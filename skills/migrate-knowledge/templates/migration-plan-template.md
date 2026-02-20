@@ -1,0 +1,286 @@
+# {{PROJECT_NAME}} — Sitecore XP Migration Plan
+
+## AWS to Azure Infrastructure Migration
+
+| Field | Value |
+|-------|-------|
+| **Client** | {{CLIENT_NAME}} |
+| **Prepared By** | {{ARCHITECT_NAME}} |
+| **Date** | {{DATE}} |
+| **Version** | {{VERSION}} |
+| **Status** | {{STATUS}} |
+| **Sitecore Version** | {{SITECORE_VERSION}} |
+| **Target Timeline** | {{TARGET_TIMELINE}} |
+
+---
+
+## 1. Executive Summary
+
+{{EXECUTIVE_SUMMARY}}
+
+### Migration Scope
+- **Source**: Sitecore XP {{SITECORE_VERSION}} on AWS ({{SOURCE_TOPOLOGY}})
+- **Target**: Sitecore XP {{SITECORE_VERSION}} on Azure ({{TARGET_TOPOLOGY}})
+- **Migration Type**: Infrastructure replatforming (no version upgrade)
+
+### Key Metrics
+| Metric | Value |
+|--------|-------|
+| Estimated Total Effort | {{TOTAL_HOURS_EXPECTED}} hours ({{TOTAL_HOURS_OPTIMISTIC}}–{{TOTAL_HOURS_PESSIMISTIC}} range) |
+| Estimated Duration | {{ESTIMATED_DURATION}} |
+| Number of Environments | {{ENVIRONMENT_COUNT}} |
+| Risk Items | {{RISK_COUNT}} ({{HIGH_RISK_COUNT}} high) |
+| Open Discovery Gaps | {{GAP_COUNT}} |
+
+---
+
+## 2. Current State Architecture
+
+### 2.1 Topology Overview
+{{CURRENT_TOPOLOGY_DESCRIPTION}}
+
+### 2.2 Infrastructure Components
+
+#### Compute
+{{CURRENT_COMPUTE}}
+
+#### Database
+{{CURRENT_DATABASE}}
+
+#### Search
+{{CURRENT_SEARCH}}
+
+#### Caching
+{{CURRENT_CACHING}}
+
+#### CDN & Load Balancing
+{{CURRENT_CDN}}
+
+#### Storage
+{{CURRENT_STORAGE}}
+
+#### Email (EXM)
+{{CURRENT_EMAIL}}
+
+#### xConnect / xDB
+{{CURRENT_XCONNECT}}
+
+#### Networking
+{{CURRENT_NETWORKING}}
+
+#### Monitoring
+{{CURRENT_MONITORING}}
+
+#### CI/CD
+{{CURRENT_CICD}}
+
+### 2.3 Integration Points
+{{CURRENT_INTEGRATIONS}}
+
+---
+
+## 3. Target State Architecture
+
+### 3.1 Azure Topology
+{{TARGET_TOPOLOGY_DESCRIPTION}}
+
+### 3.2 Service Mapping
+
+| AWS Service | Azure Equivalent | Notes |
+|-------------|-----------------|-------|
+{{SERVICE_MAPPING_TABLE}}
+
+### 3.3 Azure Resource Summary
+
+| Resource | SKU/Tier | Count | Purpose |
+|----------|----------|-------|---------|
+{{AZURE_RESOURCE_TABLE}}
+
+---
+
+## 4. Migration Approach
+
+### 4.1 Strategy
+{{MIGRATION_STRATEGY}}
+
+### 4.2 Guiding Principles
+- Minimize downtime through parallel environment build
+- Validate each component independently before integration
+- Maintain rollback capability until DNS cutover is confirmed stable
+- No Sitecore version changes during migration to reduce variables
+
+---
+
+## 5. Phase Breakdown
+
+### Phase 1: Infrastructure Foundation
+**Duration**: {{PHASE_1_DURATION}}
+**Effort**: {{PHASE_1_HOURS}} hours
+
+{{PHASE_1_DETAILS}}
+
+#### Key Deliverables
+{{PHASE_1_DELIVERABLES}}
+
+#### Exit Criteria
+{{PHASE_1_EXIT_CRITERIA}}
+
+---
+
+### Phase 2: Data Migration
+**Duration**: {{PHASE_2_DURATION}}
+**Effort**: {{PHASE_2_HOURS}} hours
+
+{{PHASE_2_DETAILS}}
+
+#### Key Deliverables
+{{PHASE_2_DELIVERABLES}}
+
+#### Exit Criteria
+{{PHASE_2_EXIT_CRITERIA}}
+
+---
+
+### Phase 3: Application & Services
+**Duration**: {{PHASE_3_DURATION}}
+**Effort**: {{PHASE_3_HOURS}} hours
+
+{{PHASE_3_DETAILS}}
+
+#### Key Deliverables
+{{PHASE_3_DELIVERABLES}}
+
+#### Exit Criteria
+{{PHASE_3_EXIT_CRITERIA}}
+
+---
+
+### Phase 4: Validation & Testing
+**Duration**: {{PHASE_4_DURATION}}
+**Effort**: {{PHASE_4_HOURS}} hours
+
+{{PHASE_4_DETAILS}}
+
+#### Key Deliverables
+{{PHASE_4_DELIVERABLES}}
+
+#### Exit Criteria
+{{PHASE_4_EXIT_CRITERIA}}
+
+---
+
+### Phase 5: Cutover & Go-Live
+**Duration**: {{PHASE_5_DURATION}}
+**Effort**: {{PHASE_5_HOURS}} hours
+
+{{PHASE_5_DETAILS}}
+
+#### Key Deliverables
+{{PHASE_5_DELIVERABLES}}
+
+#### Exit Criteria
+{{PHASE_5_EXIT_CRITERIA}}
+
+---
+
+## 6. Timeline
+
+```
+{{TIMELINE_GANTT}}
+```
+
+---
+
+## 7. Resource Requirements
+
+### 7.1 Team Composition
+
+| Role | Hours (Expected) | Hours (Range) | Responsibilities |
+|------|------------------|---------------|------------------|
+{{RESOURCE_TABLE}}
+
+### 7.2 Resource Loading by Phase
+
+| Role | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
+|------|---------|---------|---------|---------|---------|
+{{RESOURCE_LOADING_TABLE}}
+
+---
+
+## 8. Risk Register
+
+| ID | Risk | Likelihood | Impact | Severity | Mitigation | Owner |
+|----|------|-----------|--------|----------|------------|-------|
+{{RISK_REGISTER_TABLE}}
+
+---
+
+## 9. Dependency Map
+
+### 9.1 Critical Path
+{{CRITICAL_PATH}}
+
+### 9.2 Dependency Chain
+{{DEPENDENCY_CHAIN}}
+
+---
+
+## 10. Assumptions
+
+{{ASSUMPTIONS_LIST}}
+
+---
+
+## 11. Exclusions
+
+{{EXCLUSIONS_LIST}}
+
+---
+
+## 12. Success Criteria
+
+{{SUCCESS_CRITERIA}}
+
+---
+
+## 13. Rollback Plan
+
+### 13.1 Rollback Triggers
+{{ROLLBACK_TRIGGERS}}
+
+### 13.2 Rollback Procedure
+{{ROLLBACK_PROCEDURE}}
+
+### 13.3 Point of No Return
+{{POINT_OF_NO_RETURN}}
+
+---
+
+## 14. Post-Migration
+
+### 14.1 Hypercare Period
+{{HYPERCARE_PLAN}}
+
+### 14.2 Decommissioning
+{{DECOMMISSION_PLAN}}
+
+### 14.3 Knowledge Transfer
+{{KNOWLEDGE_TRANSFER}}
+
+---
+
+## Appendices
+
+### A. Discovery Summary
+{{DISCOVERY_SUMMARY}}
+
+### B. Detailed Estimate Breakdown
+{{ESTIMATE_BREAKDOWN}}
+
+### C. Azure Resource Naming Convention
+{{NAMING_CONVENTION}}
+
+---
+
+*Generated by Migration Planner Plugin v1.0*
+*Assessment ID: {{ASSESSMENT_ID}}*

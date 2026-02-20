@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(plugin-architect)",
+      "WebFetch(domain:alexop.dev)",
+      "Bash(git fetch:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(python:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "plugin-architect@twofoldtech-dakota-plugin-architect": true
+  }
+}

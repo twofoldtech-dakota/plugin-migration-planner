@@ -1,0 +1,162 @@
+{
+  "dependencies": [
+    {
+      "id": "network_first",
+      "predecessor": "networking_vnet",
+      "successors": ["compute_single_role", "database_single", "solr_standalone", "solr_cloud", "redis_session"],
+      "type": "hard",
+      "reason": "VNet, subnets, and NSGs must be in place before any resources are provisioned"
+    },
+    {
+      "id": "ssl_before_compute",
+      "predecessor": "ssl_tls",
+      "successors": ["compute_single_role"],
+      "type": "soft",
+      "reason": "SSL certificates should be available in Key Vault before Sitecore role configuration, though VMs can be provisioned first"
+    },
+    {
+      "id": "compute_before_sitecore_roles",
+      "predecessor": "compute_single_role",
+      "successors": ["identity_server", "xconnect_xdb", "exm_dispatch"],
+      "type": "hard",
+      "reason": "VMs must exist and be configured before Sitecore roles can be deployed"
+    },
+    {
+      "id": "database_before_sitecore",
+      "predecessor": "database_single",
+      "successors": ["identity_server", "xconnect_xdb", "exm_dispatch", "testing_validation"],
+      "type": "hard",
+      "reason": "Databases must be migrated and accessible before Sitecore can start with valid connection strings"
+    },
+    {
+      "id": "identity_before_cm",
+      "predecessor": "identity_server",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "Identity Server must be running for CM login and authentication to work"
+    },
+    {
+      "id": "search_before_content",
+      "predecessor": "solr_standalone",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "Search must be operational for content authoring, delivery, and search-dependent features"
+    },
+    {
+      "id": "search_cloud_before_content",
+      "predecessor": "solr_cloud",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "SolrCloud must be operational for content authoring, delivery, and search-dependent features"
+    },
+    {
+      "id": "redis_before_cd",
+      "predecessor": "redis_session",
+      "successors": ["testing_validation"],
+      "type": "soft",
+      "reason": "Redis should be configured before CD testing to validate session state behavior"
+    },
+    {
+      "id": "ssl_before_cdn",
+      "predecessor": "ssl_tls",
+      "successors": ["cdn_setup"],
+      "type": "hard",
+      "reason": "SSL certificates must be provisioned before CDN/Front Door HTTPS configuration"
+    },
+    {
+      "id": "cdn_before_dns",
+      "predecessor": "cdn_setup",
+      "successors": ["dns_cutover"],
+      "type": "hard",
+      "reason": "CDN/Front Door must be configured and validated before DNS records are pointed to it"
+    },
+    {
+      "id": "testing_before_cutover",
+      "predecessor": "testing_validation",
+      "successors": ["cutover_execution"],
+      "type": "hard",
+      "reason": "Full validation must pass before production cutover"
+    },
+    {
+      "id": "backup_before_cutover",
+      "predecessor": "backup_dr",
+      "successors": ["cutover_execution"],
+      "type": "hard",
+      "reason": "Backup and DR must be configured and tested before production cutover"
+    },
+    {
+      "id": "monitoring_parallel",
+      "predecessor": "compute_single_role",
+      "successors": ["monitoring_setup"],
+      "type": "soft",
+      "reason": "Monitoring can be set up as soon as VMs exist, can proceed in parallel with other work"
+    },
+    {
+      "id": "cicd_after_compute",
+      "predecessor": "compute_single_role",
+      "successors": ["cicd_pipeline"],
+      "type": "soft",
+      "reason": "CI/CD pipelines need deployment targets to exist, but pipeline design can start earlier"
+    },
+    {
+      "id": "cutover_before_dns",
+      "predecessor": "cutover_execution",
+      "successors": ["dns_cutover"],
+      "type": "hard",
+      "reason": "Final data sync and validation must complete before DNS switch"
+    },
+    {
+      "id": "xconnect_before_exm",
+      "predecessor": "xconnect_xdb",
+      "successors": ["exm_dispatch"],
+      "type": "hard",
+      "reason": "xConnect must be operational before EXM can function (contact data dependency)"
+    }
+  ],
+  "critical_path_template": {
+    "description": "The typical critical path for a full XP migration",
+    "path": [
+      "networking_vnet",
+      "compute_single_role",
+      "database_single",
+      "identity_server",
+      "xconnect_xdb",
+      "testing_validation",
+      "backup_dr",
+      "cutover_execution",
+      "dns_cutover"
+    ],
+    "parallel_tracks": [
+      {
+        "name": "Search Track",
+        "path": ["solr_standalone", "testing_validation"],
+        "starts_after": "networking_vnet"
+      },
+      {
+        "name": "Caching Track",
+        "path": ["redis_session"],
+        "starts_after": "networking_vnet"
+      },
+      {
+        "name": "CDN Track",
+        "path": ["ssl_tls", "cdn_setup"],
+        "starts_after": "networking_vnet"
+      },
+      {
+        "name": "Monitoring Track",
+        "path": ["monitoring_setup"],
+        "starts_after": "compute_single_role"
+      },
+      {
+        "name": "CI/CD Track",
+        "path": ["cicd_pipeline"],
+        "starts_after": "compute_single_role"
+      },
+      {
+        "name": "Storage Track",
+        "path": ["blob_storage"],
+        "starts_after": "networking_vnet"
+      }
+    ]
+  }
+}

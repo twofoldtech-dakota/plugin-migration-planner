@@ -1,0 +1,133 @@
+{
+  "patterns": [
+    {
+      "id": "session_redis_cd",
+      "pattern": "cd_instances >= 4 AND session.type != 'redis'",
+      "risk": "high",
+      "hours_impact": 12,
+      "description": "At 4+ CD instances, in-proc or SQL sessions cause sticky session problems. Without shared session state, Application Gateway affinity becomes fragile under load.",
+      "mitigation": "Add Redis session state migration to scope. Configure Azure Cache for Redis Premium with VNet integration.",
+      "affected_components": ["redis_session", "compute_single_role"]
+    },
+    {
+      "id": "solr_sxa_cdn",
+      "pattern": "search.has_sxa AND cdn.enabled",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "SXA search components + CDN caching layer interact during migration. Stale CDN cache can serve wrong search results or broken search pages.",
+      "mitigation": "Coordinate search rebuild, CDN purge, and cache warm-up sequence in cutover window. Add specific validation step."
+    },
+    {
+      "id": "exm_ip_warming",
+      "pattern": "email.enabled AND email.dedicated_ip",
+      "risk": "high",
+      "hours_impact": 40,
+      "description": "New Azure IPs have no sending reputation. Sending at full volume immediately will trigger spam filters and damage deliverability.",
+      "mitigation": "Plan 2-4 week IP warming ramp with gradual volume increase. Maintain old dispatch path as fallback during warming period.",
+      "affected_components": ["exm_dispatch"]
+    },
+    {
+      "id": "xdb_shard_map",
+      "pattern": "xconnect.enabled AND xconnect.sharding == 'custom'",
+      "risk": "high",
+      "hours_impact": 24,
+      "description": "Custom shard maps don't auto-migrate between SQL instances. Manual shard map recreation required on Azure SQL MI.",
+      "mitigation": "Export shard map from source, validate mapping on target, plan extended maintenance window for shard migration.",
+      "affected_components": ["xconnect_xdb", "database_single"]
+    },
+    {
+      "id": "media_blob_references",
+      "pattern": "storage.type == 'database' AND storage.media_size_gb > 10",
+      "risk": "medium",
+      "hours_impact": 16,
+      "description": "Media stored in database (not blob) significantly increases DB migration time, database size, and backup complexity.",
+      "mitigation": "Consider migrating to Azure Blob storage during replatform. If keeping in DB, plan for larger DB migration window and increased storage costs."
+    },
+    {
+      "id": "custom_handlers_aws",
+      "pattern": "integrations.custom_handlers > 0",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "Custom HTTP handlers/modules may reference AWS-specific services (S3 SDK, SES, Secrets Manager, Parameter Store).",
+      "mitigation": "Audit all custom handlers for AWS SDK usage, S3 references, IAM dependencies, or AWS service endpoints. Plan code changes.",
+      "affected_components": ["custom_integration"]
+    },
+    {
+      "id": "rds_collation_mismatch",
+      "pattern": "database.source == 'rds_sql_server'",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "RDS SQL Server default collation (SQL_Latin1_General_CP1_CI_AS) usually matches Sitecore's requirement, but custom databases or non-default RDS configs may have mismatches.",
+      "mitigation": "Verify collation on all databases matches SQL_Latin1_General_CP1_CI_AS. Test with Sitecore before cutover."
+    },
+    {
+      "id": "certificate_pinning",
+      "pattern": "ssl.pinning == true",
+      "risk": "high",
+      "hours_impact": 16,
+      "description": "Certificate pinning in integrations, mobile apps, or partner systems will break when new Azure certificates are issued.",
+      "mitigation": "Identify all pinned certificates, coordinate with integration teams for pin updates, plan staged rollout with monitoring.",
+      "affected_components": ["ssl_tls", "custom_integration"]
+    },
+    {
+      "id": "publishing_service_separate",
+      "pattern": "sitecore.publishing_service == 'dedicated'",
+      "risk": "low",
+      "hours_impact": 8,
+      "description": "Dedicated Publishing Service (.NET Core) needs its own VM and configuration on Azure, including separate connection strings.",
+      "mitigation": "Include Publishing Service VM in compute provisioning. Update connection strings and service configuration.",
+      "affected_components": ["compute_single_role"]
+    },
+    {
+      "id": "scheduled_tasks_aws",
+      "pattern": "integrations.scheduled_tasks > 0 AND integrations.task_scheduler == 'aws'",
+      "risk": "medium",
+      "hours_impact": 12,
+      "description": "Scheduled tasks using AWS Lambda, CloudWatch Events, or EventBridge need Azure equivalents (Azure Functions, Logic Apps, or Windows Task Scheduler).",
+      "mitigation": "Inventory all scheduled tasks, determine Azure equivalent for each, migrate and test scheduling.",
+      "affected_components": ["custom_integration", "compute_single_role"]
+    },
+    {
+      "id": "large_db_migration_window",
+      "pattern": "database.total_size_gb > 200",
+      "risk": "high",
+      "hours_impact": 16,
+      "description": "Large databases (200+ GB total) require extended migration windows. Network transfer time and index rebuild time can exceed maintenance windows.",
+      "mitigation": "Use Azure Database Migration Service with continuous sync. Plan pre-migration bulk copy followed by delta sync at cutover.",
+      "affected_components": ["database_single", "cutover_execution"]
+    },
+    {
+      "id": "redis_ssl_default",
+      "pattern": "caching.redis == true AND caching.ssl == false",
+      "risk": "medium",
+      "hours_impact": 4,
+      "description": "Azure Cache for Redis requires SSL by default (port 6380). If current ElastiCache uses non-SSL (port 6379), Sitecore Redis provider config must change.",
+      "mitigation": "Update Sitecore Redis connection strings to use SSL. Test session state behavior over SSL connection."
+    },
+    {
+      "id": "multiple_content_databases",
+      "pattern": "database.web_db_count > 1",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "Multiple web databases (for staging, A/B testing, or multi-site) multiply database migration and publish target configuration effort.",
+      "mitigation": "Map all web database publish targets, migrate each, update Sitecore publish target configurations."
+    },
+    {
+      "id": "geo_distributed",
+      "pattern": "infrastructure.regions > 1",
+      "risk": "high",
+      "hours_impact": 40,
+      "description": "Multi-region deployments require Azure geo-replication, Traffic Manager, and region-specific resource provisioning.",
+      "mitigation": "Plan region-by-region migration. Set up geo-replication for databases. Configure Traffic Manager for failover.",
+      "affected_components": ["networking_vnet", "database_single", "compute_single_role", "dns_cutover"]
+    },
+    {
+      "id": "custom_cache_clearing",
+      "pattern": "sitecore.custom_cache_clearing == true",
+      "risk": "low",
+      "hours_impact": 6,
+      "description": "Custom cache clearing strategies that use AWS services (SNS/SQS for cache invalidation across instances) need Azure equivalents.",
+      "mitigation": "Replace with Azure Service Bus or Sitecore's built-in cache clearing. Test publish and cache clear flow."
+    }
+  ]
+}

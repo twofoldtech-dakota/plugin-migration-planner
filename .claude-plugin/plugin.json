@@ -1,0 +1,69 @@
+{
+  "name": "migration-planner",
+  "version": "1.0.0",
+  "description": "Sitecore XP AWS-to-Azure migration planning assistant. Guides architects through structured discovery, cross-reference analysis, phased estimation, and client-ready deliverable generation.",
+  "skills": [
+    {
+      "name": "migrate-knowledge",
+      "description": "Background knowledge for Sitecore XP AWS-to-Azure infrastructure migrations. Provides domain expertise, estimation heuristics, and analysis frameworks.",
+      "path": "skills/migrate-knowledge",
+      "user_invocable": false
+    },
+    {
+      "name": "migrate-new",
+      "description": "Start a new migration assessment. Creates the .migration/ directory and initializes project metadata.",
+      "path": "skills/migrate-new",
+      "user_invocable": true,
+      "command": "/migrate new"
+    },
+    {
+      "name": "migrate-discover",
+      "description": "Conduct or resume the discovery interview. Walks through 17 dimensions of infrastructure discovery with branching questions.",
+      "path": "skills/migrate-discover",
+      "user_invocable": true,
+      "command": "/migrate discover"
+    },
+    {
+      "name": "migrate-analyze",
+      "description": "Run cross-reference analysis on discovery data. Identifies risks, dependency chains, complexity multipliers, and gaps.",
+      "path": "skills/migrate-analyze",
+      "user_invocable": true,
+      "command": "/migrate analyze"
+    },
+    {
+      "name": "migrate-estimate",
+      "description": "Generate phased migration effort estimates with optimistic/expected/pessimistic ranges and role-based breakdowns.",
+      "path": "skills/migrate-estimate",
+      "user_invocable": true,
+      "command": "/migrate estimate"
+    },
+    {
+      "name": "migrate-plan",
+      "description": "Generate a comprehensive client-ready migration plan document from accumulated assessment data.",
+      "path": "skills/migrate-plan",
+      "user_invocable": true,
+      "command": "/migrate plan"
+    },
+    {
+      "name": "migrate-gaps",
+      "description": "Show unanswered questions, unvalidated assumptions, and missing discovery dimensions ranked by impact.",
+      "path": "skills/migrate-gaps",
+      "user_invocable": true,
+      "command": "/migrate gaps"
+    },
+    {
+      "name": "migrate-compare",
+      "description": "Compare migration approaches side-by-side (e.g., PaaS vs IaaS, SQL MI vs SQL VM). Pass the comparison topic as an argument.",
+      "path": "skills/migrate-compare",
+      "user_invocable": true,
+      "command": "/migrate compare"
+    },
+    {
+      "name": "migrate-calibrate",
+      "description": "Feed back actuals from a completed migration to compare against estimates and improve future accuracy.",
+      "path": "skills/migrate-calibrate",
+      "user_invocable": true,
+      "command": "/migrate calibrate"
+    }
+  ]
+}

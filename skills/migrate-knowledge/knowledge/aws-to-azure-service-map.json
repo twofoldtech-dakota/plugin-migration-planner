@@ -1,0 +1,216 @@
+{
+  "compute": {
+    "EC2": {
+      "azure_equivalent": "Azure Virtual Machines",
+      "notes": "Match instance families: M-series for general purpose, E-series for memory-optimized, D-series for compute-optimized"
+    },
+    "Auto Scaling Groups": {
+      "azure_equivalent": "VM Scale Sets",
+      "notes": "VMSS supports similar scaling policies. Review custom scaling metrics."
+    },
+    "ECS": {
+      "azure_equivalent": "Azure Container Instances / AKS",
+      "notes": "ECS tasks map to ACI container groups. ECS services map to AKS deployments."
+    },
+    "EKS": {
+      "azure_equivalent": "Azure Kubernetes Service (AKS)",
+      "notes": "Cluster config, node pools, and ingress controllers need reconfiguration."
+    },
+    "Lambda": {
+      "azure_equivalent": "Azure Functions",
+      "notes": "Runtime compatibility check required. Trigger types differ."
+    }
+  },
+  "database": {
+    "RDS SQL Server": {
+      "azure_equivalent": "Azure SQL Managed Instance / Azure SQL Database",
+      "notes": "SQL MI provides near-100% compatibility with SQL Server. Azure SQL DB has some feature gaps. Sitecore requires SQL MI for full compatibility."
+    },
+    "RDS Multi-AZ": {
+      "azure_equivalent": "SQL MI Business Critical / Always On Availability Groups",
+      "notes": "Business Critical tier provides built-in HA. General Purpose uses remote storage replication."
+    },
+    "RDS Read Replicas": {
+      "azure_equivalent": "SQL MI with read-only replicas / Azure SQL Hyperscale",
+      "notes": "Hyperscale supports up to 4 read replicas."
+    }
+  },
+  "caching": {
+    "ElastiCache Redis": {
+      "azure_equivalent": "Azure Cache for Redis",
+      "notes": "Premium tier supports clustering, persistence, VNet injection. Enterprise tier for Redis modules."
+    },
+    "ElastiCache Memcached": {
+      "azure_equivalent": "Azure Cache for Redis",
+      "notes": "No native Memcached on Azure. Redis is the standard. May require session serialization changes."
+    }
+  },
+  "search": {
+    "EC2 (Solr standalone)": {
+      "azure_equivalent": "Azure VM (Solr) / Azure Cognitive Search",
+      "notes": "Sitecore supports both Solr on VM and Azure Search. Solr on VM is closer to lift-and-shift."
+    },
+    "Solr Cloud on EC2": {
+      "azure_equivalent": "Solr on AKS / Azure Cognitive Search",
+      "notes": "SolrCloud requires ZooKeeper. AKS deployment recommended for managed orchestration."
+    }
+  },
+  "storage": {
+    "S3": {
+      "azure_equivalent": "Azure Blob Storage",
+      "notes": "S3 API not natively supported. SDK/code changes required. Access tiers map: S3 Standard → Hot, S3 IA → Cool, Glacier → Archive."
+    },
+    "EFS": {
+      "azure_equivalent": "Azure Files",
+      "notes": "SMB/NFS protocol support. Premium tier for low-latency workloads."
+    },
+    "EBS": {
+      "azure_equivalent": "Azure Managed Disks",
+      "notes": "Premium SSD for production Sitecore workloads. Ultra Disk for extreme IOPS requirements."
+    }
+  },
+  "cdn": {
+    "CloudFront": {
+      "azure_equivalent": "Azure CDN / Azure Front Door",
+      "notes": "Front Door provides global load balancing + CDN + WAF. Azure CDN (Verizon/Akamai/Microsoft) for pure CDN."
+    }
+  },
+  "dns": {
+    "Route 53": {
+      "azure_equivalent": "Azure DNS",
+      "notes": "Azure DNS supports public and private zones. No native health checks — use Traffic Manager or Front Door for failover."
+    }
+  },
+  "loadbalancing": {
+    "ALB": {
+      "azure_equivalent": "Azure Application Gateway",
+      "notes": "Layer 7 load balancer with WAF, SSL offloading, URL-based routing. V2 SKU recommended."
+    },
+    "NLB": {
+      "azure_equivalent": "Azure Load Balancer (Standard)",
+      "notes": "Layer 4 load balancer. Standard SKU required for VNet integration and availability zones."
+    },
+    "ELB Classic": {
+      "azure_equivalent": "Azure Load Balancer (Basic)",
+      "notes": "Consider upgrading to Application Gateway for Sitecore CD workloads."
+    }
+  },
+  "networking": {
+    "VPC": {
+      "azure_equivalent": "Azure Virtual Network (VNet)",
+      "notes": "Similar concepts but different CIDR and subnet models. Plan address space carefully."
+    },
+    "Security Groups": {
+      "azure_equivalent": "Network Security Groups (NSGs)",
+      "notes": "NSGs are stateful like SGs but applied at subnet or NIC level. Priority-based rules."
+    },
+    "NACLs": {
+      "azure_equivalent": "NSGs + Azure Firewall",
+      "notes": "Azure doesn't have direct NACL equivalent. Use NSGs for basic filtering, Azure Firewall for advanced."
+    },
+    "VPC Peering": {
+      "azure_equivalent": "VNet Peering",
+      "notes": "Global VNet peering available. Non-transitive like AWS."
+    },
+    "Transit Gateway": {
+      "azure_equivalent": "Azure Virtual WAN / Hub-Spoke topology",
+      "notes": "Virtual WAN provides managed hub. Hub-spoke with VNet peering is also common."
+    },
+    "Direct Connect": {
+      "azure_equivalent": "Azure ExpressRoute",
+      "notes": "Private connectivity to Azure. Requires partner circuit. Global Reach for multi-region."
+    },
+    "VPN Gateway": {
+      "azure_equivalent": "Azure VPN Gateway",
+      "notes": "Site-to-site and point-to-site VPN. VpnGw2 or higher for production workloads."
+    }
+  },
+  "identity": {
+    "IAM Roles": {
+      "azure_equivalent": "Azure Managed Identity",
+      "notes": "System-assigned for single-resource, User-assigned for shared identity. RBAC-based."
+    },
+    "IAM Policies": {
+      "azure_equivalent": "Azure RBAC / Azure Policy",
+      "notes": "RBAC for access control, Azure Policy for compliance enforcement."
+    },
+    "Cognito": {
+      "azure_equivalent": "Azure AD B2C",
+      "notes": "User pool migration required. Custom policies may need rewriting."
+    }
+  },
+  "monitoring": {
+    "CloudWatch Metrics": {
+      "azure_equivalent": "Azure Monitor Metrics",
+      "notes": "Platform metrics auto-collected. Custom metrics via Application Insights."
+    },
+    "CloudWatch Logs": {
+      "azure_equivalent": "Azure Monitor Logs / Log Analytics",
+      "notes": "KQL query language instead of CloudWatch Insights. Log Analytics workspace required."
+    },
+    "CloudWatch Alarms": {
+      "azure_equivalent": "Azure Monitor Alerts",
+      "notes": "Action groups replace SNS topics for alert routing."
+    },
+    "X-Ray": {
+      "azure_equivalent": "Application Insights",
+      "notes": "Distributed tracing, application map, performance monitoring. Sitecore has App Insights integration."
+    },
+    "CloudTrail": {
+      "azure_equivalent": "Azure Activity Log / Azure Monitor",
+      "notes": "Activity Log for control plane. Diagnostic settings for data plane."
+    }
+  },
+  "secrets": {
+    "Secrets Manager": {
+      "azure_equivalent": "Azure Key Vault",
+      "notes": "Key Vault handles secrets, keys, and certificates. Managed identity for access."
+    },
+    "Parameter Store": {
+      "azure_equivalent": "Azure App Configuration / Key Vault",
+      "notes": "App Configuration for feature flags and config. Key Vault for secrets."
+    }
+  },
+  "email": {
+    "SES": {
+      "azure_equivalent": "Azure Communication Services / SendGrid",
+      "notes": "SendGrid is the most common for Sitecore EXM. ACS for newer implementations. IP reputation doesn't transfer."
+    },
+    "WorkMail": {
+      "azure_equivalent": "Exchange Online (Microsoft 365)",
+      "notes": "Full mailbox migration if applicable."
+    }
+  },
+  "cicd": {
+    "CodePipeline": {
+      "azure_equivalent": "Azure DevOps Pipelines / GitHub Actions",
+      "notes": "Pipeline definitions need complete rewrite. YAML-based in both Azure DevOps and GitHub Actions."
+    },
+    "CodeBuild": {
+      "azure_equivalent": "Azure DevOps Build / GitHub Actions",
+      "notes": "Build agent configuration differs. Microsoft-hosted or self-hosted agents."
+    },
+    "CodeDeploy": {
+      "azure_equivalent": "Azure DevOps Release / GitHub Actions",
+      "notes": "Deployment strategies (blue-green, rolling) have different configurations."
+    },
+    "ECR": {
+      "azure_equivalent": "Azure Container Registry (ACR)",
+      "notes": "Image migration required. Geo-replication available on Premium tier."
+    }
+  },
+  "backup": {
+    "AWS Backup": {
+      "azure_equivalent": "Azure Backup",
+      "notes": "Recovery Services Vault for VM and SQL backups. Azure Site Recovery for DR."
+    },
+    "S3 Versioning": {
+      "azure_equivalent": "Blob Versioning / Soft Delete",
+      "notes": "Blob versioning for object-level history. Soft delete for accidental deletion protection."
+    },
+    "EBS Snapshots": {
+      "azure_equivalent": "Managed Disk Snapshots",
+      "notes": "Incremental snapshots supported. Cross-region copy available."
+    }
+  }
+}

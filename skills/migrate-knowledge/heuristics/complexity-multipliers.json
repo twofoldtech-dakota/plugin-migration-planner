@@ -1,0 +1,173 @@
+{
+  "multipliers": [
+    {
+      "id": "multi_cd",
+      "condition": "cd_instance_count > 2",
+      "multiplier": 1.3,
+      "applies_to": ["compute_single_role", "networking_vnet", "cdn_setup", "testing_validation"],
+      "reason": "Multiple CD instances require coordinated deployment, load balancer configuration, and per-instance validation"
+    },
+    {
+      "id": "many_cd",
+      "condition": "cd_instance_count > 6",
+      "multiplier": 1.5,
+      "applies_to": ["compute_single_role", "networking_vnet", "cdn_setup", "testing_validation"],
+      "reason": "6+ CD instances significantly increase deployment complexity and testing surface",
+      "supersedes": "multi_cd"
+    },
+    {
+      "id": "solr_cloud",
+      "condition": "search.type == 'solr_cloud'",
+      "multiplier": 1.5,
+      "applies_to": ["solr_standalone"],
+      "reason": "SolrCloud requires ZooKeeper migration, ensemble setup, and cluster coordination"
+    },
+    {
+      "id": "custom_solr_indexes",
+      "condition": "search.custom_indexes > 0",
+      "multiplier": 1.3,
+      "applies_to": ["solr_standalone", "solr_cloud"],
+      "reason": "Custom indexes need schema review, config migration, and rebuild validation"
+    },
+    {
+      "id": "many_custom_solr_indexes",
+      "condition": "search.custom_indexes > 5",
+      "multiplier": 1.6,
+      "applies_to": ["solr_standalone", "solr_cloud"],
+      "reason": "Many custom indexes significantly increase migration and validation effort",
+      "supersedes": "custom_solr_indexes"
+    },
+    {
+      "id": "exm_custom_mta",
+      "condition": "email.custom_mta == true",
+      "multiplier": 1.4,
+      "applies_to": ["exm_dispatch"],
+      "reason": "Custom MTA requires SMTP relay reconfiguration, authentication updates, and IP warming"
+    },
+    {
+      "id": "exm_high_volume",
+      "condition": "email.monthly_volume > 100000",
+      "multiplier": 1.3,
+      "applies_to": ["exm_dispatch"],
+      "reason": "High-volume dispatch needs IP warming plan, gradual ramp-up, and deliverability monitoring"
+    },
+    {
+      "id": "exm_very_high_volume",
+      "condition": "email.monthly_volume > 500000",
+      "multiplier": 1.6,
+      "applies_to": ["exm_dispatch"],
+      "reason": "Very high volume requires dedicated IP pools, complex warming plan, and extended stabilization",
+      "supersedes": "exm_high_volume"
+    },
+    {
+      "id": "xdb_large",
+      "condition": "xconnect.contact_count > 1000000",
+      "multiplier": 1.5,
+      "applies_to": ["xconnect_xdb", "database_single"],
+      "reason": "Large xDB requires shard migration planning, potential downtime, and extended data validation"
+    },
+    {
+      "id": "xdb_very_large",
+      "condition": "xconnect.contact_count > 10000000",
+      "multiplier": 2.0,
+      "applies_to": ["xconnect_xdb", "database_single"],
+      "reason": "Very large xDB needs phased migration strategy, potential shard redistribution",
+      "supersedes": "xdb_large"
+    },
+    {
+      "id": "multi_site",
+      "condition": "sites_count > 3",
+      "multiplier": 1.2,
+      "applies_to": ["compute_single_role", "cdn_setup", "ssl_tls", "testing_validation", "dns_cutover"],
+      "reason": "Multi-site adds per-site validation overhead, per-site CDN config, and SSL per domain"
+    },
+    {
+      "id": "many_sites",
+      "condition": "sites_count > 10",
+      "multiplier": 1.5,
+      "applies_to": ["compute_single_role", "cdn_setup", "ssl_tls", "testing_validation", "dns_cutover"],
+      "reason": "Many sites significantly multiply validation and DNS cutover effort",
+      "supersedes": "multi_site"
+    },
+    {
+      "id": "custom_session_state",
+      "condition": "session.type == 'custom'",
+      "multiplier": 1.3,
+      "applies_to": ["redis_session", "compute_single_role"],
+      "reason": "Custom session providers need migration, Azure compatibility testing, and fallback planning"
+    },
+    {
+      "id": "ha_database",
+      "condition": "database.ha == true",
+      "multiplier": 1.4,
+      "applies_to": ["database_single"],
+      "reason": "HA database requires Always On AG or MI Business Critical setup, failover testing"
+    },
+    {
+      "id": "large_media_library",
+      "condition": "storage.media_size_gb > 50",
+      "multiplier": 1.3,
+      "applies_to": ["blob_storage"],
+      "reason": "Large media libraries need staged transfer and extended cutover window"
+    },
+    {
+      "id": "very_large_media_library",
+      "condition": "storage.media_size_gb > 500",
+      "multiplier": 1.8,
+      "applies_to": ["blob_storage"],
+      "reason": "Very large media libraries may require multi-day transfer and phased sync strategy",
+      "supersedes": "large_media_library"
+    },
+    {
+      "id": "vpn_connectivity",
+      "condition": "networking.vpn_required == true",
+      "multiplier": 1.3,
+      "applies_to": ["networking_vnet"],
+      "reason": "VPN/ExpressRoute setup adds connectivity complexity, requires coordination with network team"
+    },
+    {
+      "id": "expressroute",
+      "condition": "networking.expressroute == true",
+      "multiplier": 1.5,
+      "applies_to": ["networking_vnet"],
+      "reason": "ExpressRoute requires circuit provisioning, partner coordination, and peering setup",
+      "supersedes": "vpn_connectivity"
+    },
+    {
+      "id": "compliance_requirements",
+      "condition": "compliance.required == true",
+      "multiplier": 1.2,
+      "applies_to": ["all"],
+      "reason": "Compliance requirements add documentation, audit trails, and validation overhead"
+    },
+    {
+      "id": "pci_compliance",
+      "condition": "compliance.pci == true",
+      "multiplier": 1.4,
+      "applies_to": ["all"],
+      "reason": "PCI DSS compliance requires specific network segmentation, encryption, and audit controls",
+      "supersedes": "compliance_requirements"
+    },
+    {
+      "id": "multi_environment",
+      "condition": "environment_count > 2",
+      "multiplier": 1.3,
+      "applies_to": ["networking_vnet", "compute_single_role", "database_single", "monitoring_setup", "cicd_pipeline"],
+      "reason": "Multiple environments (dev/staging/UAT/prod) multiply infrastructure provisioning effort"
+    },
+    {
+      "id": "custom_modules",
+      "condition": "sitecore.custom_modules > 3",
+      "multiplier": 1.2,
+      "applies_to": ["compute_single_role", "testing_validation"],
+      "reason": "Custom Sitecore modules need individual migration validation and compatibility testing"
+    },
+    {
+      "id": "sxa_enabled",
+      "condition": "sitecore.sxa == true",
+      "multiplier": 1.1,
+      "applies_to": ["solr_standalone", "solr_cloud", "testing_validation"],
+      "reason": "SXA adds additional search indexes and rendering validation requirements"
+    }
+  ]
+}

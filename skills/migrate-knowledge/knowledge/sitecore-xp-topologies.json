@@ -1,0 +1,231 @@
+{
+  "topologies": {
+    "xm_single": {
+      "name": "XM Single (Developer/Small)",
+      "description": "Single server running both CM and CD roles. Suitable for development or very small sites.",
+      "roles": {
+        "cm_cd_combined": {
+          "description": "Combined Content Management and Content Delivery",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 16, "disk_gb": 100 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 32, "disk_gb": 200 },
+          "azure_vm_series": "D8s_v5 or E8s_v5"
+        }
+      },
+      "databases": {
+        "core": { "description": "Sitecore Core database", "typical_size_gb": "1-5" },
+        "master": { "description": "Content authoring database", "typical_size_gb": "5-50" },
+        "web": { "description": "Published content database", "typical_size_gb": "5-50" }
+      },
+      "services": ["Solr"],
+      "license_roles": ["Standalone"]
+    },
+    "xm_scaled": {
+      "name": "XM Scaled",
+      "description": "Separate CM and CD instances. No xConnect or analytics. Content management only.",
+      "roles": {
+        "cm": {
+          "description": "Content Management server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 16, "disk_gb": 100 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 32, "disk_gb": 200 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "cd": {
+          "description": "Content Delivery server(s)",
+          "typical_count": "2-4",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5",
+          "scalable": true
+        }
+      },
+      "databases": {
+        "core": { "description": "Sitecore Core database", "typical_size_gb": "1-5" },
+        "master": { "description": "Content authoring database", "typical_size_gb": "5-50" },
+        "web": { "description": "Published content database", "typical_size_gb": "5-50" }
+      },
+      "services": ["Solr", "Redis (optional for session)"],
+      "license_roles": ["ContentManagement", "ContentDelivery"]
+    },
+    "xp_scaled": {
+      "name": "XP Scaled (Full Experience Platform)",
+      "description": "Full Sitecore XP with xConnect, analytics, marketing automation. The most common enterprise topology.",
+      "roles": {
+        "cm": {
+          "description": "Content Management server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 16, "disk_gb": 100 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 32, "disk_gb": 200 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "cd": {
+          "description": "Content Delivery server(s)",
+          "typical_count": "2-8",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5",
+          "scalable": true
+        },
+        "xconnect": {
+          "description": "xConnect Collection service",
+          "typical_count": "1-2",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "xconnect_search": {
+          "description": "xConnect Search indexer",
+          "typical_count": 1,
+          "min_spec": { "cpu": 2, "ram_gb": 4, "disk_gb": 60 },
+          "recommended_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "azure_vm_series": "D4s_v5"
+        },
+        "identity": {
+          "description": "Sitecore Identity Server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 2, "ram_gb": 4, "disk_gb": 40 },
+          "recommended_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 60 },
+          "azure_vm_series": "D4s_v5"
+        },
+        "processing": {
+          "description": "Processing/Aggregation server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "reporting": {
+          "description": "Reporting service (can be co-located with Processing)",
+          "typical_count": 1,
+          "min_spec": { "cpu": 2, "ram_gb": 4, "disk_gb": 60 },
+          "recommended_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "azure_vm_series": "D4s_v5"
+        }
+      },
+      "databases": {
+        "core": { "description": "Sitecore Core database", "typical_size_gb": "1-5" },
+        "master": { "description": "Content authoring database", "typical_size_gb": "5-100" },
+        "web": { "description": "Published content database", "typical_size_gb": "5-100" },
+        "reporting": { "description": "Analytics reporting database", "typical_size_gb": "5-50" },
+        "experience_forms": { "description": "Forms data", "typical_size_gb": "1-10" },
+        "marketing_automation": { "description": "Marketing automation data", "typical_size_gb": "1-10" },
+        "processing_pools": { "description": "Processing pools database", "typical_size_gb": "1-5" },
+        "processing_tasks": { "description": "Processing tasks database", "typical_size_gb": "1-5" },
+        "reference_data": { "description": "Reference data for xConnect", "typical_size_gb": "1-5" },
+        "xdb_collection_shard_0": { "description": "xDB Collection shard", "typical_size_gb": "10-200" },
+        "xdb_collection_shard_1": { "description": "xDB Collection shard", "typical_size_gb": "10-200" },
+        "xdb_collection_shard_map_manager": { "description": "Shard map manager", "typical_size_gb": "<1" }
+      },
+      "services": ["Solr", "Redis", "Identity Server"],
+      "license_roles": ["ContentManagement", "ContentDelivery", "Processing", "Reporting", "xConnect"]
+    },
+    "xp_exm": {
+      "name": "XP Scaled + EXM (Email Experience Manager)",
+      "description": "Full XP with email marketing capabilities. Adds EXM dispatch and dedicated dispatch roles.",
+      "roles": {
+        "cm": {
+          "description": "Content Management server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 16, "disk_gb": 100 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 32, "disk_gb": 200 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "cd": {
+          "description": "Content Delivery server(s)",
+          "typical_count": "2-8",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5",
+          "scalable": true
+        },
+        "xconnect": {
+          "description": "xConnect Collection service",
+          "typical_count": "1-2",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "xconnect_search": {
+          "description": "xConnect Search indexer",
+          "typical_count": 1,
+          "min_spec": { "cpu": 2, "ram_gb": 4, "disk_gb": 60 },
+          "recommended_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "azure_vm_series": "D4s_v5"
+        },
+        "identity": {
+          "description": "Sitecore Identity Server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 2, "ram_gb": 4, "disk_gb": 40 },
+          "recommended_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 60 },
+          "azure_vm_series": "D4s_v5"
+        },
+        "processing": {
+          "description": "Processing/Aggregation server",
+          "typical_count": 1,
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5"
+        },
+        "exm_dispatch": {
+          "description": "EXM Dedicated Dispatch Server",
+          "typical_count": "1-2",
+          "min_spec": { "cpu": 4, "ram_gb": 8, "disk_gb": 80 },
+          "recommended_spec": { "cpu": 8, "ram_gb": 16, "disk_gb": 100 },
+          "azure_vm_series": "D8s_v5"
+        }
+      },
+      "databases": {
+        "core": { "description": "Sitecore Core database", "typical_size_gb": "1-5" },
+        "master": { "description": "Content authoring database", "typical_size_gb": "5-100" },
+        "web": { "description": "Published content database", "typical_size_gb": "5-100" },
+        "reporting": { "description": "Analytics reporting database", "typical_size_gb": "5-50" },
+        "experience_forms": { "description": "Forms data", "typical_size_gb": "1-10" },
+        "marketing_automation": { "description": "Marketing automation data", "typical_size_gb": "1-10" },
+        "processing_pools": { "description": "Processing pools database", "typical_size_gb": "1-5" },
+        "processing_tasks": { "description": "Processing tasks database", "typical_size_gb": "1-5" },
+        "reference_data": { "description": "Reference data for xConnect", "typical_size_gb": "1-5" },
+        "exm_master": { "description": "EXM Master database", "typical_size_gb": "5-20" },
+        "exm_dispatch": { "description": "EXM dispatch log database", "typical_size_gb": "5-50" },
+        "xdb_collection_shard_0": { "description": "xDB Collection shard", "typical_size_gb": "10-200" },
+        "xdb_collection_shard_1": { "description": "xDB Collection shard", "typical_size_gb": "10-200" },
+        "xdb_collection_shard_map_manager": { "description": "Shard map manager", "typical_size_gb": "<1" }
+      },
+      "services": ["Solr", "Redis", "Identity Server", "SMTP/MTA"],
+      "license_roles": ["ContentManagement", "ContentDelivery", "Processing", "Reporting", "xConnect", "EXM Dispatch"]
+    }
+  },
+  "common_services": {
+    "solr": {
+      "description": "Apache Solr provides search functionality for Sitecore content and xDB",
+      "versions_supported": { "sitecore_10.0-10.1": "8.4+", "sitecore_10.2+": "8.8+" },
+      "deployment_options": ["Standalone", "SolrCloud"],
+      "azure_options": ["Solr on Azure VM", "Solr on AKS", "Azure Cognitive Search (with Sitecore module)"]
+    },
+    "redis": {
+      "description": "Redis provides session state, output cache, and Sitecore caching",
+      "usage_in_sitecore": ["Session State Provider", "Output Cache", "Private Session State (xConnect)"],
+      "azure_options": ["Azure Cache for Redis (Premium or Enterprise)"]
+    },
+    "identity_server": {
+      "description": "Sitecore Identity Server handles authentication for CM and other roles",
+      "framework": ".NET Core",
+      "dependencies": ["Core database", "SSL certificate"],
+      "azure_considerations": "Can run on same VM as CM or dedicated VM/App Service"
+    }
+  },
+  "database_connection_strings": {
+    "core": "Sitecore.Core",
+    "master": "Sitecore.Master",
+    "web": "Sitecore.Web",
+    "reporting": "Sitecore.Reporting",
+    "experience_forms": "Sitecore.ExperienceForms",
+    "marketing_automation": "Sitecore.MarketingAutomation",
+    "processing_pools": "Sitecore.Processing.Pools",
+    "processing_tasks": "Sitecore.Processing.Tasks",
+    "reference_data": "Sitecore.ReferenceData",
+    "exm_master": "Sitecore.EXM.Master",
+    "xdb_collection": "xconnect.collection",
+    "xdb_collection_shard_map_manager": "xconnect.collection.shard.mapmanager"
+  }
+}

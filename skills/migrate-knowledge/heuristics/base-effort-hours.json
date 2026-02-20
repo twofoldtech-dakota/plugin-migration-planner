@@ -1,0 +1,214 @@
+{
+  "components": {
+    "compute_single_role": {
+      "base_hours": 16,
+      "unit": "per VM role",
+      "includes": "VM provisioning, OS config, Sitecore install, role config, smoke test",
+      "role_breakdown": {
+        "infrastructure_engineer": 12,
+        "sitecore_developer": 4
+      }
+    },
+    "database_single": {
+      "base_hours": 12,
+      "unit": "per database",
+      "includes": "Schema migration, data migration, connection string updates, validation",
+      "role_breakdown": {
+        "dba": 8,
+        "sitecore_developer": 4
+      }
+    },
+    "solr_standalone": {
+      "base_hours": 24,
+      "unit": "per cluster",
+      "includes": "Solr install, schema copy, index rebuild, search validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 16,
+        "sitecore_developer": 8
+      }
+    },
+    "solr_cloud": {
+      "base_hours": 40,
+      "unit": "per cluster",
+      "includes": "SolrCloud + ZooKeeper setup, schema migration, collection config, index rebuild, validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 28,
+        "sitecore_developer": 12
+      }
+    },
+    "redis_session": {
+      "base_hours": 8,
+      "unit": "per instance",
+      "includes": "Azure Cache provisioning, session state config, SSL setup, testing",
+      "role_breakdown": {
+        "infrastructure_engineer": 4,
+        "sitecore_developer": 4
+      }
+    },
+    "cdn_setup": {
+      "base_hours": 8,
+      "unit": "per distribution",
+      "includes": "Azure CDN/Front Door setup, origin config, cache rules, SSL, WAF rules",
+      "role_breakdown": {
+        "infrastructure_engineer": 6,
+        "sitecore_developer": 2
+      }
+    },
+    "dns_cutover": {
+      "base_hours": 4,
+      "unit": "per zone",
+      "includes": "Record migration, TTL management, cutover plan, validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 4
+      }
+    },
+    "ssl_tls": {
+      "base_hours": 4,
+      "unit": "per certificate",
+      "includes": "Certificate migration/reissuance, Key Vault upload, binding config, validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 3,
+        "sitecore_developer": 1
+      }
+    },
+    "blob_storage": {
+      "base_hours": 12,
+      "unit": "per bucket/container",
+      "includes": "Data transfer, access policy config, Sitecore media provider config, validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 6,
+        "sitecore_developer": 6
+      }
+    },
+    "exm_dispatch": {
+      "base_hours": 20,
+      "unit": "per setup",
+      "includes": "MTA/SendGrid config, IP warming plan, dispatch testing, deliverability validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 8,
+        "sitecore_developer": 12
+      }
+    },
+    "xconnect_xdb": {
+      "base_hours": 24,
+      "unit": "per topology",
+      "includes": "xConnect deploy, collection/search config, xDB shard migration, validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 8,
+        "sitecore_developer": 12,
+        "dba": 4
+      }
+    },
+    "identity_server": {
+      "base_hours": 8,
+      "unit": "per instance",
+      "includes": "Identity Server deploy, client config, SSO integration testing",
+      "role_breakdown": {
+        "infrastructure_engineer": 3,
+        "sitecore_developer": 5
+      }
+    },
+    "custom_integration": {
+      "base_hours": 16,
+      "unit": "per integration",
+      "includes": "Endpoint updates, auth changes, connectivity testing, error handling",
+      "role_breakdown": {
+        "sitecore_developer": 12,
+        "infrastructure_engineer": 4
+      }
+    },
+    "cicd_pipeline": {
+      "base_hours": 16,
+      "unit": "per pipeline",
+      "includes": "Pipeline rebuild, artifact config, deployment target updates, testing",
+      "role_breakdown": {
+        "infrastructure_engineer": 12,
+        "sitecore_developer": 4
+      }
+    },
+    "monitoring_setup": {
+      "base_hours": 12,
+      "unit": "per environment",
+      "includes": "Azure Monitor, Application Insights, alerts, dashboards, log queries",
+      "role_breakdown": {
+        "infrastructure_engineer": 8,
+        "sitecore_developer": 4
+      }
+    },
+    "networking_vnet": {
+      "base_hours": 16,
+      "unit": "per environment",
+      "includes": "VNet design, subnet layout, NSGs, peering, firewall rules, connectivity testing",
+      "role_breakdown": {
+        "infrastructure_engineer": 16
+      }
+    },
+    "backup_dr": {
+      "base_hours": 12,
+      "unit": "per environment",
+      "includes": "Azure Backup config, DR strategy, Site Recovery setup, RTO/RPO validation",
+      "role_breakdown": {
+        "infrastructure_engineer": 10,
+        "dba": 2
+      }
+    },
+    "project_management": {
+      "base_hours": 40,
+      "unit": "per engagement",
+      "includes": "Planning, coordination, stakeholder comms, status reporting, risk management",
+      "role_breakdown": {
+        "project_manager": 40
+      }
+    },
+    "testing_validation": {
+      "base_hours": 40,
+      "unit": "per environment",
+      "includes": "Functional testing, performance testing, security validation, UAT support",
+      "role_breakdown": {
+        "qa_engineer": 24,
+        "sitecore_developer": 12,
+        "infrastructure_engineer": 4
+      }
+    },
+    "cutover_execution": {
+      "base_hours": 16,
+      "unit": "per environment",
+      "includes": "Final data sync, DNS switch, smoke testing, go/no-go decision, rollback readiness",
+      "role_breakdown": {
+        "infrastructure_engineer": 6,
+        "sitecore_developer": 4,
+        "dba": 4,
+        "project_manager": 2
+      }
+    }
+  },
+  "phase_mapping": {
+    "phase_1_infrastructure": ["networking_vnet", "compute_single_role", "ssl_tls"],
+    "phase_2_data": ["database_single", "blob_storage", "solr_standalone", "solr_cloud", "redis_session"],
+    "phase_3_application": ["identity_server", "xconnect_xdb", "exm_dispatch", "custom_integration", "cdn_setup", "cicd_pipeline", "monitoring_setup"],
+    "phase_4_validation": ["testing_validation", "backup_dr"],
+    "phase_5_cutover": ["dns_cutover", "cutover_execution"]
+  },
+  "roles": {
+    "infrastructure_engineer": {
+      "description": "Cloud infrastructure specialist. Handles Azure resource provisioning, networking, security, monitoring.",
+      "typical_rate_range": "$150-250/hr"
+    },
+    "dba": {
+      "description": "Database administrator. Handles SQL Server migration, performance tuning, HA configuration.",
+      "typical_rate_range": "$150-225/hr"
+    },
+    "sitecore_developer": {
+      "description": "Sitecore platform specialist. Handles Sitecore configuration, integration updates, content validation.",
+      "typical_rate_range": "$175-275/hr"
+    },
+    "qa_engineer": {
+      "description": "Quality assurance engineer. Handles test planning, execution, regression, performance testing.",
+      "typical_rate_range": "$100-175/hr"
+    },
+    "project_manager": {
+      "description": "Project manager. Handles coordination, scheduling, stakeholder communication, risk management.",
+      "typical_rate_range": "$125-200/hr"
+    }
+  }
+}
