@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+@theme {
+	/* Neo-brutalist border */
+	--color-brutal: #1a1a1a;
+	--color-brutal-light: #333333;
+
+	/* Light mode neutrals */
+	--color-bg: #f0ece4;
+	--color-surface: #ffffff;
+	--color-surface-hover: #f5f2ec;
+	--color-border: #1a1a1a;
+	--color-border-light: #e8e4dc;
+	--color-text: #1a1a1a;
+	--color-text-secondary: #4a4a4a;
+	--color-text-muted: #8a8a8a;
+
+	/* Primary — electric indigo */
+	--color-primary: #4f46e5;
+	--color-primary-light: #ddd8ff;
+	--color-primary-hover: #4338ca;
+
+	/* Status colors — punchy for brutalist */
+	--color-success: #16a34a;
+	--color-success-light: #bbf7d0;
+	--color-warning: #ea580c;
+	--color-warning-light: #fed7aa;
+	--color-danger: #dc2626;
+	--color-danger-light: #fecaca;
+	--color-info: #2563eb;
+	--color-info-light: #bfdbfe;
+
+	/* Typography */
+	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+	/* Neo-brutalist shadows — offset black */
+	--shadow-sm: 2px 2px 0 var(--color-brutal);
+	--shadow-md: 4px 4px 0 var(--color-brutal);
+	--shadow-lg: 6px 6px 0 var(--color-brutal);
+}
+
+/* ── Light mode (default) ─────────────────────────── */
+html {
+	font-family: var(--font-sans);
+	color: var(--color-text);
+	background-color: var(--color-bg);
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+}
+
+code, pre, .font-mono {
+	font-family: var(--font-mono);
+}
+
+/* ── Dark mode ────────────────────────────────────── */
+html.dark {
+	--color-bg: #111111;
+	--color-surface: #1e1e1e;
+	--color-surface-hover: #2a2a2a;
+	--color-border: #e0e0e0;
+	--color-border-light: #333333;
+	--color-text: #f0f0f0;
+	--color-text-secondary: #b0b0b0;
+	--color-text-muted: #707070;
+	--color-brutal: #e0e0e0;
+	--color-brutal-light: #aaaaaa;
+
+	--color-primary: #818cf8;
+	--color-primary-light: #312e81;
+	--color-primary-hover: #a5b4fc;
+
+	--color-success: #4ade80;
+	--color-success-light: #14532d;
+	--color-warning: #fb923c;
+	--color-warning-light: #431407;
+	--color-danger: #f87171;
+	--color-danger-light: #450a0a;
+	--color-info: #60a5fa;
+	--color-info-light: #1e3a5f;
+
+	--shadow-sm: 2px 2px 0 var(--color-brutal);
+	--shadow-md: 4px 4px 0 var(--color-brutal);
+	--shadow-lg: 6px 6px 0 var(--color-brutal);
+}
+
+/* ── Utility: brutal-border ───────────────────────── */
+.brutal-border {
+	border: 3px solid var(--color-brutal);
+	border-radius: 4px;
+}
+
+.brutal-border-thin {
+	border: 2px solid var(--color-brutal);
+	border-radius: 4px;
+}
+
+/* ── Animations ──────────────────────────────────── */
+
+@keyframes brutal-enter {
+	from { opacity: 0; transform: translateY(8px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nav-progress {
+	from { transform: scaleX(0); }
+	to   { transform: scaleX(0.8); }
+}
+@keyframes nav-progress-complete {
+	from { transform: scaleX(0.8); opacity: 1; }
+	to   { transform: scaleX(1); opacity: 0; }
+}
+
+/*
+ * Entrance animations only run on initial page load.
+ * After the first client-side navigation, `has-navigated` is added to <html>
+ * permanently and view transitions handle all subsequent route changes.
+ */
+.animate-enter {
+	animation: brutal-enter 250ms ease-out both;
+}
+.stagger-grid > * {
+	animation: brutal-enter 250ms ease-out both;
+	animation-delay: calc(var(--stagger-i, 0) * 70ms);
+}
+html.has-navigated .animate-enter,
+html.has-navigated .stagger-grid > * {
+	animation: none;
+}
+
+/* Navigation progress bar */
+.nav-progress-bar {
+	transform-origin: left;
+	animation: nav-progress 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.nav-progress-bar.complete {
+	animation: nav-progress-complete 300ms ease-out forwards;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	*, ::view-transition-old(*), ::view-transition-new(*) {
+		animation-duration: 0s !important;
+		transition-duration: 0s !important;
+	}
+}
