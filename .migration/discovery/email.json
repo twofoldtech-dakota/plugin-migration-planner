@@ -1,0 +1,14 @@
+{
+  "dimension": "email",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "exm_enabled": { "value": true, "confidence": "confirmed" },
+    "dispatch_provider": { "value": "SendGrid", "confidence": "confirmed" },
+    "dedicated_ips": { "value": 2, "confidence": "confirmed" },
+    "monthly_volume": { "value": 200000, "confidence": "assumed", "basis": "Client estimate, not from SendGrid analytics" },
+    "ip_warmup_needed": { "value": true, "confidence": "confirmed" },
+    "custom_templates": { "value": true, "confidence": "confirmed" },
+    "bounce_handling": { "value": "SendGrid webhooks", "confidence": "confirmed" }
+  }
+}

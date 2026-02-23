@@ -1,0 +1,1 @@
+import{V as y,W as u,as as _,at as o,L as t,a5 as g,ar as i,a3 as l,Y as r,a4 as p,Z as m}from"./DcamcR-f.js";function C(d,n){let a=null,E=t;var s;if(t){a=p;for(var e=m(document.head);e!==null&&(e.nodeType!==g||e.data!==d);)e=i(e);if(e===null)l(!1);else{var f=i(e);e.remove(),r(f)}}t||(s=document.head.appendChild(y()));try{u(()=>n(s),_|o)}finally{E&&(l(!0),r(a))}}export{C as h};

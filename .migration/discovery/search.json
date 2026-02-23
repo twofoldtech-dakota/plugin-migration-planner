@@ -1,0 +1,15 @@
+{
+  "dimension": "search",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "provider": { "value": "SolrCloud", "confidence": "confirmed" },
+    "version": { "value": "8.11", "confidence": "confirmed" },
+    "node_count": { "value": 2, "confidence": "confirmed" },
+    "node_instance_type": { "value": "m5.large", "confidence": "confirmed" },
+    "zookeeper_count": { "value": 3, "confidence": "confirmed" },
+    "custom_indexes": { "value": 3, "confidence": "assumed", "basis": "Client mentioned 3, names unconfirmed" },
+    "index_names": { "value": ["product_catalog", "knowledge_base", "store_locator"], "confidence": "assumed" },
+    "total_index_size_gb": { "value": 15, "confidence": "assumed" }
+  }
+}

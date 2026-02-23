@@ -1,0 +1,21 @@
+{
+  "dimension": "compute",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "hosting_platform": { "value": "EC2", "confidence": "confirmed" },
+    "cm_count": { "value": 1, "confidence": "confirmed" },
+    "cm_instance_type": { "value": "m5.xlarge", "confidence": "confirmed" },
+    "cd_count": { "value": 4, "confidence": "confirmed" },
+    "cd_instance_type": { "value": "m5.large", "confidence": "confirmed" },
+    "cd_autoscale": { "value": true, "confidence": "confirmed", "max_instances": 6 },
+    "xconnect_count": { "value": 2, "confidence": "confirmed" },
+    "xconnect_instance_type": { "value": "m5.large", "confidence": "confirmed" },
+    "processing_count": { "value": 1, "confidence": "confirmed" },
+    "processing_instance_type": { "value": "m5.large", "confidence": "confirmed" },
+    "identity_count": { "value": 1, "confidence": "confirmed" },
+    "identity_instance_type": { "value": "t3.medium", "confidence": "confirmed" },
+    "load_balancer": { "value": "ALB", "confidence": "confirmed" },
+    "os_version": { "value": "Windows Server 2019", "confidence": "confirmed" }
+  }
+}

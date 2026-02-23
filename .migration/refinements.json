@@ -1,0 +1,83 @@
+{
+  "roleOverrides": {},
+  "roleTasks": {
+    "compute_single_role": {
+      "sitecore_developer": [
+        "Update xConnect connection strings",
+        "Configure collection service settings",
+        "Test tracker pipeline end-to-end",
+        "Validate analytics data flow"
+      ],
+      "infrastructure_engineer": [
+        "Provision VMs with correct SKU and disk config",
+        "Configure auto-scaling and health probes",
+        "Set up load balancer rules",
+        "Validate internet egress and DNS resolution"
+      ]
+    },
+    "managed_identity_keyvault": {
+      "sitecore_developer": [
+        "Update Identity Server configuration",
+        "Reconfigure SSO provider settings",
+        "Validate token issuance and expiry",
+        "Test role claim mapping"
+      ],
+      "infrastructure_engineer": [
+        "Provision required Azure resources",
+        "Configure networking and security boundaries",
+        "Validate service connectivity",
+        "Document final resource config"
+      ]
+    },
+    "networking_vnet": {
+      "infrastructure_engineer": [
+        "Configure DNS records and TTL reduction",
+        "Upload SSL certificates to Key Vault",
+        "Apply NSG and firewall rules",
+        "Validate end-to-end TLS chain"
+      ]
+    },
+    "ssl_tls": {
+      "sitecore_developer": [
+        "Update environment configuration files",
+        "Resolve custom code compatibility issues",
+        "Validate Sitecore functionality",
+        "Test all custom modules on target"
+      ],
+      "infrastructure_engineer": [
+        "Configure DNS records and TTL reduction",
+        "Upload SSL certificates to Key Vault",
+        "Apply NSG and firewall rules",
+        "Validate end-to-end TLS chain"
+      ]
+    },
+    "blob_storage": {
+      "sitecore_developer": [
+        "Update environment configuration files",
+        "Resolve custom code compatibility issues",
+        "Validate Sitecore functionality",
+        "Test all custom modules on target"
+      ],
+      "infrastructure_engineer": [
+        "Create storage account with correct redundancy",
+        "Configure lifecycle management rules",
+        "Set CORS and access policies",
+        "Validate read/write from app tier"
+      ]
+    },
+    "content_serialization_sync": {
+      "sitecore_developer": [
+        "Update environment configuration files",
+        "Resolve custom code compatibility issues",
+        "Validate Sitecore functionality",
+        "Test all custom modules on target"
+      ],
+      "infrastructure_engineer": [
+        "Provision required Azure resources",
+        "Configure networking and security boundaries",
+        "Validate service connectivity",
+        "Document final resource config"
+      ]
+    }
+  }
+}

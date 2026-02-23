@@ -1,0 +1,12 @@
+{
+  "dimension": "cicd",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "platform": { "value": "Jenkins", "confidence": "confirmed" },
+    "pipeline_count": { "value": 2, "confidence": "confirmed" },
+    "pipelines": { "value": ["CI Build + Deploy to Dev/Staging", "Production Release Pipeline"], "confidence": "confirmed" },
+    "artifact_storage": { "value": "S3", "confidence": "confirmed" },
+    "pipeline_complexity": { "value": "moderate", "confidence": "assumed", "basis": "2 pipelines, but internal steps not reviewed" }
+  }
+}

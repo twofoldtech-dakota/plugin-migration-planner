@@ -1,0 +1,16 @@
+{
+  "name": "plugin-migration-planner",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:db": "npm run build -w packages/db",
+    "build:mcp": "npm run build -w apps/mcp-server",
+    "build:web": "npm run build -w apps/web",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:mcp": "npm run dev -w apps/mcp-server"
+  }
+}

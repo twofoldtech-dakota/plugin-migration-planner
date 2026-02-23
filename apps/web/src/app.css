@@ -98,6 +98,15 @@ html.dark {
 	border-radius: 4px;
 }
 
+/* Hero surface — always dark regardless of theme */
+.hero-surface {
+	background-color: #1a1a1a;
+	color: #ffffff;
+}
+html.dark .hero-surface {
+	background-color: #0c0c0c;
+}
+
 /* ── Animations ──────────────────────────────────── */
 
 @keyframes brutal-enter {

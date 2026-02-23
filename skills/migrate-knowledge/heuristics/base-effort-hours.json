@@ -80,13 +80,13 @@
         "sitecore_developer": 6
       }
     },
-    "exm_dispatch": {
-      "base_hours": 20,
-      "unit": "per setup",
-      "includes": "MTA/SendGrid config, IP warming plan, dispatch testing, deliverability validation",
+    "content_serialization_sync": {
+      "base_hours": 12,
+      "unit": "per environment",
+      "includes": "Unicorn/TDS/SCS configuration review, serialization path updates for Azure, initial sync to target, conflict resolution, validation of synced items",
       "role_breakdown": {
-        "infrastructure_engineer": 8,
-        "sitecore_developer": 12
+        "sitecore_developer": 10,
+        "infrastructure_engineer": 2
       }
     },
     "xconnect_xdb": {
@@ -152,6 +152,24 @@
         "dba": 2
       }
     },
+    "managed_identity_keyvault": {
+      "base_hours": 10,
+      "unit": "per environment",
+      "includes": "Azure Managed Identity setup for all Sitecore roles, Key Vault provisioning, secret migration from AWS Secrets Manager/Parameter Store, connection string references, access policy configuration",
+      "role_breakdown": {
+        "infrastructure_engineer": 6,
+        "sitecore_developer": 4
+      }
+    },
+    "publishing_service": {
+      "base_hours": 8,
+      "unit": "per instance",
+      "includes": "Publishing Service VM provisioning, .NET Core runtime setup, connection string config, publish queue validation, performance tuning",
+      "role_breakdown": {
+        "infrastructure_engineer": 3,
+        "sitecore_developer": 5
+      }
+    },
     "project_management": {
       "base_hours": 40,
       "unit": "per engagement",
@@ -180,14 +198,62 @@
         "dba": 4,
         "project_manager": 2
       }
+    },
+    "content_migration": {
+      "base_hours": 16,
+      "unit": "per content type",
+      "includes": "Content type mapping, field migration, workflow migration, language version sync, validation",
+      "role_breakdown": {
+        "sitecore_developer": 12,
+        "qa_engineer": 4
+      }
+    },
+    "code_migration": {
+      "base_hours": 24,
+      "unit": "per custom module",
+      "includes": "Pipeline processor migration, event handler updates, API endpoint refactoring, ORM compatibility, unit test updates",
+      "role_breakdown": {
+        "sitecore_developer": 20,
+        "qa_engineer": 4
+      }
+    },
+    "frontend_rebuild": {
+      "base_hours": 40,
+      "unit": "per rendering approach change",
+      "includes": "Component migration, rendering host setup, build pipeline updates, design system adaptation, cross-browser testing",
+      "role_breakdown": {
+        "sitecore_developer": 24,
+        "infrastructure_engineer": 4,
+        "qa_engineer": 12
+      }
+    },
+    "training": {
+      "base_hours": 16,
+      "unit": "per training area",
+      "includes": "Training material preparation, hands-on workshops, knowledge transfer sessions, documentation",
+      "role_breakdown": {
+        "sitecore_developer": 8,
+        "infrastructure_engineer": 8
+      }
+    },
+    "go_live_planning": {
+      "base_hours": 24,
+      "unit": "per environment",
+      "includes": "Cutover runbook, rollback plan, communication plan, go/no-go criteria, stakeholder sign-off",
+      "role_breakdown": {
+        "project_manager": 12,
+        "sitecore_developer": 6,
+        "infrastructure_engineer": 6
+      }
     }
   },
   "phase_mapping": {
-    "phase_1_infrastructure": ["networking_vnet", "compute_single_role", "ssl_tls"],
-    "phase_2_data": ["database_single", "blob_storage", "solr_standalone", "solr_cloud", "redis_session"],
-    "phase_3_application": ["identity_server", "xconnect_xdb", "exm_dispatch", "custom_integration", "cdn_setup", "cicd_pipeline", "monitoring_setup"],
-    "phase_4_validation": ["testing_validation", "backup_dr"],
-    "phase_5_cutover": ["dns_cutover", "cutover_execution"]
+    "phase_1_infrastructure": ["networking_vnet", "compute_single_role", "ssl_tls", "managed_identity_keyvault"],
+    "phase_2_data": ["database_single", "blob_storage", "content_serialization_sync", "solr_standalone", "solr_cloud", "redis_session"],
+    "phase_3_application": ["identity_server", "xconnect_xdb", "custom_integration", "cdn_setup", "cicd_pipeline", "monitoring_setup", "publishing_service", "code_migration", "frontend_rebuild"],
+    "phase_3b_content": ["content_migration"],
+    "phase_4_validation": ["testing_validation", "backup_dr", "training"],
+    "phase_5_cutover": ["dns_cutover", "cutover_execution", "go_live_planning"]
   },
   "roles": {
     "infrastructure_engineer": {

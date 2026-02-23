@@ -1,0 +1,31 @@
+{
+  "dimension": "integrations",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "integration_count": { "value": 3, "confidence": "confirmed" },
+    "integrations": [
+      {
+        "name": "Salesforce CRM",
+        "type": "REST API",
+        "direction": "bidirectional",
+        "aws_sdk_usage": { "value": "unknown", "confidence": "unknown" },
+        "confidence": "confirmed"
+      },
+      {
+        "name": "Akeneo PIM",
+        "type": "REST API + scheduled sync",
+        "direction": "inbound",
+        "aws_sdk_usage": { "value": "unknown", "confidence": "unknown" },
+        "confidence": "confirmed"
+      },
+      {
+        "name": "Bynder DAM",
+        "type": "Sitecore connector module",
+        "direction": "inbound",
+        "aws_sdk_usage": { "value": "unknown", "confidence": "unknown" },
+        "confidence": "confirmed"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "dimension": "ssl_tls",
+  "status": "complete",
+  "completed_at": "2026-02-21T23:45:00Z",
+  "answers": {
+    "ssl_certificate_provider": {
+      "value": "AWS Certificate Manager (ACM)",
+      "notes": "ACM handles provisioning and renewal. Azure equivalent: App Service Managed Certificates or Key Vault certificates.",
+      "confidence": "confirmed",
+      "basis": "confirmed by user"
+    },
+    "ssl_certificate_count": {
+      "value": 1,
+      "notes": "Single wildcard certificate covers all sites",
+      "confidence": "confirmed",
+      "basis": "confirmed by user: wildcard cert, ACM handles it"
+    },
+    "ssl_wildcard_in_use": {
+      "value": true,
+      "notes": "Wildcard cert covers all Sitecore domains across 20 CloudFront distributions",
+      "confidence": "confirmed",
+      "basis": "confirmed by user: 'wildcard'"
+    },
+    "ssl_termination_point": {
+      "value": [
+        "CloudFront / CDN edge",
+        "Application Load Balancer (ALB)"
+      ],
+      "notes": "Dual termination: CloudFront edge + ALB re-encrypt to origin. Azure equivalent: Front Door edge + App Gateway or App Service.",
+      "confidence": "confirmed",
+      "basis": "confirmed by user: 'terminates at cloudfront and ALB both'"
+    },
+    "ssl_minimum_tls_version": {
+      "value": "TLS 1.2",
+      "notes": "Standard for Sitecore 10.4",
+      "confidence": "confirmed",
+      "basis": "inferred from Sitecore 10.4, confirmed by user review"
+    },
+    "ssl_auto_renewal": {
+      "value": true,
+      "notes": "ACM auto-renews. Azure equivalent: App Service Managed Certificates auto-renew, or Key Vault with DigiCert/GlobalSign.",
+      "confidence": "confirmed",
+      "basis": "confirmed by user: 'ACM handles it'"
+    },
+    "ssl_acm_validation_method": {
+      "value": "DNS validation",
+      "notes": "Standard for ACM with Route 53. Azure equivalent: CNAME validation for App Service certs.",
+      "confidence": "assumed",
+      "basis": "domain knowledge: DNS validation is default and recommended for ACM with Route 53"
+    }
+  }
+}

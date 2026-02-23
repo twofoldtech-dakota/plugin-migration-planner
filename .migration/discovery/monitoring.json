@@ -1,0 +1,12 @@
+{
+  "dimension": "monitoring",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "primary_tool": { "value": "CloudWatch", "confidence": "confirmed" },
+    "secondary_tool": { "value": "Datadog", "confidence": "confirmed" },
+    "custom_dashboards": { "value": "unknown", "confidence": "unknown", "basis": "Not disclosed" },
+    "alerting": { "value": "CloudWatch Alarms + Datadog monitors", "confidence": "confirmed" },
+    "log_aggregation": { "value": "CloudWatch Logs + Datadog", "confidence": "confirmed" }
+  }
+}

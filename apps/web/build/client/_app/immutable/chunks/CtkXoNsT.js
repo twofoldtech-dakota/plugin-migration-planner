@@ -1,0 +1,1 @@
+function t(r){return r.startsWith("A")?"bg-success-light text-success border-success":r.startsWith("B")?"bg-primary-light text-primary border-primary":r.startsWith("C")?"bg-warning-light text-warning border-warning":"bg-danger-light text-danger border-danger"}export{t as g};

@@ -1,0 +1,169 @@
+{
+  "id": "assess-e2e-20260220",
+  "generated": "2026-02-20",
+  "version": "2.0.0",
+  "risks": [
+    {
+      "id": "RISK-001",
+      "category": "data",
+      "description": "xDB shard migration complexity — 2 shards with 500K-2M contacts requires careful sequencing and validation of collection data integrity",
+      "likelihood": "high",
+      "impact": "high",
+      "severity": "critical",
+      "estimated_hours_impact": 24,
+      "linked_assumptions": ["ASMP-002", "ASMP-012"],
+      "mitigation": "Run test migration of collection shard to Azure SQL MI in dev environment first; validate contact counts and facet data",
+      "contingency": "Fall back to backup restore if shard migration fails; extend cutover window by 4 hours",
+      "owner": "DBA",
+      "status": "open"
+    },
+    {
+      "id": "RISK-002",
+      "category": "email",
+      "description": "EXM IP warming period of 4-6 weeks required for 2 new dedicated IPs to reach full send reputation at 200K/month volume",
+      "likelihood": "high",
+      "impact": "high",
+      "severity": "critical",
+      "estimated_hours_impact": 40,
+      "linked_assumptions": ["ASMP-004"],
+      "mitigation": "Start IP warmup 6 weeks before cutover; use SendGrid automated warmup; monitor deliverability daily",
+      "contingency": "Temporarily route through existing SendGrid IPs during transition; accept lower deliverability for 2 weeks",
+      "owner": "Sitecore Developer",
+      "status": "open"
+    },
+    {
+      "id": "RISK-003",
+      "category": "data",
+      "description": "120GB database migration window may exceed maintenance window if delta sync volume is high",
+      "likelihood": "medium",
+      "impact": "high",
+      "severity": "high",
+      "estimated_hours_impact": 16,
+      "linked_assumptions": ["ASMP-001", "ASMP-009"],
+      "mitigation": "Perform bulk migration pre-cutover; limit cutover to delta sync only; test delta sync timing in staging",
+      "contingency": "Extend maintenance window or split migration across two windows",
+      "owner": "DBA",
+      "status": "open"
+    },
+    {
+      "id": "RISK-004",
+      "category": "infrastructure",
+      "description": "VPN site-to-site from on-premises to Azure must be established before decommissioning AWS VPN; throughput requirements unknown",
+      "likelihood": "medium",
+      "impact": "high",
+      "severity": "high",
+      "estimated_hours_impact": 12,
+      "linked_assumptions": ["ASMP-006"],
+      "mitigation": "Provision Azure VPN Gateway early in Phase 1; test throughput with synthetic load",
+      "contingency": "Use ExpressRoute if VPN throughput insufficient; temporary dual-VPN during transition",
+      "owner": "Infrastructure Engineer",
+      "status": "open"
+    },
+    {
+      "id": "RISK-005",
+      "category": "application",
+      "description": "3 custom integrations (Salesforce, Akeneo, Bynder) may use AWS SDK internally; cloud-specific code requires refactoring",
+      "likelihood": "medium",
+      "impact": "medium",
+      "severity": "medium",
+      "estimated_hours_impact": 8,
+      "linked_assumptions": ["ASMP-005"],
+      "mitigation": "Audit integration code for AWS SDK dependencies in Phase 1; create refactoring backlog",
+      "contingency": "Wrap AWS SDK calls in abstraction layer rather than full rewrite",
+      "owner": "Sitecore Developer",
+      "status": "open"
+    },
+    {
+      "id": "RISK-006",
+      "category": "infrastructure",
+      "description": "Solr custom index migration — 3 custom indexes need schema recreation and full reindex on Azure target",
+      "likelihood": "medium",
+      "impact": "medium",
+      "severity": "medium",
+      "estimated_hours_impact": 8,
+      "linked_assumptions": ["ASMP-003"],
+      "mitigation": "Export Solr schemas early; rebuild indexes in dev first; estimate reindex time for 15GB of index data",
+      "contingency": "Rebuild indexes from Sitecore master database if schema export fails",
+      "owner": "Sitecore Developer",
+      "status": "open"
+    },
+    {
+      "id": "RISK-007",
+      "category": "infrastructure",
+      "description": "S3 blob provider module compatibility — unknown whether custom or standard provider is in use; Azure Blob requires different provider",
+      "likelihood": "low",
+      "impact": "medium",
+      "severity": "medium",
+      "estimated_hours_impact": 6,
+      "linked_assumptions": ["ASMP-007"],
+      "mitigation": "Identify blob provider module in Sitecore config during analysis; test Azure Blob provider in dev",
+      "contingency": "Use community Azure Blob provider if custom provider is incompatible",
+      "owner": "Sitecore Developer",
+      "status": "open"
+    },
+    {
+      "id": "RISK-008",
+      "category": "operational",
+      "description": "Jenkins to Azure DevOps / GitHub Actions pipeline migration requires full rebuild; pipeline complexity not fully assessed",
+      "likelihood": "medium",
+      "impact": "low",
+      "severity": "medium",
+      "estimated_hours_impact": 6,
+      "linked_assumptions": ["ASMP-010"],
+      "mitigation": "Document existing Jenkins pipeline steps; map to Azure DevOps YAML; build and test in parallel",
+      "contingency": "Keep Jenkins temporarily and only migrate CI/CD post-cutover",
+      "owner": "Infrastructure Engineer",
+      "status": "open"
+    }
+  ],
+  "active_multipliers": [
+    { "id": "multi_cd", "name": "Multiple CD Instances", "factor": 1.3, "trigger": "cd_count >= 3", "affected_components": ["networking_vnet", "compute_single_role", "cdn_setup", "testing_validation"] },
+    { "id": "xdb_large", "name": "Large xDB Collection", "factor": 1.5, "trigger": "estimated_contacts > 500K", "affected_components": ["database_single", "xconnect_xdb"] },
+    { "id": "ha_db", "name": "HA Database (Multi-AZ)", "factor": 1.4, "trigger": "multi_az == true", "affected_components": ["database_single"] },
+    { "id": "multi_env", "name": "Multiple Environments", "factor": 1.3, "trigger": "environment_count >= 3", "affected_components": ["networking_vnet", "compute_single_role", "database_single", "cicd_pipeline", "monitoring_setup"] },
+    { "id": "custom_indexes", "name": "Custom Solr Indexes", "factor": 1.3, "trigger": "custom_indexes >= 1", "affected_components": ["solr_cloud"] },
+    { "id": "large_media", "name": "Large Media Library", "factor": 1.3, "trigger": "total_size_gb >= 50", "affected_components": ["blob_storage"] },
+    { "id": "exm_high_vol", "name": "High EXM Volume", "factor": 1.3, "trigger": "monthly_volume >= 100K", "affected_components": ["exm_dispatch"] },
+    { "id": "vpn", "name": "VPN Site-to-Site", "factor": 1.3, "trigger": "vpn_site_to_site == true", "affected_components": ["networking_vnet"] }
+  ],
+  "dependency_chains": [
+    { "from": "networking_vnet", "to": ["compute_single_role", "database_single", "redis_session"], "type": "hard" },
+    { "from": "identity_server", "to": ["compute_single_role"], "type": "hard" },
+    { "from": "database_single", "to": ["xconnect_xdb", "exm_dispatch"], "type": "hard" },
+    { "from": "compute_single_role", "to": ["testing_validation", "monitoring_setup"], "type": "soft" },
+    { "from": "solr_cloud", "to": ["compute_single_role"], "type": "hard" }
+  ],
+  "risk_clusters": [
+    {
+      "name": "Data Integrity",
+      "risks": ["RISK-001", "RISK-003"],
+      "assumptions": ["ASMP-001", "ASMP-002", "ASMP-009", "ASMP-012"],
+      "combined_widening_hours": 40
+    },
+    {
+      "name": "Email Deliverability",
+      "risks": ["RISK-002"],
+      "assumptions": ["ASMP-004"],
+      "combined_widening_hours": 12
+    },
+    {
+      "name": "Network & Connectivity",
+      "risks": ["RISK-004"],
+      "assumptions": ["ASMP-006"],
+      "combined_widening_hours": 8
+    }
+  ],
+  "gaps": {
+    "unknown_answers": 7,
+    "assumed_answers": 11,
+    "confirmed_answers": 34,
+    "total_answers": 52,
+    "top_gaps": [
+      { "dimension": "integrations", "question": "AWS SDK usage in integrations", "impact": "May require code refactoring" },
+      { "dimension": "networking", "question": "VPN throughput requirements", "impact": "May need ExpressRoute" },
+      { "dimension": "storage", "question": "Blob provider module type", "impact": "May need provider swap" },
+      { "dimension": "caching", "question": "Redis eviction policy", "impact": "Session behavior may differ" },
+      { "dimension": "monitoring", "question": "Custom dashboard count", "impact": "Recreation effort unknown" }
+    ]
+  }
+}

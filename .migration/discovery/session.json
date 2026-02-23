@@ -1,0 +1,10 @@
+{
+  "dimension": "session",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "session_provider": { "value": "Redis", "confidence": "confirmed" },
+    "sticky_sessions": { "value": true, "confidence": "confirmed" },
+    "session_timeout_min": { "value": 20, "confidence": "confirmed" }
+  }
+}

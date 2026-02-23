@@ -1,0 +1,958 @@
+{
+  "version": "2.0.0",
+  "description": "AI and automation tools catalog for AWS-to-Azure Sitecore migration. Each tool includes estimated effort savings, applicability conditions, and recommendation status.",
+  "savings_cap": {
+    "max_percentage": 50,
+    "rationale": "AI tool savings are capped at 50% per component to keep estimates credible. Real-world savings vary; this cap prevents over-promising."
+  },
+  "mutual_exclusion_groups": [
+    {
+      "group": "iac_tooling",
+      "tools": ["terraform_opentofu", "azure_bicep"],
+      "reason": "Choose one IaC approach per engagement — mixing creates maintenance burden"
+    },
+    {
+      "group": "cicd_platform",
+      "tools": ["azure_devops_pipelines", "github_actions_copilot"],
+      "reason": "Primary CI/CD platform choice — pick one to standardize"
+    }
+  ],
+  "categories": {
+    "discovery_assessment": {
+      "name": "Discovery & Assessment",
+      "description": "Tools that accelerate infrastructure discovery and migration readiness assessment"
+    },
+    "data_migration": {
+      "name": "Data Migration",
+      "description": "Database migration and schema conversion tools"
+    },
+    "storage_migration": {
+      "name": "Storage Migration",
+      "description": "Blob, file, and media library migration tools"
+    },
+    "code_assistance": {
+      "name": "Code Assistance",
+      "description": "AI-powered code generation, refactoring, and migration assistance"
+    },
+    "infrastructure_automation": {
+      "name": "Infrastructure Automation",
+      "description": "Infrastructure as Code tools for repeatable Azure provisioning"
+    },
+    "testing_validation": {
+      "name": "Testing & Validation",
+      "description": "Automated testing, performance validation, and load testing"
+    },
+    "monitoring_observability": {
+      "name": "Monitoring & Observability",
+      "description": "AI-enhanced monitoring, anomaly detection, and insights"
+    },
+    "security_compliance": {
+      "name": "Security & Compliance",
+      "description": "Automated security scanning, compliance checking, and policy enforcement"
+    },
+    "cicd_devops": {
+      "name": "CI/CD & DevOps",
+      "description": "Pipeline automation and deployment tooling"
+    },
+    "backup_dr": {
+      "name": "Backup & DR",
+      "description": "Automated backup, disaster recovery, and business continuity"
+    },
+    "network_dns": {
+      "name": "Network & DNS",
+      "description": "Network migration, traffic management, and DNS cutover tools"
+    }
+  },
+  "alternatives": [
+    {
+      "id": "azure_migrate",
+      "name": "Azure Migrate",
+      "vendor": "Microsoft",
+      "category": "discovery_assessment",
+      "description": "Automated discovery and assessment of on-premises/AWS infrastructure. Generates Azure readiness reports, sizing recommendations, and cost estimates.",
+      "url": "https://learn.microsoft.com/en-us/azure/migrate/",
+      "applicable_components": ["compute_single_role", "networking_vnet", "database_single"],
+      "applicable_phases": ["phase_1_infrastructure"],
+      "hours_saved": {
+        "optimistic": 12,
+        "expected": 8,
+        "pessimistic": 4
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free Azure service"
+      },
+      "pros": [
+        "Automated VM inventory and dependency mapping",
+        "Azure sizing recommendations",
+        "Cost estimation for target state",
+        "Agentless discovery option"
+      ],
+      "cons": [
+        "AWS discovery requires agent installation",
+        "Sitecore-specific topology not understood",
+        "May over-size VMs without Sitecore context"
+      ],
+      "prerequisites": ["Azure subscription", "Network connectivity to source environment"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "min_vms": 2,
+        "description": "Most valuable when there are 2+ VMs to assess"
+      }
+    },
+    {
+      "id": "aws_app_discovery",
+      "name": "AWS Application Discovery Service",
+      "vendor": "AWS",
+      "category": "discovery_assessment",
+      "description": "Collects configuration, usage, and behavior data from AWS servers to support migration planning. Feeds into Azure Migrate for cross-cloud analysis.",
+      "url": "https://docs.aws.amazon.com/application-discovery/",
+      "applicable_components": ["compute_single_role", "networking_vnet"],
+      "applicable_phases": ["phase_1_infrastructure"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free AWS service"
+      },
+      "pros": [
+        "Detailed AWS resource inventory",
+        "Server utilization metrics",
+        "Network dependency mapping",
+        "Integrates with Migration Hub"
+      ],
+      "cons": [
+        "Requires agent on each EC2 instance",
+        "Data export needed for Azure tooling",
+        "No Sitecore-aware analysis"
+      ],
+      "prerequisites": ["AWS account access", "Permission to install agents on EC2 instances"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "min_vms": 3,
+        "description": "Most valuable for larger deployments with 3+ instances"
+      }
+    },
+    {
+      "id": "azure_dms",
+      "name": "Azure Database Migration Service",
+      "vendor": "Microsoft",
+      "category": "data_migration",
+      "description": "Managed service for migrating SQL Server databases to Azure SQL. Supports online (minimal downtime) and offline migration modes.",
+      "url": "https://learn.microsoft.com/en-us/azure/dms/",
+      "applicable_components": ["database_single"],
+      "applicable_phases": ["phase_2_data"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 3
+      },
+      "cost": {
+        "type": "included",
+        "details": "Included with Azure SQL target"
+      },
+      "pros": [
+        "Online migration with minimal downtime",
+        "Automated schema and data migration",
+        "Pre-migration validation checks",
+        "Progress monitoring dashboard"
+      ],
+      "cons": [
+        "Requires VPN/ExpressRoute for AWS source",
+        "Some SQL features may need manual adjustment",
+        "Sitecore DB-specific indexes may need rebuild"
+      ],
+      "prerequisites": ["Network connectivity between AWS RDS and Azure", "Azure SQL target provisioned"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Recommended for all SQL Server database migrations"
+      }
+    },
+    {
+      "id": "ssma",
+      "name": "SQL Server Migration Assistant (SSMA)",
+      "vendor": "Microsoft",
+      "category": "data_migration",
+      "description": "Automates database schema conversion and data migration from various database engines to SQL Server/Azure SQL.",
+      "url": "https://learn.microsoft.com/en-us/sql/ssma/",
+      "applicable_components": ["database_single"],
+      "applicable_phases": ["phase_2_data"],
+      "hours_saved": {
+        "optimistic": 6,
+        "expected": 4,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free Microsoft tool"
+      },
+      "pros": [
+        "Schema compatibility assessment",
+        "Automated conversion reports",
+        "Identifies breaking changes before migration"
+      ],
+      "cons": [
+        "Desktop tool — not cloud-native",
+        "May flag false positives on Sitecore schemas",
+        "Limited to schema analysis — not data transfer"
+      ],
+      "prerequisites": ["Windows workstation", "Connectivity to source and target databases"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Most useful when migrating from non-SQL Server sources or older SQL versions"
+      }
+    },
+    {
+      "id": "dma",
+      "name": "Database Migration Assistant (DMA)",
+      "vendor": "Microsoft",
+      "category": "data_migration",
+      "description": "Assesses SQL Server databases for compatibility issues, feature parity gaps, and performance recommendations for Azure SQL targets.",
+      "url": "https://learn.microsoft.com/en-us/sql/dma/",
+      "applicable_components": ["database_single"],
+      "applicable_phases": ["phase_2_data"],
+      "hours_saved": {
+        "optimistic": 4,
+        "expected": 3,
+        "pessimistic": 1
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free Microsoft tool"
+      },
+      "pros": [
+        "Detailed compatibility report",
+        "Azure SQL feature parity check",
+        "Performance recommendation baseline",
+        "SKU recommendation"
+      ],
+      "cons": [
+        "Assessment only — no migration execution",
+        "Requires direct database connectivity",
+        "Reports can be verbose for large Sitecore DBs"
+      ],
+      "prerequisites": ["Windows workstation", "SQL Server connectivity"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Run before migration to identify blockers early"
+      }
+    },
+    {
+      "id": "azcopy",
+      "name": "AzCopy",
+      "vendor": "Microsoft",
+      "category": "storage_migration",
+      "description": "High-performance command-line tool for copying data to/from Azure Blob Storage. Supports S3-to-Blob direct transfer.",
+      "url": "https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10",
+      "applicable_components": ["blob_storage"],
+      "applicable_phases": ["phase_2_data"],
+      "hours_saved": {
+        "optimistic": 6,
+        "expected": 4,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free tool — only pay for data transfer/storage"
+      },
+      "pros": [
+        "Direct S3-to-Blob transfer (no intermediate step)",
+        "Parallel transfer with automatic retry",
+        "Supports incremental sync",
+        "Handles large files efficiently"
+      ],
+      "cons": [
+        "CLI only — requires scripting for complex scenarios",
+        "S3 IAM credentials needed",
+        "No Sitecore media library metadata awareness"
+      ],
+      "prerequisites": ["AzCopy installed", "S3 read access", "Azure Storage write access"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Recommended for all S3-to-Blob media library migrations"
+      }
+    },
+    {
+      "id": "azure_storage_mover",
+      "name": "Azure Storage Mover",
+      "vendor": "Microsoft",
+      "category": "storage_migration",
+      "description": "Managed migration service for large-scale file and object storage migrations to Azure. Provides monitoring and scheduling.",
+      "url": "https://learn.microsoft.com/en-us/azure/storage-mover/",
+      "applicable_components": ["blob_storage"],
+      "applicable_phases": ["phase_2_data"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free service — only pay for data transfer/storage"
+      },
+      "pros": [
+        "Managed service with progress tracking",
+        "Scheduling and bandwidth management",
+        "Handles millions of files",
+        "Built-in validation"
+      ],
+      "cons": [
+        "Requires agent VM in source environment",
+        "More setup overhead than AzCopy for small transfers",
+        "Newer service — fewer community resources"
+      ],
+      "prerequisites": ["Azure subscription", "Agent VM deployed near source storage"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "min_storage_gb": 100,
+        "description": "Best for large media libraries (100GB+) where progress tracking and scheduling matter"
+      }
+    },
+    {
+      "id": "github_copilot",
+      "name": "GitHub Copilot",
+      "vendor": "GitHub/Microsoft",
+      "category": "code_assistance",
+      "description": "AI pair programmer that accelerates code changes, configuration updates, and integration refactoring during migration.",
+      "url": "https://github.com/features/copilot",
+      "applicable_components": ["custom_integration", "cicd_pipeline", "xconnect_xdb", "identity_server"],
+      "applicable_phases": ["phase_3_application"],
+      "hours_saved": {
+        "optimistic": 16,
+        "expected": 10,
+        "pessimistic": 4
+      },
+      "cost": {
+        "type": "subscription",
+        "details": "$19/user/month (Individual) or $39/user/month (Business)"
+      },
+      "pros": [
+        "Accelerates connection string and config updates",
+        "Helps refactor AWS SDK calls to Azure SDK",
+        "Generates boilerplate for Azure service integrations",
+        "Context-aware suggestions in familiar IDE"
+      ],
+      "cons": [
+        "May suggest incorrect Azure API patterns",
+        "Sitecore-specific code suggestions can be inaccurate",
+        "Requires developer review of all suggestions",
+        "Not a substitute for migration expertise"
+      ],
+      "prerequisites": ["GitHub Copilot license", "VS Code or Visual Studio"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "min_integrations": 1,
+        "description": "Valuable when there are custom integrations or code changes needed"
+      }
+    },
+    {
+      "id": "claude_code",
+      "name": "Claude Code (AI Coding)",
+      "vendor": "Anthropic",
+      "category": "code_assistance",
+      "description": "AI coding assistant for complex migration tasks: refactoring AWS SDK dependencies, updating configuration files, generating IaC templates, and writing migration scripts.",
+      "url": "https://claude.ai/claude-code",
+      "applicable_components": ["custom_integration", "cicd_pipeline", "networking_vnet", "monitoring_setup"],
+      "applicable_phases": ["phase_1_infrastructure", "phase_3_application"],
+      "hours_saved": {
+        "optimistic": 20,
+        "expected": 12,
+        "pessimistic": 5
+      },
+      "cost": {
+        "type": "subscription",
+        "details": "Usage-based pricing"
+      },
+      "pros": [
+        "Handles complex multi-file refactoring",
+        "Can generate complete IaC templates",
+        "Understands migration context across codebase",
+        "Generates migration scripts and runbook steps"
+      ],
+      "cons": [
+        "Requires clear migration context and constraints",
+        "Sitecore-specific patterns need verification",
+        "Not a substitute for infrastructure expertise"
+      ],
+      "prerequisites": ["Claude Code access"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Valuable for any engagement with significant code or configuration changes"
+      }
+    },
+    {
+      "id": "terraform_opentofu",
+      "name": "Terraform / OpenTofu",
+      "vendor": "HashiCorp / OpenTofu",
+      "category": "infrastructure_automation",
+      "description": "Infrastructure as Code for provisioning Azure resources. Codifies the entire target state for repeatable, auditable deployments.",
+      "url": "https://www.terraform.io/",
+      "applicable_components": ["networking_vnet", "compute_single_role", "redis_session", "cdn_setup", "monitoring_setup", "backup_dr"],
+      "applicable_phases": ["phase_1_infrastructure", "phase_2_data", "phase_3_application", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 24,
+        "expected": 16,
+        "pessimistic": 8
+      },
+      "cost": {
+        "type": "free",
+        "details": "Open source (OpenTofu) or free tier (Terraform). Terraform Cloud optional."
+      },
+      "pros": [
+        "Repeatable infrastructure across environments",
+        "Drift detection and state management",
+        "Large Azure provider with community modules",
+        "Multi-cloud support (can reference AWS for reads)"
+      ],
+      "cons": [
+        "Learning curve if team is new to IaC",
+        "State file management complexity",
+        "Sitecore-specific modules don't exist — custom needed",
+        "Initial template creation takes time (but saves on subsequent environments)"
+      ],
+      "prerequisites": ["Terraform/OpenTofu installed", "Azure service principal", "Team IaC familiarity"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "min_environments": 2,
+        "description": "ROI increases with multiple environments. Essential for 2+ environments."
+      },
+      "mutual_exclusion": "azure_bicep"
+    },
+    {
+      "id": "azure_bicep",
+      "name": "Azure Bicep",
+      "vendor": "Microsoft",
+      "category": "infrastructure_automation",
+      "description": "Azure-native IaC language. Simpler syntax than ARM templates, first-class Azure support, no state file management.",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/",
+      "applicable_components": ["networking_vnet", "compute_single_role", "redis_session", "cdn_setup", "monitoring_setup", "backup_dr"],
+      "applicable_phases": ["phase_1_infrastructure", "phase_2_data", "phase_3_application", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 20,
+        "expected": 14,
+        "pessimistic": 6
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free — built into Azure CLI"
+      },
+      "pros": [
+        "Native Azure integration — always supports latest features",
+        "No state file to manage",
+        "Simpler syntax than ARM templates",
+        "Built-in what-if deployment preview"
+      ],
+      "cons": [
+        "Azure-only — no multi-cloud",
+        "Smaller community than Terraform",
+        "Team may already know Terraform",
+        "Less mature module ecosystem"
+      ],
+      "prerequisites": ["Azure CLI installed", "Azure subscription"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Preferred when team is Azure-native and not already using Terraform"
+      },
+      "mutual_exclusion": "terraform_opentofu"
+    },
+    {
+      "id": "playwright_ai_testgen",
+      "name": "Playwright AI Test Gen",
+      "vendor": "Microsoft",
+      "category": "testing_validation",
+      "description": "AI-assisted test generation for Sitecore front-end validation. Records user interactions and generates automated test scripts.",
+      "url": "https://playwright.dev/",
+      "applicable_components": ["testing_validation"],
+      "applicable_phases": ["phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 12,
+        "expected": 8,
+        "pessimistic": 3
+      },
+      "cost": {
+        "type": "free",
+        "details": "Open source"
+      },
+      "pros": [
+        "Generates tests from recorded interactions",
+        "Cross-browser validation",
+        "Visual regression detection",
+        "Can validate Sitecore rendering consistency"
+      ],
+      "cons": [
+        "Requires manual test scenario identification",
+        "Dynamic Sitecore content may cause false failures",
+        "Test maintenance overhead post-migration"
+      ],
+      "prerequisites": ["Node.js environment", "Access to both source and target sites"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Valuable for validating front-end rendering consistency post-migration"
+      }
+    },
+    {
+      "id": "k6_performance",
+      "name": "K6 Performance Testing",
+      "vendor": "Grafana Labs",
+      "category": "testing_validation",
+      "description": "Load testing tool for validating Azure target performance matches or exceeds AWS baseline. Scriptable with JavaScript.",
+      "url": "https://k6.io/",
+      "applicable_components": ["testing_validation"],
+      "applicable_phases": ["phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Open source. Grafana Cloud K6 available for distributed testing."
+      },
+      "pros": [
+        "Developer-friendly JavaScript scripting",
+        "Can replicate production traffic patterns",
+        "Baseline vs target comparison",
+        "Integrates with CI/CD pipelines"
+      ],
+      "cons": [
+        "Requires baseline metrics from AWS environment",
+        "Script creation takes effort",
+        "May need cloud execution for realistic load"
+      ],
+      "prerequisites": ["K6 installed", "Performance baseline from AWS"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Recommended for all migrations to validate performance parity"
+      }
+    },
+    {
+      "id": "azure_load_testing",
+      "name": "Azure Load Testing",
+      "vendor": "Microsoft",
+      "category": "testing_validation",
+      "description": "Managed load testing service in Azure. Supports JMeter scripts and URL-based tests with integrated monitoring.",
+      "url": "https://learn.microsoft.com/en-us/azure/load-testing/",
+      "applicable_components": ["testing_validation"],
+      "applicable_phases": ["phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 6,
+        "expected": 4,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "pay_per_use",
+        "details": "Pay per virtual user minute"
+      },
+      "pros": [
+        "Managed — no load generator infrastructure needed",
+        "Integrates with Azure Monitor for server-side metrics",
+        "Supports existing JMeter scripts",
+        "CI/CD pipeline integration"
+      ],
+      "cons": [
+        "Cost can grow with large load tests",
+        "Azure-only — can't test AWS baseline directly",
+        "Less flexible than K6 for custom scenarios"
+      ],
+      "prerequisites": ["Azure subscription", "Test scripts (JMeter or URL-based)"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Good complement to K6 for Azure-integrated monitoring during load tests"
+      }
+    },
+    {
+      "id": "azure_monitor_ai",
+      "name": "Azure Monitor AI Insights",
+      "vendor": "Microsoft",
+      "category": "monitoring_observability",
+      "description": "AI-powered anomaly detection, smart diagnostics, and proactive alerts for Azure resources. Accelerates post-migration monitoring setup.",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/",
+      "applicable_components": ["monitoring_setup"],
+      "applicable_phases": ["phase_3_application", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 6,
+        "expected": 4,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "included",
+        "details": "Included with Azure Monitor (pay for data ingestion)"
+      },
+      "pros": [
+        "Automatic baseline detection",
+        "Smart alert grouping reduces noise",
+        "Pre-built Sitecore-compatible dashboards",
+        "Proactive diagnostics for common issues"
+      ],
+      "cons": [
+        "Learning period for anomaly detection",
+        "Custom Sitecore metrics need manual instrumentation",
+        "Data ingestion costs can add up"
+      ],
+      "prerequisites": ["Azure Monitor enabled", "Application Insights SDK in Sitecore"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Recommended for all migrations — accelerates monitoring setup and post-migration stability"
+      }
+    },
+    {
+      "id": "app_insights_smart",
+      "name": "Application Insights Smart Detection",
+      "vendor": "Microsoft",
+      "category": "monitoring_observability",
+      "description": "Automatic detection of performance anomalies, failure patterns, and degradation in Sitecore application telemetry.",
+      "url": "https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/proactive-diagnostics",
+      "applicable_components": ["monitoring_setup", "testing_validation"],
+      "applicable_phases": ["phase_3_application", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 4,
+        "expected": 3,
+        "pessimistic": 1
+      },
+      "cost": {
+        "type": "included",
+        "details": "Included with Application Insights"
+      },
+      "pros": [
+        "Zero-config anomaly detection",
+        "Automatic failure diagnostics",
+        "Proactive email alerts for degradation",
+        "Helps catch post-migration regressions"
+      ],
+      "cons": [
+        "Needs 24-48 hours of data to establish baseline",
+        "Can be noisy during migration transition",
+        "Limited customization of detection rules"
+      ],
+      "prerequisites": ["Application Insights enabled in Sitecore"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Enable immediately post-migration for automatic regression detection"
+      }
+    },
+    {
+      "id": "defender_for_cloud",
+      "name": "Microsoft Defender for Cloud",
+      "vendor": "Microsoft",
+      "category": "security_compliance",
+      "description": "Cloud security posture management with continuous assessment, compliance scoring, and threat protection for Azure resources.",
+      "url": "https://learn.microsoft.com/en-us/azure/defender-for-cloud/",
+      "applicable_components": ["networking_vnet", "compute_single_role", "database_single"],
+      "applicable_phases": ["phase_1_infrastructure", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "pay_per_use",
+        "details": "Free tier available. Enhanced plans per resource type."
+      },
+      "pros": [
+        "Automated security assessment of Azure resources",
+        "Compliance scoring against standards (CIS, PCI, SOC2)",
+        "Vulnerability scanning for VMs and databases",
+        "Actionable remediation recommendations"
+      ],
+      "cons": [
+        "Enhanced plans add cost",
+        "Alert volume can be high initially",
+        "Sitecore-specific security patterns not built-in"
+      ],
+      "prerequisites": ["Azure subscription"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Recommended for all migrations. Essential when compliance requirements exist."
+      }
+    },
+    {
+      "id": "azure_policy",
+      "name": "Azure Policy Compliance",
+      "vendor": "Microsoft",
+      "category": "security_compliance",
+      "description": "Automated policy enforcement and compliance auditing. Ensures Azure resources meet organizational and regulatory standards.",
+      "url": "https://learn.microsoft.com/en-us/azure/governance/policy/",
+      "applicable_components": ["networking_vnet", "compute_single_role", "backup_dr"],
+      "applicable_phases": ["phase_1_infrastructure"],
+      "hours_saved": {
+        "optimistic": 6,
+        "expected": 4,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Included with Azure subscription"
+      },
+      "pros": [
+        "Automated compliance enforcement",
+        "Built-in policy definitions for common standards",
+        "Prevents non-compliant resource deployment",
+        "Audit trail for compliance reporting"
+      ],
+      "cons": [
+        "Policy authoring requires Azure expertise",
+        "Overly strict policies can block deployments",
+        "No Sitecore-specific policy templates"
+      ],
+      "prerequisites": ["Azure subscription", "Defined compliance requirements"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "has_compliance": true,
+        "description": "Essential when compliance requirements (PCI, SOC2, HIPAA) are present"
+      }
+    },
+    {
+      "id": "azure_devops_pipelines",
+      "name": "Azure DevOps Pipeline Templates",
+      "vendor": "Microsoft",
+      "category": "cicd_devops",
+      "description": "Pre-built pipeline templates for Azure deployments. Accelerates CI/CD rebuild with Sitecore-compatible build and deploy stages.",
+      "url": "https://learn.microsoft.com/en-us/azure/devops/pipelines/",
+      "applicable_components": ["cicd_pipeline"],
+      "applicable_phases": ["phase_3_application"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free tier: 1 parallel job, 1800 min/month. Paid plans for more."
+      },
+      "pros": [
+        "Native Azure integration",
+        "Template marketplace with deployment patterns",
+        "Built-in artifact management",
+        "Environment approvals and gates"
+      ],
+      "cons": [
+        "Migration from non-Azure DevOps CI requires full rebuild",
+        "Sitecore-specific templates need customization",
+        "YAML learning curve for complex pipelines"
+      ],
+      "prerequisites": ["Azure DevOps organization"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Preferred when team is already using Azure DevOps or plans to adopt it"
+      },
+      "mutual_exclusion": "github_actions_copilot"
+    },
+    {
+      "id": "github_actions_copilot",
+      "name": "GitHub Actions with Copilot",
+      "vendor": "GitHub/Microsoft",
+      "category": "cicd_devops",
+      "description": "GitHub Actions CI/CD with Copilot-assisted workflow authoring. AI helps generate deployment workflows for Azure targets.",
+      "url": "https://github.com/features/actions",
+      "applicable_components": ["cicd_pipeline"],
+      "applicable_phases": ["phase_3_application"],
+      "hours_saved": {
+        "optimistic": 10,
+        "expected": 6,
+        "pessimistic": 3
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free tier: 2000 min/month. Copilot subscription separate."
+      },
+      "pros": [
+        "Copilot generates workflow YAML from descriptions",
+        "Large marketplace of Azure deployment actions",
+        "Tight GitHub integration",
+        "Easy to understand YAML syntax"
+      ],
+      "cons": [
+        "Requires GitHub repository (or migration to GitHub)",
+        "Copilot suggestions need verification",
+        "Complex multi-stage deployments can be verbose"
+      ],
+      "prerequisites": ["GitHub repository", "GitHub Copilot license (optional)"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Preferred when team uses GitHub for source control"
+      },
+      "mutual_exclusion": "azure_devops_pipelines"
+    },
+    {
+      "id": "azure_site_recovery",
+      "name": "Azure Site Recovery",
+      "vendor": "Microsoft",
+      "category": "backup_dr",
+      "description": "Disaster recovery as a service. Replicates VMs from AWS to Azure for DR or as a migration pathway with minimal downtime.",
+      "url": "https://learn.microsoft.com/en-us/azure/site-recovery/",
+      "applicable_components": ["backup_dr", "compute_single_role"],
+      "applicable_phases": ["phase_4_validation", "phase_5_cutover"],
+      "hours_saved": {
+        "optimistic": 10,
+        "expected": 6,
+        "pessimistic": 3
+      },
+      "cost": {
+        "type": "pay_per_use",
+        "details": "$25/instance/month for replication"
+      },
+      "pros": [
+        "Continuous replication — minimal cutover downtime",
+        "Test failover without production impact",
+        "Automated recovery plans with sequencing",
+        "Can serve as migration mechanism"
+      ],
+      "cons": [
+        "Requires agent installation on source VMs",
+        "Network bandwidth for continuous replication",
+        "Sitecore role dependencies need manual sequencing",
+        "Post-failover config changes still needed"
+      ],
+      "prerequisites": ["Azure subscription", "Recovery Services vault", "Network connectivity"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "min_vms": 3,
+        "description": "Most valuable for larger deployments where minimal downtime cutover is critical"
+      }
+    },
+    {
+      "id": "azure_backup_smart",
+      "name": "Azure Backup with Smart Tiering",
+      "vendor": "Microsoft",
+      "category": "backup_dr",
+      "description": "Intelligent backup with automatic tiering to optimize costs. Policy-based backup management for VMs, databases, and file shares.",
+      "url": "https://learn.microsoft.com/en-us/azure/backup/",
+      "applicable_components": ["backup_dr"],
+      "applicable_phases": ["phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 4,
+        "expected": 3,
+        "pessimistic": 1
+      },
+      "cost": {
+        "type": "pay_per_use",
+        "details": "Based on protected instance size and storage consumed"
+      },
+      "pros": [
+        "Automated backup policies",
+        "Smart tiering reduces storage costs",
+        "Centralized backup management",
+        "Built-in compliance reporting"
+      ],
+      "cons": [
+        "Backup policies need tuning for Sitecore RPO requirements",
+        "Cross-region backup adds cost",
+        "Restore testing should be validated"
+      ],
+      "prerequisites": ["Recovery Services vault"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Standard for all Azure deployments — configure during validation phase"
+      }
+    },
+    {
+      "id": "azure_traffic_manager",
+      "name": "Azure Traffic Manager (Gradual Cutover)",
+      "vendor": "Microsoft",
+      "category": "network_dns",
+      "description": "DNS-based traffic routing for gradual migration cutover. Enables weighted routing to shift traffic from AWS to Azure incrementally.",
+      "url": "https://learn.microsoft.com/en-us/azure/traffic-manager/",
+      "applicable_components": ["dns_cutover", "cutover_execution"],
+      "applicable_phases": ["phase_5_cutover"],
+      "hours_saved": {
+        "optimistic": 8,
+        "expected": 5,
+        "pessimistic": 2
+      },
+      "cost": {
+        "type": "pay_per_use",
+        "details": "$0.54/million DNS queries"
+      },
+      "pros": [
+        "Gradual traffic shift reduces cutover risk",
+        "Automatic health-based failback to AWS",
+        "Weighted routing for canary deployment",
+        "No downtime during transition"
+      ],
+      "cons": [
+        "DNS TTL affects failover speed",
+        "Session affinity between AWS and Azure needs careful handling",
+        "Sitecore session state must work cross-platform during transition",
+        "Adds DNS hop latency"
+      ],
+      "prerequisites": ["Azure Traffic Manager profile", "Health endpoints on both AWS and Azure"],
+      "recommendation": "conditional",
+      "applicability_conditions": {
+        "description": "Recommended when zero-downtime cutover is required or risk tolerance is low"
+      }
+    },
+    {
+      "id": "azure_network_watcher",
+      "name": "Azure Network Watcher",
+      "vendor": "Microsoft",
+      "category": "network_dns",
+      "description": "Network monitoring and diagnostics tool. Validates connectivity, captures packets, and diagnoses networking issues during migration.",
+      "url": "https://learn.microsoft.com/en-us/azure/network-watcher/",
+      "applicable_components": ["networking_vnet"],
+      "applicable_phases": ["phase_1_infrastructure", "phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 4,
+        "expected": 3,
+        "pessimistic": 1
+      },
+      "cost": {
+        "type": "included",
+        "details": "Included with Azure subscription (packet capture has storage cost)"
+      },
+      "pros": [
+        "Connection troubleshooting between Azure and AWS",
+        "NSG flow log analysis",
+        "Topology visualization",
+        "IP flow verify for firewall rule validation"
+      ],
+      "cons": [
+        "Azure-side only — can't diagnose AWS networking",
+        "Flow logs generate significant storage",
+        "Learning curve for advanced features"
+      ],
+      "prerequisites": ["Network Watcher enabled in target regions"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Enable in all target regions for troubleshooting during migration"
+      }
+    },
+    {
+      "id": "azure_advisor",
+      "name": "Azure Advisor",
+      "vendor": "Microsoft",
+      "category": "monitoring_observability",
+      "description": "Personalized cloud consultant that provides recommendations for cost optimization, performance, reliability, security, and operational excellence.",
+      "url": "https://learn.microsoft.com/en-us/azure/advisor/",
+      "applicable_components": ["compute_single_role", "database_single", "networking_vnet", "monitoring_setup"],
+      "applicable_phases": ["phase_4_validation"],
+      "hours_saved": {
+        "optimistic": 4,
+        "expected": 3,
+        "pessimistic": 1
+      },
+      "cost": {
+        "type": "free",
+        "details": "Free Azure service"
+      },
+      "pros": [
+        "Automated right-sizing recommendations",
+        "Cost optimization suggestions post-deployment",
+        "Security and reliability best practice checks",
+        "Actionable with one-click remediation"
+      ],
+      "cons": [
+        "Needs running resources to analyze — post-deployment only",
+        "Generic recommendations — not Sitecore-aware",
+        "Some recommendations require workload running period"
+      ],
+      "prerequisites": ["Deployed Azure resources"],
+      "recommendation": "recommended",
+      "applicability_conditions": {
+        "description": "Review after initial Azure deployment to optimize sizing and costs"
+      }
+    }
+  ]
+}

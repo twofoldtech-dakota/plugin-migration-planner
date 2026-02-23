@@ -1,0 +1,14 @@
+{
+  "dimension": "caching",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "provider": { "value": "ElastiCache Redis", "confidence": "confirmed" },
+    "node_type": { "value": "r6g.large", "confidence": "confirmed" },
+    "node_count": { "value": 2, "confidence": "confirmed" },
+    "cluster_mode": { "value": false, "confidence": "confirmed" },
+    "eviction_policy": { "value": "unknown", "confidence": "unknown", "basis": "Not disclosed" },
+    "used_for_session": { "value": true, "confidence": "confirmed" },
+    "ssl_in_transit": { "value": true, "confidence": "confirmed" }
+  }
+}

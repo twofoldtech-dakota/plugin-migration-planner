@@ -1,0 +1,11 @@
+{
+  "dimension": "dns",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "provider": { "value": "Route 53", "confidence": "confirmed" },
+    "zone_count": { "value": 3, "confidence": "confirmed" },
+    "zones": { "value": ["contoso.com", "contoso-cms.com", "contoso-cdn.com"], "confidence": "confirmed" },
+    "record_count": { "value": 42, "confidence": "confirmed" }
+  }
+}

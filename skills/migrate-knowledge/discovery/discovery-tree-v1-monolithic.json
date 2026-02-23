@@ -1,0 +1,2883 @@
+{
+  "version": "1.0",
+  "description": "Comprehensive 16-dimension discovery tree for Sitecore XP AWS-to-Azure migration planning. Each dimension captures the infrastructure, configuration, and dependency details an architect needs to build a complete migration plan.",
+  "dimensions": [
+    {
+      "id": "compute",
+      "name": "Compute / Hosting",
+      "order": 1,
+      "description": "Captures the current EC2-based hosting topology for Sitecore CM, CD, and supporting roles, including instance types, scaling configuration, and OS details needed to map to equivalent Azure App Services or VM SKUs.",
+      "required_questions": [
+        {
+          "id": "compute_cm_instance_count",
+          "question": "How many CM (Content Management) instances are running in production?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "compute_cd_instance_count",
+          "question": "How many CD (Content Delivery) instances are running in production?",
+          "type": "number",
+          "default": 2
+        },
+        {
+          "id": "compute_ec2_instance_type_cm",
+          "question": "What EC2 instance type is used for CM servers?",
+          "type": "select",
+          "options": [
+            "t3.large",
+            "t3.xlarge",
+            "t3.2xlarge",
+            "m5.large",
+            "m5.xlarge",
+            "m5.2xlarge",
+            "m5.4xlarge",
+            "c5.xlarge",
+            "c5.2xlarge",
+            "c5.4xlarge",
+            "r5.xlarge",
+            "r5.2xlarge",
+            "other"
+          ]
+        },
+        {
+          "id": "compute_ec2_instance_type_cd",
+          "question": "What EC2 instance type is used for CD servers?",
+          "type": "select",
+          "options": [
+            "t3.large",
+            "t3.xlarge",
+            "t3.2xlarge",
+            "m5.large",
+            "m5.xlarge",
+            "m5.2xlarge",
+            "m5.4xlarge",
+            "c5.xlarge",
+            "c5.2xlarge",
+            "c5.4xlarge",
+            "r5.xlarge",
+            "r5.2xlarge",
+            "other"
+          ]
+        },
+        {
+          "id": "compute_os_version",
+          "question": "What Windows Server version is running on the Sitecore instances?",
+          "type": "select",
+          "options": [
+            "Windows Server 2016",
+            "Windows Server 2019",
+            "Windows Server 2022"
+          ]
+        },
+        {
+          "id": "compute_sitecore_version",
+          "question": "What version of Sitecore XP is deployed?",
+          "type": "select",
+          "options": [
+            "9.0",
+            "9.0.2",
+            "9.1",
+            "9.1.1",
+            "9.2",
+            "9.3",
+            "10.0",
+            "10.1",
+            "10.2",
+            "10.3",
+            "10.4"
+          ]
+        },
+        {
+          "id": "compute_cd_autoscaling",
+          "question": "Are CD instances behind an Auto Scaling Group (ASG)?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "compute_hosting_model",
+          "question": "How is Sitecore deployed on the EC2 instances?",
+          "type": "select",
+          "options": [
+            "IIS directly on EC2",
+            "Docker containers on EC2",
+            "ECS Fargate",
+            "ECS on EC2",
+            "EKS (Kubernetes)"
+          ]
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "compute_asg_min_max",
+          "question": "What are the Auto Scaling Group min/max instance counts for CD?",
+          "type": "text",
+          "condition": {
+            "question_id": "compute_cd_autoscaling",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "compute_asg_scaling_metric",
+          "question": "What scaling metric triggers CD auto-scaling?",
+          "type": "select",
+          "options": [
+            "CPU utilization",
+            "Memory utilization",
+            "Request count",
+            "Custom CloudWatch metric",
+            "Scheduled scaling"
+          ],
+          "condition": {
+            "question_id": "compute_cd_autoscaling",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "compute_ec2_instance_type_cm_other",
+          "question": "Specify the custom EC2 instance type used for CM servers.",
+          "type": "text",
+          "condition": {
+            "question_id": "compute_ec2_instance_type_cm",
+            "operator": "equals",
+            "value": "other"
+          }
+        },
+        {
+          "id": "compute_container_registry",
+          "question": "Which container registry stores the Sitecore images?",
+          "type": "select",
+          "options": [
+            "Amazon ECR",
+            "Docker Hub",
+            "Sitecore Container Registry",
+            "Private registry",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "compute_hosting_model",
+            "operator": "in",
+            "value": [
+              "Docker containers on EC2",
+              "ECS Fargate",
+              "ECS on EC2",
+              "EKS (Kubernetes)"
+            ]
+          }
+        },
+        {
+          "id": "compute_kubernetes_version",
+          "question": "What Kubernetes version is the EKS cluster running?",
+          "type": "text",
+          "condition": {
+            "question_id": "compute_hosting_model",
+            "operator": "equals",
+            "value": "EKS (Kubernetes)"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_os_from_sitecore_version_10x",
+          "infers": "compute_os_version",
+          "value": "Windows Server 2019",
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_os_from_sitecore_version_9x",
+          "infers": "compute_os_version",
+          "value": "Windows Server 2016",
+          "condition": "compute_sitecore_version < 10.0",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_autoscaling_from_cd_count",
+          "infers": "compute_cd_autoscaling",
+          "value": true,
+          "condition": "compute_cd_instance_count >= 3",
+          "confidence": "low"
+        },
+        {
+          "id": "infer_containerized_from_sitecore_10x",
+          "infers": "compute_hosting_model",
+          "value": "Docker containers on EC2",
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "order": 2,
+      "description": "Captures SQL Server database topology including engine version, instance sizing, high availability configuration, and database sizes for Core, Master, Web, and xDB databases to plan the Azure SQL or SQL Managed Instance migration.",
+      "required_questions": [
+        {
+          "id": "database_engine",
+          "question": "What database engine hosts the Sitecore databases?",
+          "type": "select",
+          "options": [
+            "Amazon RDS for SQL Server",
+            "SQL Server on EC2",
+            "Amazon Aurora (PostgreSQL-compatible)"
+          ]
+        },
+        {
+          "id": "database_sql_version",
+          "question": "What SQL Server version is in use?",
+          "type": "select",
+          "options": [
+            "SQL Server 2016",
+            "SQL Server 2017",
+            "SQL Server 2019",
+            "SQL Server 2022"
+          ]
+        },
+        {
+          "id": "database_rds_instance_class",
+          "question": "What RDS instance class (or EC2 instance type) hosts the databases?",
+          "type": "select",
+          "options": [
+            "db.m5.large",
+            "db.m5.xlarge",
+            "db.m5.2xlarge",
+            "db.m5.4xlarge",
+            "db.r5.large",
+            "db.r5.xlarge",
+            "db.r5.2xlarge",
+            "db.r5.4xlarge",
+            "EC2 self-managed",
+            "other"
+          ]
+        },
+        {
+          "id": "database_total_size_gb",
+          "question": "What is the total size of all Sitecore databases combined (in GB)?",
+          "type": "number",
+          "default": 50
+        },
+        {
+          "id": "database_ha_config",
+          "question": "What high availability configuration is in place for the database?",
+          "type": "select",
+          "options": [
+            "RDS Multi-AZ",
+            "Always On Availability Groups",
+            "Database mirroring",
+            "Log shipping",
+            "No HA configured",
+            "Other"
+          ]
+        },
+        {
+          "id": "database_separate_xdb",
+          "question": "Are xDB collection/reporting databases on a separate SQL instance from Core/Master/Web?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "database_custom_databases",
+          "question": "Are there custom databases (beyond standard Sitecore databases) on the same SQL instance?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "database_encryption_at_rest",
+          "question": "Is Transparent Data Encryption (TDE) or RDS encryption at rest enabled?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "database_clr_assemblies",
+          "question": "Are custom CLR assemblies deployed in any SQL Server database?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "database_linked_servers",
+          "question": "Are linked servers configured on the SQL Server instance?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "database_cross_db_queries",
+          "question": "Do stored procedures or application code use cross-database queries (three-part naming)?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "database_compliance_requirements",
+          "question": "Which compliance frameworks apply to the data stored in Sitecore databases?",
+          "type": "multi_select",
+          "options": [
+            "HIPAA (health data)",
+            "PCI DSS (payment card data)",
+            "GDPR (EU personal data)",
+            "SOC 2 Type II",
+            "CCPA (California privacy)",
+            "Data residency requirements",
+            "None / No specific compliance"
+          ]
+        },
+        {
+          "id": "database_data_residency_region",
+          "question": "Are there data residency requirements that restrict which Azure region(s) can host the databases?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "database_custom_db_list",
+          "question": "List the custom databases and their approximate sizes.",
+          "type": "text",
+          "condition": {
+            "question_id": "database_custom_databases",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_xdb_instance_class",
+          "question": "What RDS instance class hosts the xDB databases?",
+          "type": "select",
+          "options": [
+            "db.m5.large",
+            "db.m5.xlarge",
+            "db.m5.2xlarge",
+            "db.r5.large",
+            "db.r5.xlarge",
+            "db.r5.2xlarge",
+            "other"
+          ],
+          "condition": {
+            "question_id": "database_separate_xdb",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_read_replicas",
+          "question": "How many read replicas are configured for the database?",
+          "type": "number",
+          "condition": {
+            "question_id": "database_engine",
+            "operator": "equals",
+            "value": "Amazon RDS for SQL Server"
+          }
+        },
+        {
+          "id": "database_ag_node_count",
+          "question": "How many nodes are in the Always On Availability Group?",
+          "type": "number",
+          "condition": {
+            "question_id": "database_ha_config",
+            "operator": "equals",
+            "value": "Always On Availability Groups"
+          }
+        },
+        {
+          "id": "database_encryption_key_management",
+          "question": "How are encryption keys managed?",
+          "type": "select",
+          "options": [
+            "AWS KMS (default key)",
+            "AWS KMS (customer-managed key)",
+            "Self-managed certificates"
+          ],
+          "condition": {
+            "question_id": "database_encryption_at_rest",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_clr_assembly_list",
+          "question": "List the CLR assemblies deployed and their purpose.",
+          "type": "text",
+          "condition": {
+            "question_id": "database_clr_assemblies",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_linked_server_targets",
+          "question": "What systems do the linked servers connect to?",
+          "type": "text",
+          "condition": {
+            "question_id": "database_linked_servers",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_data_residency_regions",
+          "question": "Which geographic regions are permitted for data storage?",
+          "type": "multi_select",
+          "options": [
+            "US only",
+            "EU only",
+            "US and EU",
+            "Specific country (specify in notes)",
+            "No geographic restriction"
+          ],
+          "condition": {
+            "question_id": "database_data_residency_region",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "database_hipaa_baa_required",
+          "question": "Is a Business Associate Agreement (BAA) required with the cloud provider?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "database_compliance_requirements",
+            "operator": "contains",
+            "value": "HIPAA (health data)"
+          }
+        },
+        {
+          "id": "database_audit_logging_required",
+          "question": "Is database-level audit logging required for compliance?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "database_compliance_requirements",
+            "operator": "not_equals",
+            "value": ["None / No specific compliance"]
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_sql_version_from_sitecore_10x",
+          "infers": "database_sql_version",
+          "value": "SQL Server 2019",
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_rds_from_managed_hosting",
+          "infers": "database_engine",
+          "value": "Amazon RDS for SQL Server",
+          "condition": "compute_hosting_model == 'IIS directly on EC2'",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_ha_from_rds",
+          "infers": "database_ha_config",
+          "value": "RDS Multi-AZ",
+          "condition": "database_engine == 'Amazon RDS for SQL Server'",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_separate_xdb_from_large_db",
+          "infers": "database_separate_xdb",
+          "value": true,
+          "condition": "database_total_size_gb >= 100",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "name": "Search (Solr)",
+      "order": 3,
+      "description": "Captures the Solr search infrastructure details including topology, version, index sizes, and custom configuration needed to plan migration to Azure Cognitive Search or Solr on Azure VMs.",
+      "required_questions": [
+        {
+          "id": "search_provider",
+          "question": "Which search provider is Sitecore configured to use?",
+          "type": "select",
+          "options": [
+            "Solr (standalone)",
+            "SolrCloud",
+            "Azure Cognitive Search (already)",
+            "Coveo for Sitecore"
+          ]
+        },
+        {
+          "id": "search_solr_version",
+          "question": "What version of Solr is deployed?",
+          "type": "select",
+          "options": [
+            "7.5",
+            "8.1",
+            "8.4",
+            "8.6",
+            "8.8",
+            "8.11",
+            "9.0",
+            "9.3",
+            "other"
+          ]
+        },
+        {
+          "id": "search_solr_node_count",
+          "question": "How many Solr nodes are in the cluster?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "search_solr_hosting",
+          "question": "How is Solr hosted?",
+          "type": "select",
+          "options": [
+            "EC2 instances (self-managed)",
+            "SearchStax managed service",
+            "Docker containers",
+            "ECS/EKS",
+            "Other managed service"
+          ]
+        },
+        {
+          "id": "search_total_index_size_gb",
+          "question": "What is the total Solr index size across all cores (in GB)?",
+          "type": "number",
+          "default": 10
+        },
+        {
+          "id": "search_custom_indexes",
+          "question": "Are there custom Solr indexes beyond the standard Sitecore indexes?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "search_solr_ssl",
+          "question": "Is Solr configured with SSL/TLS for communication with Sitecore?",
+          "type": "boolean",
+          "default": true
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "search_custom_index_list",
+          "question": "List the custom Solr indexes and their approximate sizes.",
+          "type": "text",
+          "condition": {
+            "question_id": "search_custom_indexes",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "search_solrcloud_zookeeper",
+          "question": "How many ZooKeeper nodes are in the SolrCloud ensemble?",
+          "type": "number",
+          "condition": {
+            "question_id": "search_provider",
+            "operator": "equals",
+            "value": "SolrCloud"
+          }
+        },
+        {
+          "id": "search_solrcloud_replication_factor",
+          "question": "What replication factor is configured for SolrCloud collections?",
+          "type": "number",
+          "condition": {
+            "question_id": "search_provider",
+            "operator": "equals",
+            "value": "SolrCloud"
+          }
+        },
+        {
+          "id": "search_coveo_plan",
+          "question": "What Coveo plan/tier is in use?",
+          "type": "text",
+          "condition": {
+            "question_id": "search_provider",
+            "operator": "equals",
+            "value": "Coveo for Sitecore"
+          }
+        },
+        {
+          "id": "search_searchstax_tier",
+          "question": "What SearchStax deployment tier and region is in use?",
+          "type": "text",
+          "condition": {
+            "question_id": "search_solr_hosting",
+            "operator": "equals",
+            "value": "SearchStax managed service"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_solr_version_from_sitecore_10x",
+          "infers": "search_solr_version",
+          "value": "8.8",
+          "condition": "compute_sitecore_version >= 10.2",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_solr_version_from_sitecore_9x",
+          "infers": "search_solr_version",
+          "value": "8.1",
+          "condition": "compute_sitecore_version >= 9.2 && compute_sitecore_version < 10.0",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_solrcloud_from_multiple_nodes",
+          "infers": "search_provider",
+          "value": "SolrCloud",
+          "condition": "search_solr_node_count >= 3",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_ssl_from_sitecore_9_1_plus",
+          "infers": "search_solr_ssl",
+          "value": true,
+          "condition": "compute_sitecore_version >= 9.1",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "caching",
+      "name": "Caching (Redis)",
+      "order": 4,
+      "description": "Captures the Redis caching layer configuration including ElastiCache topology, node sizes, clustering, and how Sitecore roles use Redis for session state, output caching, or custom caching scenarios to plan Azure Cache for Redis migration.",
+      "required_questions": [
+        {
+          "id": "caching_redis_in_use",
+          "question": "Is Redis used in the Sitecore environment?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "caching_redis_hosting",
+          "question": "How is Redis hosted?",
+          "type": "select",
+          "options": [
+            "Amazon ElastiCache for Redis",
+            "Redis on EC2 (self-managed)",
+            "Not using Redis"
+          ]
+        },
+        {
+          "id": "caching_redis_node_type",
+          "question": "What ElastiCache node type (or EC2 instance type) is used for Redis?",
+          "type": "select",
+          "options": [
+            "cache.t3.micro",
+            "cache.t3.small",
+            "cache.t3.medium",
+            "cache.m5.large",
+            "cache.m5.xlarge",
+            "cache.r5.large",
+            "cache.r5.xlarge",
+            "EC2 self-managed",
+            "other"
+          ]
+        },
+        {
+          "id": "caching_redis_cluster_mode",
+          "question": "Is Redis cluster mode enabled?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "caching_redis_purpose",
+          "question": "What is Redis used for in the Sitecore environment?",
+          "type": "multi_select",
+          "options": [
+            "Session state (private sessions)",
+            "Session state (shared sessions)",
+            "Sitecore output caching",
+            "Custom application caching",
+            "Pub/Sub messaging",
+            "Rate limiting"
+          ]
+        },
+        {
+          "id": "caching_redis_memory_gb",
+          "question": "What is the total allocated Redis memory (in GB)?",
+          "type": "number",
+          "default": 2
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "caching_redis_replica_count",
+          "question": "How many Redis replica nodes are configured?",
+          "type": "number",
+          "condition": {
+            "question_id": "caching_redis_cluster_mode",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "caching_redis_shard_count",
+          "question": "How many shards are configured in the Redis cluster?",
+          "type": "number",
+          "condition": {
+            "question_id": "caching_redis_cluster_mode",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "caching_redis_eviction_policy",
+          "question": "What eviction policy is configured on the Redis instance?",
+          "type": "select",
+          "options": [
+            "noeviction",
+            "allkeys-lru",
+            "volatile-lru",
+            "allkeys-random",
+            "volatile-ttl",
+            "unknown"
+          ],
+          "condition": {
+            "question_id": "caching_redis_in_use",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "caching_redis_encryption_transit",
+          "question": "Is in-transit encryption (TLS) enabled for Redis connections?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "caching_redis_hosting",
+            "operator": "equals",
+            "value": "Amazon ElastiCache for Redis"
+          }
+        },
+        {
+          "id": "caching_redis_auth",
+          "question": "Is Redis AUTH (password authentication) enabled?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "caching_redis_in_use",
+            "operator": "equals",
+            "value": true
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_redis_for_session_from_cd_count",
+          "infers": "caching_redis_in_use",
+          "value": true,
+          "condition": "compute_cd_instance_count >= 2",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_redis_purpose_session",
+          "infers": "caching_redis_purpose",
+          "value": ["Session state (private sessions)"],
+          "condition": "compute_cd_instance_count >= 2 && caching_redis_in_use == true",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_elasticache_from_rds",
+          "infers": "caching_redis_hosting",
+          "value": "Amazon ElastiCache for Redis",
+          "condition": "database_engine == 'Amazon RDS for SQL Server'",
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "cdn",
+      "name": "CDN",
+      "order": 5,
+      "description": "Captures the Content Delivery Network configuration including CloudFront distributions, caching behaviors, origin configuration, and any WAF rules to plan migration to Azure Front Door or Azure CDN.",
+      "required_questions": [
+        {
+          "id": "cdn_in_use",
+          "question": "Is a CDN deployed in front of the Sitecore CD instances?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "cdn_provider",
+          "question": "Which CDN provider is in use?",
+          "type": "select",
+          "options": [
+            "Amazon CloudFront",
+            "Akamai",
+            "Cloudflare",
+            "Fastly",
+            "Other",
+            "None"
+          ]
+        },
+        {
+          "id": "cdn_distribution_count",
+          "question": "How many CDN distributions/configurations exist for Sitecore?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "cdn_caching_strategy",
+          "question": "What caching strategy is used at the CDN layer?",
+          "type": "select",
+          "options": [
+            "Cache static assets only (CSS, JS, images)",
+            "Cache static assets and media library items",
+            "Cache full pages for anonymous users",
+            "Cache everything with vary rules",
+            "Passthrough only (CDN for SSL/WAF only)"
+          ]
+        },
+        {
+          "id": "cdn_waf_enabled",
+          "question": "Is a WAF (Web Application Firewall) enabled on the CDN?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "cdn_custom_error_pages",
+          "question": "Are custom error pages configured at the CDN level?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "cdn_waf_rule_count",
+          "question": "Approximately how many custom WAF rules are configured?",
+          "type": "number",
+          "condition": {
+            "question_id": "cdn_waf_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "cdn_waf_managed_rules",
+          "question": "Which managed WAF rule sets are enabled?",
+          "type": "multi_select",
+          "options": [
+            "AWS Managed Rules - Core Rule Set",
+            "AWS Managed Rules - SQL Injection",
+            "AWS Managed Rules - Known Bad Inputs",
+            "AWS Managed Rules - Bot Control",
+            "Custom vendor rules",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "cdn_waf_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "cdn_cloudfront_functions",
+          "question": "Are CloudFront Functions or Lambda@Edge functions in use?",
+          "type": "select",
+          "options": [
+            "CloudFront Functions",
+            "Lambda@Edge",
+            "Both",
+            "Neither"
+          ],
+          "condition": {
+            "question_id": "cdn_provider",
+            "operator": "equals",
+            "value": "Amazon CloudFront"
+          }
+        },
+        {
+          "id": "cdn_geo_restrictions",
+          "question": "Are geographic restrictions configured on the CDN?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "cdn_in_use",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "cdn_third_party_details",
+          "question": "Provide the third-party CDN account and configuration details.",
+          "type": "text",
+          "condition": {
+            "question_id": "cdn_provider",
+            "operator": "in",
+            "value": ["Akamai", "Cloudflare", "Fastly", "Other"]
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_cdn_from_production",
+          "infers": "cdn_in_use",
+          "value": true,
+          "condition": "compute_cd_instance_count >= 1",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_cloudfront_from_aws",
+          "infers": "cdn_provider",
+          "value": "Amazon CloudFront",
+          "condition": "cdn_in_use == true && compute_hosting_model == 'IIS directly on EC2'",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_waf_from_enterprise",
+          "infers": "cdn_waf_enabled",
+          "value": true,
+          "condition": "cdn_in_use == true && compute_cd_instance_count >= 3",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "dns",
+      "name": "DNS",
+      "order": 6,
+      "description": "Captures DNS hosting and domain configuration including Route 53 zones, record types, TTL values, and routing policies to plan migration to Azure DNS or coordinate third-party DNS updates.",
+      "required_questions": [
+        {
+          "id": "dns_provider",
+          "question": "Where are the Sitecore site DNS zones hosted?",
+          "type": "select",
+          "options": [
+            "Amazon Route 53",
+            "Cloudflare DNS",
+            "Azure DNS (already)",
+            "GoDaddy",
+            "Corporate DNS (on-premises)",
+            "Other third-party DNS"
+          ]
+        },
+        {
+          "id": "dns_zone_count",
+          "question": "How many DNS zones (domains) serve the Sitecore sites?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "dns_total_record_count",
+          "question": "Approximately how many DNS records exist across all Sitecore-related zones?",
+          "type": "number",
+          "default": 10
+        },
+        {
+          "id": "dns_routing_policy",
+          "question": "What DNS routing policies are used for Sitecore traffic?",
+          "type": "multi_select",
+          "options": [
+            "Simple routing",
+            "Weighted routing",
+            "Latency-based routing",
+            "Failover routing",
+            "Geolocation routing",
+            "Multi-value answer routing"
+          ]
+        },
+        {
+          "id": "dns_ttl_seconds",
+          "question": "What is the typical TTL (in seconds) for Sitecore site A/CNAME records?",
+          "type": "number",
+          "default": 300
+        },
+        {
+          "id": "dns_health_checks",
+          "question": "Are Route 53 or DNS-level health checks configured for failover?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "dns_health_check_endpoints",
+          "question": "What endpoints are monitored by the DNS health checks?",
+          "type": "text",
+          "condition": {
+            "question_id": "dns_health_checks",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "dns_failover_secondary",
+          "question": "What is the failover target when the primary health check fails?",
+          "type": "select",
+          "options": [
+            "Secondary AWS region",
+            "Static S3 maintenance page",
+            "Third-party failover service",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "dns_routing_policy",
+            "operator": "contains",
+            "value": "Failover routing"
+          }
+        },
+        {
+          "id": "dns_route53_private_zones",
+          "question": "Are Route 53 private hosted zones used for internal Sitecore service discovery?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "dns_provider",
+            "operator": "equals",
+            "value": "Amazon Route 53"
+          }
+        },
+        {
+          "id": "dns_dnssec_enabled",
+          "question": "Is DNSSEC signing enabled on the DNS zones?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "dns_provider",
+            "operator": "in",
+            "value": ["Amazon Route 53", "Cloudflare DNS"]
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_route53_from_aws_stack",
+          "infers": "dns_provider",
+          "value": "Amazon Route 53",
+          "condition": "cdn_provider == 'Amazon CloudFront'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_failover_from_ha",
+          "infers": "dns_health_checks",
+          "value": true,
+          "condition": "database_ha_config != 'No HA configured'",
+          "confidence": "low"
+        },
+        {
+          "id": "infer_simple_routing",
+          "infers": "dns_routing_policy",
+          "value": ["Simple routing"],
+          "condition": "compute_cd_instance_count <= 2 && cdn_in_use == true",
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "ssl_tls",
+      "name": "SSL / TLS",
+      "order": 7,
+      "description": "Captures SSL/TLS certificate management including ACM certificates, certificate chains, termination points, and renewal processes to plan migration to Azure Key Vault certificates or App Service managed certificates.",
+      "required_questions": [
+        {
+          "id": "ssl_certificate_provider",
+          "question": "Where are SSL/TLS certificates managed?",
+          "type": "select",
+          "options": [
+            "AWS Certificate Manager (ACM)",
+            "Let's Encrypt",
+            "DigiCert / Symantec",
+            "Sectigo / Comodo",
+            "GoDaddy",
+            "Self-signed (internal only)",
+            "Other CA"
+          ]
+        },
+        {
+          "id": "ssl_certificate_count",
+          "question": "How many unique SSL/TLS certificates are used across the Sitecore environment?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "ssl_wildcard_in_use",
+          "question": "Are wildcard certificates used for Sitecore domains?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "ssl_termination_point",
+          "question": "Where does SSL/TLS terminate?",
+          "type": "multi_select",
+          "options": [
+            "CloudFront / CDN edge",
+            "Application Load Balancer (ALB)",
+            "Network Load Balancer (NLB)",
+            "IIS on the EC2 instance",
+            "Reverse proxy (Nginx/HAProxy)"
+          ]
+        },
+        {
+          "id": "ssl_minimum_tls_version",
+          "question": "What is the minimum TLS version enforced?",
+          "type": "select",
+          "options": [
+            "TLS 1.0",
+            "TLS 1.1",
+            "TLS 1.2",
+            "TLS 1.3"
+          ]
+        },
+        {
+          "id": "ssl_auto_renewal",
+          "question": "Are certificates set up for automatic renewal?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "ssl_acm_validation_method",
+          "question": "What validation method is used for ACM certificates?",
+          "type": "select",
+          "options": [
+            "DNS validation",
+            "Email validation"
+          ],
+          "condition": {
+            "question_id": "ssl_certificate_provider",
+            "operator": "equals",
+            "value": "AWS Certificate Manager (ACM)"
+          }
+        },
+        {
+          "id": "ssl_manual_renewal_process",
+          "question": "Describe the manual certificate renewal process and who owns it.",
+          "type": "text",
+          "condition": {
+            "question_id": "ssl_auto_renewal",
+            "operator": "equals",
+            "value": false
+          }
+        },
+        {
+          "id": "ssl_client_cert_auth",
+          "question": "Is mutual TLS (client certificate authentication) used for any Sitecore endpoints?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "ssl_termination_point",
+            "operator": "contains",
+            "value": "Application Load Balancer (ALB)"
+          }
+        },
+        {
+          "id": "ssl_certificate_pinning",
+          "question": "Is certificate pinning enforced by any consuming applications or mobile apps?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "ssl_certificate_count",
+            "operator": "greater_than",
+            "value": 1
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_acm_from_aws_stack",
+          "infers": "ssl_certificate_provider",
+          "value": "AWS Certificate Manager (ACM)",
+          "condition": "cdn_provider == 'Amazon CloudFront'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_auto_renewal_from_acm",
+          "infers": "ssl_auto_renewal",
+          "value": true,
+          "condition": "ssl_certificate_provider == 'AWS Certificate Manager (ACM)'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_tls_12_from_sitecore_10x",
+          "infers": "ssl_minimum_tls_version",
+          "value": "TLS 1.2",
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_termination_from_cdn",
+          "infers": "ssl_termination_point",
+          "value": ["CloudFront / CDN edge"],
+          "condition": "cdn_in_use == true && cdn_provider == 'Amazon CloudFront'",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "name": "Storage / Media",
+      "order": 8,
+      "description": "Captures how Sitecore media library items and other blobs are stored, including S3 buckets, blob providers, media cache sizes, and image resizing configuration to plan Azure Blob Storage migration.",
+      "required_questions": [
+        {
+          "id": "storage_media_strategy",
+          "question": "Where does Sitecore store media library blobs?",
+          "type": "select",
+          "options": [
+            "SQL Server database (default blob storage)",
+            "Amazon S3 via custom blob provider",
+            "Local file system on EC2",
+            "Shared file system (EFS / FSx)",
+            "Azure Blob Storage (already)"
+          ]
+        },
+        {
+          "id": "storage_media_total_size_gb",
+          "question": "What is the total size of all media library content (in GB)?",
+          "type": "number",
+          "default": 10
+        },
+        {
+          "id": "storage_media_item_count",
+          "question": "Approximately how many media items are in the Sitecore media library?",
+          "type": "number",
+          "default": 5000
+        },
+        {
+          "id": "storage_s3_bucket_count",
+          "question": "How many S3 buckets are used by the Sitecore environment (media, logs, exports, etc.)?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "storage_image_resizing",
+          "question": "Is Sitecore media image resizing used (on-the-fly image manipulation)?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "storage_media_cache_size_gb",
+          "question": "What is the configured media cache size on each CD instance (in GB)?",
+          "type": "number",
+          "default": 5
+        },
+        {
+          "id": "storage_shared_filesystem",
+          "question": "Is a shared file system used between CM and CD instances (e.g., for media or deployment)?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "storage_s3_bucket_names",
+          "question": "List the S3 bucket names and their purposes.",
+          "type": "text",
+          "condition": {
+            "question_id": "storage_s3_bucket_count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "id": "storage_blob_provider_name",
+          "question": "Which custom blob provider module is used for S3 integration?",
+          "type": "select",
+          "options": [
+            "Sitecore Azure Blob Storage provider",
+            "Custom in-house provider",
+            "Third-party module (specify)",
+            "Unknown"
+          ],
+          "condition": {
+            "question_id": "storage_media_strategy",
+            "operator": "equals",
+            "value": "Amazon S3 via custom blob provider"
+          }
+        },
+        {
+          "id": "storage_shared_filesystem_type",
+          "question": "What shared file system type is in use?",
+          "type": "select",
+          "options": [
+            "Amazon EFS",
+            "Amazon FSx for Windows File Server",
+            "NFS on EC2",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "storage_shared_filesystem",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "storage_s3_versioning",
+          "question": "Is S3 versioning enabled on the media buckets?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "storage_media_strategy",
+            "operator": "equals",
+            "value": "Amazon S3 via custom blob provider"
+          }
+        },
+        {
+          "id": "storage_s3_lifecycle_policies",
+          "question": "Are S3 lifecycle policies configured (e.g., transition to Glacier, expiration)?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "storage_s3_bucket_count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_db_blob_for_small_media",
+          "infers": "storage_media_strategy",
+          "value": "SQL Server database (default blob storage)",
+          "condition": "storage_media_total_size_gb <= 20",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_shared_fs_from_multiple_cd",
+          "infers": "storage_shared_filesystem",
+          "value": true,
+          "condition": "compute_cd_instance_count >= 2 && storage_media_strategy == 'Local file system on EC2'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_s3_blob_for_large_media",
+          "infers": "storage_media_strategy",
+          "value": "Amazon S3 via custom blob provider",
+          "condition": "storage_media_total_size_gb > 50",
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "email",
+      "name": "Email / SMTP",
+      "order": 9,
+      "description": "Captures the SMTP and transactional email configuration for Sitecore (password resets, form submissions, workflow notifications) to plan migration of email delivery to an Azure-compatible provider.",
+      "required_questions": [
+        {
+          "id": "email_smtp_provider",
+          "question": "What SMTP/email delivery service is used for transactional email?",
+          "type": "select",
+          "options": [
+            "Amazon SES",
+            "SendGrid",
+            "Custom SMTP server",
+            "On-premise relay",
+            "Not applicable"
+          ]
+        },
+        {
+          "id": "email_transactional",
+          "question": "Does Sitecore send transactional emails (password resets, form submissions, workflow notifications)?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "email_smtp_config_location",
+          "question": "Where are SMTP settings configured?",
+          "type": "select",
+          "options": [
+            "Sitecore config files (MailServer settings)",
+            "Web.config / ConnectionStrings.config",
+            "Environment variables",
+            "Custom configuration",
+            "Unknown"
+          ]
+        },
+        {
+          "id": "email_custom_sending_code",
+          "question": "Is there custom code that sends emails using AWS SES SDK (not standard SMTP)?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "email_ses_sending_identity",
+          "question": "How many verified sending identities (domains/emails) are configured in SES?",
+          "type": "number",
+          "condition": {
+            "question_id": "email_smtp_provider",
+            "operator": "equals",
+            "value": "Amazon SES"
+          }
+        },
+        {
+          "id": "email_ses_sandbox",
+          "question": "Is the SES account in sandbox mode or production mode?",
+          "type": "select",
+          "options": [
+            "Production mode",
+            "Sandbox mode"
+          ],
+          "condition": {
+            "question_id": "email_smtp_provider",
+            "operator": "equals",
+            "value": "Amazon SES"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_ses_from_aws_stack",
+          "infers": "email_smtp_provider",
+          "value": "Amazon SES",
+          "condition": "database_engine == 'Amazon RDS for SQL Server'",
+          "confidence": "low"
+        }
+      ]
+    },
+    {
+      "id": "xconnect",
+      "name": "xConnect / xDB",
+      "order": 10,
+      "description": "Captures the xConnect and xDB analytics infrastructure including collection services, processing roles, reporting configuration, and contact data volumes to plan Azure-equivalent analytics pipeline migration.",
+      "required_questions": [
+        {
+          "id": "xconnect_enabled",
+          "question": "Is xConnect / xDB analytics tracking enabled in the Sitecore environment?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "xconnect_instance_count",
+          "question": "How many xConnect service instances are running?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "xconnect_collection_db_type",
+          "question": "What database type is used for the xDB Collection database?",
+          "type": "select",
+          "options": [
+            "SQL Server (on RDS or EC2)",
+            "MongoDB (legacy Sitecore 8.x)",
+            "Azure Cosmos DB (already)"
+          ]
+        },
+        {
+          "id": "xconnect_contact_count",
+          "question": "Approximately how many contacts are stored in xDB?",
+          "type": "select",
+          "options": [
+            "Under 100,000",
+            "100,000 - 500,000",
+            "500,000 - 2,000,000",
+            "2,000,000 - 10,000,000",
+            "Over 10,000,000"
+          ]
+        },
+        {
+          "id": "xconnect_processing_enabled",
+          "question": "Is the xConnect Processing role running (for aggregation and ML)?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "xconnect_indexer_enabled",
+          "question": "Is the xConnect Search Indexer role running?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "xconnect_ma_enabled",
+          "question": "Is Marketing Automation (MA) enabled and in use?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "xconnect_custom_facets",
+          "question": "Are custom xDB contact facets deployed?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "xconnect_custom_facet_list",
+          "question": "List the custom xDB contact facets and their data models.",
+          "type": "text",
+          "condition": {
+            "question_id": "xconnect_custom_facets",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "xconnect_ma_plan_count",
+          "question": "How many active Marketing Automation plans are deployed?",
+          "type": "number",
+          "condition": {
+            "question_id": "xconnect_ma_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "xconnect_separate_instance",
+          "question": "Is xConnect hosted on separate EC2 instances from CM/CD?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "xconnect_instance_count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "id": "xconnect_collection_db_size_gb",
+          "question": "What is the size of the xDB Collection database (in GB)?",
+          "type": "number",
+          "condition": {
+            "question_id": "xconnect_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "xconnect_retention_policy",
+          "question": "What data retention policy is configured for xDB contact interactions?",
+          "type": "select",
+          "options": [
+            "No retention policy (keep forever)",
+            "30 days",
+            "90 days",
+            "1 year",
+            "Custom retention period"
+          ],
+          "condition": {
+            "question_id": "xconnect_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_xconnect_sql_from_sitecore_9x",
+          "infers": "xconnect_collection_db_type",
+          "value": "SQL Server (on RDS or EC2)",
+          "condition": "compute_sitecore_version >= 9.0",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_xconnect_separate_from_large_contacts",
+          "infers": "xconnect_separate_instance",
+          "value": true,
+          "condition": "xconnect_contact_count in ['2,000,000 - 10,000,000', 'Over 10,000,000']",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_processing_from_xconnect",
+          "infers": "xconnect_processing_enabled",
+          "value": true,
+          "condition": "xconnect_enabled == true",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "order": 11,
+      "description": "Captures the Sitecore Identity Server configuration, federated authentication providers, and role/claim mappings to plan migration to Azure AD B2C or equivalent identity infrastructure.",
+      "required_questions": [
+        {
+          "id": "identity_server_deployed",
+          "question": "Is Sitecore Identity Server deployed (introduced in Sitecore 9.1)?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "identity_server_hosting",
+          "question": "How is Sitecore Identity Server hosted?",
+          "type": "select",
+          "options": [
+            "Same EC2 instance as CM",
+            "Dedicated EC2 instance",
+            "Docker container",
+            "Not deployed"
+          ]
+        },
+        {
+          "id": "identity_external_providers",
+          "question": "Which external identity providers are integrated with Sitecore for editor/admin login?",
+          "type": "multi_select",
+          "options": [
+            "Azure AD",
+            "ADFS",
+            "Okta",
+            "Auth0",
+            "Ping Identity",
+            "SAML (generic)",
+            "OpenID Connect (generic)",
+            "None (Sitecore built-in only)"
+          ]
+        },
+        {
+          "id": "identity_visitor_auth",
+          "question": "Is federated authentication used for front-end visitor login (extranet)?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "identity_custom_claims",
+          "question": "Are custom claims or role mappings configured in the identity pipeline?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "identity_sso_enabled",
+          "question": "Is Single Sign-On (SSO) enabled across multiple Sitecore instances or related applications?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "identity_visitor_auth_provider",
+          "question": "Which identity provider handles front-end visitor authentication?",
+          "type": "select",
+          "options": [
+            "Azure AD B2C",
+            "AWS Cognito",
+            "Auth0",
+            "Okta",
+            "Custom membership provider",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "identity_visitor_auth",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "identity_custom_claims_detail",
+          "question": "Describe the custom claims and role-mapping rules configured.",
+          "type": "text",
+          "condition": {
+            "question_id": "identity_custom_claims",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "identity_sso_applications",
+          "question": "List the applications participating in the SSO configuration.",
+          "type": "text",
+          "condition": {
+            "question_id": "identity_sso_enabled",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "identity_adfs_version",
+          "question": "What version of ADFS is in use?",
+          "type": "text",
+          "condition": {
+            "question_id": "identity_external_providers",
+            "operator": "contains",
+            "value": "ADFS"
+          }
+        },
+        {
+          "id": "identity_mfa_enabled",
+          "question": "Is multi-factor authentication enforced for Sitecore CMS editor login?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "identity_external_providers",
+            "operator": "not_equals",
+            "value": ["None (Sitecore built-in only)"]
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_identity_server_from_sitecore_91",
+          "infers": "identity_server_deployed",
+          "value": true,
+          "condition": "compute_sitecore_version >= 9.1",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_no_identity_server_pre_91",
+          "infers": "identity_server_deployed",
+          "value": false,
+          "condition": "compute_sitecore_version < 9.1",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_identity_on_cm_from_small_deployment",
+          "infers": "identity_server_hosting",
+          "value": "Same EC2 instance as CM",
+          "condition": "compute_cm_instance_count == 1 && identity_server_deployed == true",
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "session_state",
+      "name": "Session State",
+      "order": 12,
+      "description": "Captures how ASP.NET session state is managed across the Sitecore topology, including private and shared session providers, session timeouts, and sticky session configuration to plan the Azure-equivalent session architecture.",
+      "required_questions": [
+        {
+          "id": "session_private_provider",
+          "question": "What session state provider is used for private sessions on CD servers?",
+          "type": "select",
+          "options": [
+            "InProc (in-memory on each server)",
+            "Redis (via Sitecore Redis session provider)",
+            "SQL Server session state",
+            "Custom session provider"
+          ]
+        },
+        {
+          "id": "session_shared_provider",
+          "question": "What provider is used for shared sessions (xDB tracker sessions)?",
+          "type": "select",
+          "options": [
+            "Redis (via Sitecore Redis session provider)",
+            "SQL Server",
+            "MongoDB (legacy)",
+            "InProc (single CD only)",
+            "Not configured / disabled"
+          ]
+        },
+        {
+          "id": "session_timeout_minutes",
+          "question": "What is the configured session timeout (in minutes)?",
+          "type": "number",
+          "default": 20
+        },
+        {
+          "id": "session_sticky_sessions",
+          "question": "Are sticky sessions (session affinity) enabled on the load balancer?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "session_average_size_kb",
+          "question": "What is the approximate average session size (in KB)?",
+          "type": "number",
+          "default": 50
+        },
+        {
+          "id": "session_peak_concurrent",
+          "question": "What is the peak number of concurrent sessions during high traffic?",
+          "type": "number",
+          "default": 1000
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "session_redis_database_index",
+          "question": "Which Redis database index is used for session state?",
+          "type": "number",
+          "condition": {
+            "question_id": "session_private_provider",
+            "operator": "equals",
+            "value": "Redis (via Sitecore Redis session provider)"
+          }
+        },
+        {
+          "id": "session_sticky_cookie_name",
+          "question": "What is the sticky session cookie name configured on the load balancer?",
+          "type": "text",
+          "condition": {
+            "question_id": "session_sticky_sessions",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "session_custom_provider_detail",
+          "question": "Describe the custom session state provider implementation.",
+          "type": "text",
+          "condition": {
+            "question_id": "session_private_provider",
+            "operator": "equals",
+            "value": "Custom session provider"
+          }
+        },
+        {
+          "id": "session_sql_database_name",
+          "question": "What is the name of the SQL Server session state database?",
+          "type": "text",
+          "condition": {
+            "question_id": "session_private_provider",
+            "operator": "equals",
+            "value": "SQL Server session state"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_redis_session_from_multi_cd",
+          "infers": "session_private_provider",
+          "value": "Redis (via Sitecore Redis session provider)",
+          "condition": "compute_cd_instance_count >= 2 && caching_redis_in_use == true",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_inproc_from_single_cd",
+          "infers": "session_private_provider",
+          "value": "InProc (in-memory on each server)",
+          "condition": "compute_cd_instance_count == 1",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_no_sticky_from_redis",
+          "infers": "session_sticky_sessions",
+          "value": false,
+          "condition": "session_private_provider == 'Redis (via Sitecore Redis session provider)'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_shared_redis_from_xconnect",
+          "infers": "session_shared_provider",
+          "value": "Redis (via Sitecore Redis session provider)",
+          "condition": "xconnect_enabled == true && caching_redis_in_use == true",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "custom_integrations",
+      "name": "Custom Integrations",
+      "order": 13,
+      "description": "Captures third-party and custom integration points with the Sitecore environment including CRM, ERP, DAM, PIM, and API integrations that must be validated and potentially reconfigured during migration.",
+      "required_questions": [
+        {
+          "id": "integrations_crm",
+          "question": "Is Sitecore integrated with a CRM system?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "integrations_crm_platform",
+          "question": "Which CRM platform is integrated?",
+          "type": "select",
+          "options": [
+            "Salesforce",
+            "Microsoft Dynamics 365",
+            "HubSpot",
+            "None",
+            "Other"
+          ]
+        },
+        {
+          "id": "integrations_dam",
+          "question": "Is a Digital Asset Management (DAM) system integrated with the Sitecore media library?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "integrations_custom_api_count",
+          "question": "How many custom API integrations (REST/SOAP/GraphQL) does Sitecore consume or expose?",
+          "type": "number",
+          "default": 0
+        },
+        {
+          "id": "integrations_aws_services",
+          "question": "Which AWS-specific services does the Sitecore application directly integrate with?",
+          "type": "multi_select",
+          "options": [
+            "Amazon SQS",
+            "Amazon SNS",
+            "AWS Lambda",
+            "Amazon S3 (beyond media)",
+            "AWS Secrets Manager",
+            "AWS Systems Manager Parameter Store",
+            "Amazon CloudWatch (custom metrics)",
+            "Amazon Kinesis",
+            "AWS Step Functions",
+            "None"
+          ]
+        },
+        {
+          "id": "integrations_sitecore_modules",
+          "question": "Which Sitecore marketplace or third-party modules are installed?",
+          "type": "multi_select",
+          "options": [
+            "Sitecore Publishing Service",
+            "Sitecore JavaScript Services (JSS)",
+            "Sitecore Headless Services",
+            "Sitecore Experience Accelerator (SXA)",
+            "Sitecore Content Hub connector",
+            "Sitecore OrderCloud connector",
+            "Sitecore Commerce",
+            "Coveo for Sitecore",
+            "Unicorn serialization",
+            "Sitecore PowerShell Extensions (SPE)",
+            "None of the above"
+          ]
+        },
+        {
+          "id": "integrations_payment_gateway",
+          "question": "Is a payment gateway integrated with the Sitecore solution?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "integrations_crm_connector",
+          "question": "How is the CRM integration implemented?",
+          "type": "select",
+          "options": [
+            "Sitecore Connect for Salesforce CRM",
+            "Sitecore Connect for Dynamics 365",
+            "Custom integration code",
+            "Third-party connector"
+          ],
+          "condition": {
+            "question_id": "integrations_crm",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "integrations_dam_platform",
+          "question": "Which DAM platform is integrated?",
+          "type": "select",
+          "options": [
+            "Sitecore Content Hub DAM",
+            "Bynder",
+            "Cloudinary",
+            "Aprimo",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "integrations_dam",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "integrations_api_internal_external",
+          "question": "How many of the custom API integrations connect to internal systems vs. external/SaaS systems?",
+          "type": "text",
+          "condition": {
+            "question_id": "integrations_custom_api_count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "id": "integrations_payment_gateway_provider",
+          "question": "Which payment gateway provider is integrated?",
+          "type": "select",
+          "options": [
+            "Stripe",
+            "PayPal / Braintree",
+            "Adyen",
+            "Authorize.net",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "integrations_payment_gateway",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "integrations_commerce_version",
+          "question": "What version of Sitecore Commerce is deployed?",
+          "type": "text",
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore Commerce"
+          }
+        },
+        {
+          "id": "integrations_jss_rendering_host",
+          "question": "How is the JSS rendering host (Node.js) deployed?",
+          "type": "select",
+          "options": [
+            "Same EC2 instance as CD",
+            "Dedicated EC2 instance(s)",
+            "Docker container (ECS/EKS)",
+            "AWS Lambda (serverless SSR)",
+            "Not applicable (client-side rendering only)"
+          ],
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore JavaScript Services (JSS)"
+          }
+        },
+        {
+          "id": "integrations_jss_rendering_mode",
+          "question": "What rendering mode does the JSS application use?",
+          "type": "select",
+          "options": [
+            "Server-Side Rendering (SSR) with hydration",
+            "Client-Side Rendering (CSR) only",
+            "Static Site Generation (SSG)",
+            "Hybrid (SSR + CSR)"
+          ],
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore JavaScript Services (JSS)"
+          }
+        },
+        {
+          "id": "integrations_jss_framework",
+          "question": "Which front-end framework is the JSS application built with?",
+          "type": "select",
+          "options": [
+            "React",
+            "Next.js",
+            "Angular",
+            "Vue.js",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore JavaScript Services (JSS)"
+          }
+        },
+        {
+          "id": "integrations_publishing_service_version",
+          "question": "What version of Sitecore Publishing Service is deployed?",
+          "type": "text",
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore Publishing Service"
+          }
+        },
+        {
+          "id": "integrations_publishing_service_hosting",
+          "question": "How is the Publishing Service hosted?",
+          "type": "select",
+          "options": [
+            "Same server as CM",
+            "Dedicated EC2 instance",
+            "Docker container",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore Publishing Service"
+          }
+        },
+        {
+          "id": "integrations_sxa_site_count",
+          "question": "How many SXA-based sites are deployed?",
+          "type": "number",
+          "condition": {
+            "question_id": "integrations_sitecore_modules",
+            "operator": "contains",
+            "value": "Sitecore Experience Accelerator (SXA)"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_crm_false_when_none",
+          "infers": "integrations_crm",
+          "value": false,
+          "condition": "integrations_crm_platform == 'None'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_jss_from_headless",
+          "infers": "integrations_sitecore_modules",
+          "value": ["Sitecore JavaScript Services (JSS)"],
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "low"
+        },
+        {
+          "id": "infer_publishing_service_from_large_deployment",
+          "infers": "integrations_sitecore_modules",
+          "value": ["Sitecore Publishing Service"],
+          "condition": "compute_cd_instance_count >= 3",
+          "confidence": "medium"
+        }
+      ]
+    },
+    {
+      "id": "cicd",
+      "name": "CI/CD",
+      "order": 14,
+      "description": "Captures the continuous integration and deployment pipeline configuration including build tools, artifact management, deployment strategies, and environment promotion workflows to plan equivalent Azure DevOps or GitHub Actions pipelines.",
+      "required_questions": [
+        {
+          "id": "cicd_platform",
+          "question": "What CI/CD platform is used to build and deploy the Sitecore solution?",
+          "type": "select",
+          "options": [
+            "AWS CodePipeline / CodeBuild / CodeDeploy",
+            "Azure DevOps Pipelines",
+            "Jenkins",
+            "GitHub Actions",
+            "GitLab CI/CD",
+            "TeamCity",
+            "Octopus Deploy",
+            "Manual deployment",
+            "Other"
+          ]
+        },
+        {
+          "id": "cicd_source_control",
+          "question": "Where is the Sitecore solution source code hosted?",
+          "type": "select",
+          "options": [
+            "AWS CodeCommit",
+            "GitHub",
+            "Azure DevOps Repos",
+            "GitLab",
+            "Bitbucket",
+            "Other"
+          ]
+        },
+        {
+          "id": "cicd_deployment_strategy",
+          "question": "What deployment strategy is used for CD instance updates?",
+          "type": "select",
+          "options": [
+            "Rolling update (one instance at a time)",
+            "Blue/green deployment",
+            "Canary deployment",
+            "All-at-once deployment",
+            "Immutable deployment (replace instances)",
+            "Manual file copy / RDP"
+          ]
+        },
+        {
+          "id": "cicd_artifact_storage",
+          "question": "Where are build artifacts stored?",
+          "type": "select",
+          "options": [
+            "Amazon S3",
+            "AWS CodeArtifact",
+            "Azure Artifacts",
+            "JFrog Artifactory",
+            "NuGet feed (self-hosted)",
+            "File share",
+            "Container registry",
+            "Other"
+          ]
+        },
+        {
+          "id": "cicd_environment_count",
+          "question": "How many environments are in the deployment pipeline (e.g., Dev, QA, Staging, Prod)?",
+          "type": "number",
+          "default": 3
+        },
+        {
+          "id": "cicd_item_serialization",
+          "question": "How are Sitecore items serialized and deployed?",
+          "type": "select",
+          "options": [
+            "Sitecore Content Serialization (SCS)",
+            "Unicorn",
+            "TDS (Team Development for Sitecore)",
+            "Sitecore packages (manual)",
+            "Custom serialization",
+            "Not serialized"
+          ]
+        },
+        {
+          "id": "cicd_automated_testing",
+          "question": "Are automated tests included in the CI/CD pipeline?",
+          "type": "boolean",
+          "default": false
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "cicd_codepipeline_stages",
+          "question": "How many stages are in the CodePipeline configuration?",
+          "type": "number",
+          "condition": {
+            "question_id": "cicd_platform",
+            "operator": "equals",
+            "value": "AWS CodePipeline / CodeBuild / CodeDeploy"
+          }
+        },
+        {
+          "id": "cicd_bluegreen_details",
+          "question": "How is blue/green deployment orchestrated (e.g., Route 53 weighted, ALB target group swap)?",
+          "type": "text",
+          "condition": {
+            "question_id": "cicd_deployment_strategy",
+            "operator": "equals",
+            "value": "Blue/green deployment"
+          }
+        },
+        {
+          "id": "cicd_test_types",
+          "question": "What types of automated tests run in the pipeline?",
+          "type": "multi_select",
+          "options": [
+            "Unit tests",
+            "Integration tests",
+            "Smoke tests",
+            "Performance / load tests",
+            "Security scans (SAST/DAST)",
+            "Accessibility tests"
+          ],
+          "condition": {
+            "question_id": "cicd_automated_testing",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "cicd_environment_names",
+          "question": "List the environment names in promotion order (e.g., Dev → QA → Staging → UAT → Prod).",
+          "type": "text",
+          "condition": {
+            "question_id": "cicd_environment_count",
+            "operator": "greater_than",
+            "value": 2
+          }
+        },
+        {
+          "id": "cicd_environment_parity",
+          "question": "Do non-production environments mirror production in terms of infrastructure configuration?",
+          "type": "select",
+          "options": [
+            "Full parity (same topology, scaled down)",
+            "Partial parity (simplified topology, shared databases)",
+            "Minimal (single VM for all roles)",
+            "Varies by environment"
+          ],
+          "condition": {
+            "question_id": "cicd_environment_count",
+            "operator": "greater_than",
+            "value": 2
+          }
+        },
+        {
+          "id": "cicd_approval_gates",
+          "question": "Are manual approval gates configured between environments?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "cicd_environment_count",
+            "operator": "greater_than",
+            "value": 2
+          }
+        },
+        {
+          "id": "cicd_container_build",
+          "question": "Are Docker images built as part of the CI/CD pipeline?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "compute_hosting_model",
+            "operator": "in",
+            "value": [
+              "Docker containers on EC2",
+              "ECS Fargate",
+              "ECS on EC2",
+              "EKS (Kubernetes)"
+            ]
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_scs_from_sitecore_10x",
+          "infers": "cicd_item_serialization",
+          "value": "Sitecore Content Serialization (SCS)",
+          "condition": "compute_sitecore_version >= 10.0",
+          "confidence": "low"
+        },
+        {
+          "id": "infer_unicorn_from_sitecore_9x",
+          "infers": "cicd_item_serialization",
+          "value": "Unicorn",
+          "condition": "compute_sitecore_version >= 9.0 && compute_sitecore_version < 10.0",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_codepipeline_from_aws",
+          "infers": "cicd_platform",
+          "value": "AWS CodePipeline / CodeBuild / CodeDeploy",
+          "condition": "cicd_source_control == 'AWS CodeCommit'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_s3_artifacts_from_codepipeline",
+          "infers": "cicd_artifact_storage",
+          "value": "Amazon S3",
+          "condition": "cicd_platform == 'AWS CodePipeline / CodeBuild / CodeDeploy'",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "monitoring",
+      "name": "Monitoring",
+      "order": 15,
+      "description": "Captures the observability stack including application performance monitoring, log aggregation, alerting configuration, and health-check endpoints to plan migration to Azure Monitor, Application Insights, or equivalent services.",
+      "required_questions": [
+        {
+          "id": "monitoring_apm_tool",
+          "question": "What Application Performance Monitoring (APM) tool is used?",
+          "type": "select",
+          "options": [
+            "Amazon CloudWatch",
+            "New Relic",
+            "Datadog",
+            "Dynatrace",
+            "AppDynamics",
+            "Azure Application Insights (already)",
+            "Sitecore built-in diagnostics only",
+            "None",
+            "Other"
+          ]
+        },
+        {
+          "id": "monitoring_log_aggregation",
+          "question": "How are Sitecore application logs aggregated and stored?",
+          "type": "select",
+          "options": [
+            "Amazon CloudWatch Logs",
+            "ELK Stack (Elasticsearch, Logstash, Kibana)",
+            "Splunk",
+            "Datadog Logs",
+            "Sumo Logic",
+            "Graylog",
+            "Local log files only",
+            "Other"
+          ]
+        },
+        {
+          "id": "monitoring_alerting_configured",
+          "question": "Are automated alerts configured for Sitecore infrastructure and application health?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "monitoring_health_check_endpoints",
+          "question": "Are custom health-check endpoints deployed on Sitecore CM/CD?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "monitoring_custom_metrics",
+          "question": "Are custom application metrics collected from Sitecore (beyond default infrastructure metrics)?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "monitoring_uptime_sla",
+          "question": "What uptime SLA target is defined for the Sitecore platform?",
+          "type": "select",
+          "options": [
+            "99.0%",
+            "99.5%",
+            "99.9%",
+            "99.95%",
+            "99.99%",
+            "No formal SLA defined"
+          ]
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "monitoring_alert_channels",
+          "question": "What notification channels are used for alerts?",
+          "type": "multi_select",
+          "options": [
+            "Email",
+            "Slack",
+            "Microsoft Teams",
+            "PagerDuty",
+            "OpsGenie",
+            "SNS topics",
+            "Custom webhook"
+          ],
+          "condition": {
+            "question_id": "monitoring_alerting_configured",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "monitoring_alert_count",
+          "question": "Approximately how many alert rules are configured?",
+          "type": "number",
+          "condition": {
+            "question_id": "monitoring_alerting_configured",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "monitoring_custom_metrics_detail",
+          "question": "Describe the custom metrics being collected from Sitecore.",
+          "type": "text",
+          "condition": {
+            "question_id": "monitoring_custom_metrics",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "monitoring_log_retention_days",
+          "question": "What is the log retention period (in days)?",
+          "type": "number",
+          "condition": {
+            "question_id": "monitoring_log_aggregation",
+            "operator": "not_equals",
+            "value": "Local log files only"
+          }
+        },
+        {
+          "id": "monitoring_synthetics",
+          "question": "Are synthetic monitoring / uptime checks configured?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "monitoring_uptime_sla",
+            "operator": "not_equals",
+            "value": "No formal SLA defined"
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_cloudwatch_from_aws",
+          "infers": "monitoring_apm_tool",
+          "value": "Amazon CloudWatch",
+          "condition": "compute_hosting_model == 'IIS directly on EC2'",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_cloudwatch_logs_from_aws",
+          "infers": "monitoring_log_aggregation",
+          "value": "Amazon CloudWatch Logs",
+          "condition": "monitoring_apm_tool == 'Amazon CloudWatch'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_alerting_from_sla",
+          "infers": "monitoring_alerting_configured",
+          "value": true,
+          "condition": "monitoring_uptime_sla in ['99.9%', '99.95%', '99.99%']",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "name": "Networking / Firewall",
+      "order": 16,
+      "description": "Captures the VPC, subnet, security group, and network connectivity configuration including VPN tunnels, peering connections, and firewall rules to plan Azure Virtual Network and NSG migration.",
+      "required_questions": [
+        {
+          "id": "networking_vpc_count",
+          "question": "How many VPCs contain Sitecore infrastructure components?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "networking_subnet_tiers",
+          "question": "What subnet tiers exist in the Sitecore VPC?",
+          "type": "multi_select",
+          "options": [
+            "Public subnets (internet-facing load balancers)",
+            "Private subnets (application tier - CM/CD)",
+            "Private subnets (database tier)",
+            "Private subnets (search tier - Solr)",
+            "Management / bastion subnets"
+          ]
+        },
+        {
+          "id": "networking_az_count",
+          "question": "Across how many Availability Zones is the Sitecore infrastructure deployed?",
+          "type": "select",
+          "options": [
+            "1 AZ",
+            "2 AZs",
+            "3 AZs"
+          ]
+        },
+        {
+          "id": "networking_vpn_connection",
+          "question": "Is there a VPN or Direct Connect connection from AWS to the corporate network?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "networking_load_balancer_type",
+          "question": "What type of load balancer is used in front of CD instances?",
+          "type": "select",
+          "options": [
+            "Application Load Balancer (ALB)",
+            "Network Load Balancer (NLB)",
+            "Classic Load Balancer",
+            "No load balancer (CDN direct to single instance)",
+            "Third-party load balancer (F5, Nginx, etc.)"
+          ]
+        },
+        {
+          "id": "networking_nat_gateway",
+          "question": "Are NAT Gateways used for outbound internet access from private subnets?",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "id": "networking_bastion_access",
+          "question": "How is administrative access to EC2 instances managed?",
+          "type": "select",
+          "options": [
+            "Bastion host / jump box",
+            "AWS Systems Manager Session Manager",
+            "Direct RDP (public IP)",
+            "VPN + direct RDP",
+            "Other"
+          ]
+        },
+        {
+          "id": "networking_topology_pattern",
+          "question": "What network topology pattern is used for the AWS infrastructure?",
+          "type": "select",
+          "options": [
+            "Flat (single VPC, all resources)",
+            "Hub-spoke (shared services VPC + application VPCs)",
+            "Multi-VPC isolated (separate VPC per environment)",
+            "Transit Gateway centralized"
+          ]
+        },
+        {
+          "id": "networking_environment_isolation",
+          "question": "How are different environments (dev/staging/prod) isolated at the network level?",
+          "type": "select",
+          "options": [
+            "Separate VPCs per environment",
+            "Same VPC, separate subnets",
+            "Same VPC, security group isolation only",
+            "Separate AWS accounts per environment",
+            "No network isolation between environments"
+          ]
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "networking_vpn_type",
+          "question": "What type of VPN or connectivity is in use?",
+          "type": "select",
+          "options": [
+            "AWS Site-to-Site VPN",
+            "AWS Direct Connect",
+            "Direct Connect + VPN backup",
+            "Third-party VPN appliance",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "networking_vpn_connection",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "networking_vpn_bandwidth_mbps",
+          "question": "What is the provisioned bandwidth for the VPN/Direct Connect (in Mbps)?",
+          "type": "number",
+          "condition": {
+            "question_id": "networking_vpn_connection",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "networking_vpc_peering",
+          "question": "Are there VPC peering connections to other VPCs (e.g., shared services, other applications)?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "networking_vpc_count",
+            "operator": "greater_than_or_equal",
+            "value": 1
+          }
+        },
+        {
+          "id": "networking_security_group_count",
+          "question": "Approximately how many security groups are associated with Sitecore infrastructure?",
+          "type": "number",
+          "condition": {
+            "question_id": "networking_vpc_count",
+            "operator": "greater_than",
+            "value": 0
+          }
+        },
+        {
+          "id": "networking_private_endpoints",
+          "question": "Are VPC endpoints configured for AWS services (S3, RDS, etc.) to avoid public internet traffic?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "networking_nat_gateway",
+            "operator": "equals",
+            "value": true
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_alb_from_multi_cd",
+          "infers": "networking_load_balancer_type",
+          "value": "Application Load Balancer (ALB)",
+          "condition": "compute_cd_instance_count >= 2",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_multi_az_from_ha",
+          "infers": "networking_az_count",
+          "value": "2 AZs",
+          "condition": "database_ha_config == 'RDS Multi-AZ'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_vpn_from_corporate_dns",
+          "infers": "networking_vpn_connection",
+          "value": true,
+          "condition": "dns_provider == 'Corporate DNS (on-premises)'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_nat_gw_from_private_subnets",
+          "infers": "networking_nat_gateway",
+          "value": true,
+          "condition": "networking_subnet_tiers contains 'Private subnets (application tier - CM/CD)'",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "backup_dr",
+      "name": "Backup / DR",
+      "order": 17,
+      "description": "Captures disaster recovery strategy, backup schedules, retention policies, RTO/RPO targets, and multi-region configuration to plan Azure Backup, Azure Site Recovery, and geo-redundant architecture.",
+      "required_questions": [
+        {
+          "id": "backup_database_strategy",
+          "question": "How are Sitecore database backups managed?",
+          "type": "select",
+          "options": [
+            "RDS automated backups",
+            "SQL Server native backups to S3",
+            "AWS Backup service",
+            "Third-party backup tool",
+            "Manual backup process",
+            "No regular backups"
+          ]
+        },
+        {
+          "id": "backup_retention_days",
+          "question": "What is the database backup retention period (in days)?",
+          "type": "number",
+          "default": 7
+        },
+        {
+          "id": "backup_rpo_hours",
+          "question": "What is the target Recovery Point Objective (RPO) in hours?",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "id": "backup_rto_hours",
+          "question": "What is the target Recovery Time Objective (RTO) in hours?",
+          "type": "number",
+          "default": 4
+        },
+        {
+          "id": "backup_dr_region",
+          "question": "Is a secondary AWS region configured for disaster recovery?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "backup_ec2_ami_backups",
+          "question": "Are EC2 AMI (machine image) backups taken regularly?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "backup_dr_plan_documented",
+          "question": "Is there a documented and tested disaster recovery plan?",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "backup_media_backup",
+          "question": "How are media library and file-based assets backed up?",
+          "type": "select",
+          "options": [
+            "Covered by database backups (blobs in SQL)",
+            "S3 versioning and cross-region replication",
+            "S3 lifecycle + Glacier archival",
+            "EBS snapshots",
+            "Separate backup process",
+            "Not backed up separately"
+          ]
+        }
+      ],
+      "conditional_questions": [
+        {
+          "id": "backup_dr_region_name",
+          "question": "Which secondary AWS region is used for DR?",
+          "type": "select",
+          "options": [
+            "us-east-1 (N. Virginia)",
+            "us-east-2 (Ohio)",
+            "us-west-1 (N. California)",
+            "us-west-2 (Oregon)",
+            "eu-west-1 (Ireland)",
+            "eu-west-2 (London)",
+            "eu-central-1 (Frankfurt)",
+            "ap-southeast-1 (Singapore)",
+            "ap-northeast-1 (Tokyo)",
+            "Other"
+          ],
+          "condition": {
+            "question_id": "backup_dr_region",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "backup_dr_strategy",
+          "question": "What DR strategy is implemented in the secondary region?",
+          "type": "select",
+          "options": [
+            "Pilot light (minimal resources, scale up on failover)",
+            "Warm standby (reduced capacity always running)",
+            "Hot standby / active-active",
+            "Backup and restore only"
+          ],
+          "condition": {
+            "question_id": "backup_dr_region",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "backup_ami_frequency",
+          "question": "How frequently are EC2 AMI backups taken?",
+          "type": "select",
+          "options": [
+            "Daily",
+            "Weekly",
+            "Monthly",
+            "After each deployment",
+            "Ad-hoc"
+          ],
+          "condition": {
+            "question_id": "backup_ec2_ami_backups",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "backup_dr_last_tested",
+          "question": "When was the DR plan last tested?",
+          "type": "select",
+          "options": [
+            "Within the last month",
+            "Within the last quarter",
+            "Within the last year",
+            "Over a year ago",
+            "Never tested"
+          ],
+          "condition": {
+            "question_id": "backup_dr_plan_documented",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "backup_point_in_time_recovery",
+          "question": "Is point-in-time recovery enabled for the database?",
+          "type": "boolean",
+          "condition": {
+            "question_id": "backup_database_strategy",
+            "operator": "equals",
+            "value": "RDS automated backups"
+          }
+        },
+        {
+          "id": "backup_active_active_details",
+          "question": "How is active-active traffic distribution managed between regions?",
+          "type": "select",
+          "options": [
+            "Route 53 latency-based routing",
+            "Route 53 weighted routing",
+            "Global Accelerator",
+            "CDN-based (CloudFront with multiple origins)",
+            "Application-level routing"
+          ],
+          "condition": {
+            "question_id": "backup_dr_strategy",
+            "operator": "equals",
+            "value": "Hot standby / active-active"
+          }
+        },
+        {
+          "id": "backup_db_replication_type",
+          "question": "How is database replication handled between regions for DR?",
+          "type": "select",
+          "options": [
+            "RDS cross-region read replica",
+            "SQL Server Always On AG (cross-region)",
+            "AWS DMS continuous replication",
+            "Custom backup/restore process",
+            "No cross-region DB replication"
+          ],
+          "condition": {
+            "question_id": "backup_dr_region",
+            "operator": "equals",
+            "value": true
+          }
+        },
+        {
+          "id": "backup_failover_automation",
+          "question": "Is the DR failover process automated or manual?",
+          "type": "select",
+          "options": [
+            "Fully automated (health check triggers failover)",
+            "Semi-automated (runbook with scripts)",
+            "Manual (documented procedure, human-initiated)",
+            "No documented failover process"
+          ],
+          "condition": {
+            "question_id": "backup_dr_region",
+            "operator": "equals",
+            "value": true
+          }
+        }
+      ],
+      "inference_rules": [
+        {
+          "id": "infer_rds_backup_from_rds",
+          "infers": "backup_database_strategy",
+          "value": "RDS automated backups",
+          "condition": "database_engine == 'Amazon RDS for SQL Server'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_media_backup_from_sql_blobs",
+          "infers": "backup_media_backup",
+          "value": "Covered by database backups (blobs in SQL)",
+          "condition": "storage_media_strategy == 'SQL Server database (default blob storage)'",
+          "confidence": "high"
+        },
+        {
+          "id": "infer_media_backup_from_s3",
+          "infers": "backup_media_backup",
+          "value": "S3 versioning and cross-region replication",
+          "condition": "storage_media_strategy == 'Amazon S3 via custom blob provider'",
+          "confidence": "medium"
+        },
+        {
+          "id": "infer_no_dr_region_from_single_az",
+          "infers": "backup_dr_region",
+          "value": false,
+          "condition": "networking_az_count == '1 AZ'",
+          "confidence": "medium"
+        }
+      ]
+    }
+  ]
+}

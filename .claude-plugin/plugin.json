@@ -1,6 +1,6 @@
 {
   "name": "migration-planner",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "description": "Sitecore XP AWS-to-Azure migration planning assistant. Guides architects through structured discovery, cross-reference analysis, phased estimation, and client-ready deliverable generation.",
   "skills": [
     {
@@ -64,6 +64,48 @@
       "path": "skills/migrate-calibrate",
       "user_invocable": true,
       "command": "/migrate calibrate"
+    },
+    {
+      "name": "migrate-switch",
+      "description": "Switch between multiple migration assessments in the same project. Lists all assessments and lets you pick which one to work on.",
+      "path": "skills/migrate-switch",
+      "user_invocable": true,
+      "command": "/migrate switch"
+    },
+    {
+      "name": "migrate-dashboard",
+      "description": "Generate an interactive HTML dashboard with toggleable scope, AI alternatives, assumption scenarios, and real-time estimate recalculation.",
+      "path": "skills/migrate-dashboard",
+      "user_invocable": true,
+      "command": "/migrate dashboard"
+    },
+    {
+      "name": "migrate-challenge",
+      "description": "Run a skeptical quality review on a completed workflow step. Three agent personas (Orchestrator, Challenger, Researcher) autonomously review data quality with live web search validation, looping until confidence threshold is met.",
+      "path": "skills/migrate-challenge",
+      "user_invocable": true,
+      "command": "/migrate challenge"
+    },
+    {
+      "name": "migrate-research",
+      "description": "Deep-research any platform and build a complete knowledge pack. Runs a coordinated team of research agents (Architecture Analyst, Version Historian, Ecosystem Scout, Gotcha Miner, Effort Calibrator, Security Auditor, Licensing Analyst, Path Mapper, Discovery Builder) that write structured data directly to the database via MCP tools.",
+      "path": "skills/migrate-research",
+      "user_invocable": true,
+      "command": "/migrate research"
+    },
+    {
+      "name": "migrate-wbs",
+      "description": "Generate a work breakdown structure (Epics/Stories/Tasks) from the refined migration estimate. Creates actionable work items suitable for import into Jira, Azure DevOps, or other project management tools.",
+      "path": "skills/migrate-wbs",
+      "user_invocable": true,
+      "command": "/migrate wbs"
+    },
+    {
+      "name": "migrate-team",
+      "description": "Recommend team composition (roles, headcount, allocation, cost projections) based on the migration estimate, complexity, and timeline.",
+      "path": "skills/migrate-team",
+      "user_invocable": true,
+      "command": "/migrate team"
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "migration-planner-db": {
+      "command": "node",
+      "args": ["apps/mcp-server/dist/index.js"],
+      "type": "stdio",
+      "env": {
+        "DATABASE_URL": "postgresql://dakotasmith@localhost:5432/migration_planner"
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}

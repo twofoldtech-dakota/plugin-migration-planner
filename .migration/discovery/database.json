@@ -1,0 +1,22 @@
+{
+  "dimension": "database",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "engine": { "value": "SQL Server 2019 Enterprise", "confidence": "confirmed" },
+    "hosting": { "value": "RDS", "confidence": "confirmed" },
+    "multi_az": { "value": true, "confidence": "confirmed" },
+    "database_count": { "value": 11, "confidence": "confirmed" },
+    "total_size_gb": { "value": 120, "confidence": "assumed", "basis": "CloudWatch storage metrics, not exact" },
+    "largest_db_gb": { "value": 45, "confidence": "assumed", "basis": "Estimated xDB collection" },
+    "collation": { "value": "SQL_Latin1_General_CP1_CI_AS", "confidence": "assumed", "basis": "Sitecore default assumed" },
+    "custom_schemas": { "value": false, "confidence": "assumed" },
+    "databases": [
+      "Sitecore_Core", "Sitecore_Master", "Sitecore_Web",
+      "Sitecore_ExperienceForms", "Sitecore_EXM_Master",
+      "Sitecore_MarketingAutomation", "Sitecore_Processing_Pools",
+      "Sitecore_Processing_Tasks", "Sitecore_ReferenceData",
+      "Sitecore_Xdb_Collection", "Sitecore_Xdb_Collection_Shard1"
+    ]
+  }
+}

@@ -18,7 +18,7 @@
     },
     "Lambda": {
       "azure_equivalent": "Azure Functions",
-      "notes": "Runtime compatibility check required. Trigger types differ."
+      "notes": "Runtime compatibility check required. Trigger mappings: API Gateway trigger → HTTP trigger, S3 event → Blob trigger, SQS → Service Bus trigger, CloudWatch Events → Timer trigger, DynamoDB Streams → Cosmos DB trigger. Lambda Layers have no direct equivalent — use NuGet packages or shared projects. Lambda@Edge → Azure Front Door Rules Engine or Azure Functions with Front Door integration."
     }
   },
   "database": {
@@ -174,7 +174,7 @@
   "email": {
     "SES": {
       "azure_equivalent": "Azure Communication Services / SendGrid",
-      "notes": "SendGrid is the most common for Sitecore EXM. ACS for newer implementations. IP reputation doesn't transfer."
+      "notes": "SendGrid is common for Sitecore SMTP relay. Azure Communication Services for newer implementations. If using SES as SMTP relay, update Sitecore SMTP settings to new provider."
     },
     "WorkMail": {
       "azure_equivalent": "Exchange Online (Microsoft 365)",
@@ -197,6 +197,28 @@
     "ECR": {
       "azure_equivalent": "Azure Container Registry (ACR)",
       "notes": "Image migration required. Geo-replication available on Premium tier."
+    }
+  },
+  "messaging_streaming": {
+    "SQS": {
+      "azure_equivalent": "Azure Service Bus Queues / Azure Storage Queues",
+      "notes": "Service Bus for enterprise messaging (sessions, dead-letter, transactions). Storage Queues for simple high-volume scenarios. SQS FIFO → Service Bus sessions."
+    },
+    "SNS": {
+      "azure_equivalent": "Azure Service Bus Topics / Azure Event Grid",
+      "notes": "Service Bus Topics for pub/sub with subscriptions and filters. Event Grid for event-driven architectures. SNS SMS → Azure Communication Services."
+    },
+    "Kinesis Data Streams": {
+      "azure_equivalent": "Azure Event Hubs",
+      "notes": "Event Hubs provides similar partition-based streaming. Kinesis shard → Event Hubs partition. Capture feature for archival to Blob Storage."
+    },
+    "Kinesis Firehose": {
+      "azure_equivalent": "Azure Event Hubs Capture / Azure Stream Analytics",
+      "notes": "Event Hubs Capture for direct-to-storage. Stream Analytics for transformation before delivery."
+    },
+    "Step Functions": {
+      "azure_equivalent": "Azure Durable Functions / Azure Logic Apps",
+      "notes": "Durable Functions for code-first orchestration. Logic Apps for low-code integration workflows. Step Functions state machine → Durable Functions orchestrator pattern."
     }
   },
   "backup": {

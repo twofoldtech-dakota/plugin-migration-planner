@@ -1,6 +1,44 @@
 # Discovery Dimensions Reference
 
-This document describes each of the 17 discovery dimensions used by the Sitecore XP AWS-to-Azure migration planner. For every dimension it explains what is covered, why it matters during migration, what to look for, and how gaps in discovery data affect estimation accuracy.
+This document describes each of the 22 discovery dimensions used by the Sitecore XP AWS-to-Azure migration planner. Dimensions are split into two categories: **Infrastructure** (16 dimensions covering the cloud platform layer) and **Platform** (6 dimensions covering the Sitecore application, content, and team layer). For every dimension it explains what is covered, why it matters during migration, what to look for, and how gaps in discovery data affect estimation accuracy.
+
+---
+
+## Confidence Impact Matrix
+
+The table below ranks each dimension by its impact on estimate accuracy. Use this to prioritize discovery interviews — dimensions with higher impact should be investigated first.
+
+| Priority | Dimension | Estimation Impact | Typical Hours Swing | Why |
+|----------|-----------|------------------|--------------------|----|
+| 1 | Database | Critical | 40-120 hrs | Size determines migration window, HA topology drives architecture, collation issues are late-stage blockers |
+| 2 | Custom Integrations | Critical | 24-80 hrs | Every undiscovered integration is a cutover-day failure. Most common source of timeline overruns |
+| 3 | Compute/Hosting | High | 16-48 hrs | Instance counts and types drive Azure sizing costs and architecture. Auto-scaling complexity varies widely |
+| 4 | xConnect/xDB | High | 16-60 hrs | Shard migration, custom facets, and contact volume dominate Phase 2 duration for XP topologies |
+| 5 | Networking/Firewall | High | 12-40 hrs | CIDR conflicts and security rule translation are day-one outage risks. VPN/ExpressRoute lead times affect timeline |
+| 6 | Search (Solr) | Medium-High | 8-32 hrs | Index rebuild time directly affects cutover window. Custom computed fields can block Cognitive Search path |
+| 7 | Caching (Redis) | Medium | 8-24 hrs | Tier selection affects cost and performance. Custom Lua scripts and cluster-mode add complexity |
+| 8 | Session State | Medium | 8-20 hrs | Incorrect migration causes intermittent user-facing failures that are hard to diagnose |
+| 9 | CI/CD | Medium | 8-24 hrs | AWS-native pipelines require full rebuild. Blocks deployment to Azure during testing |
+| 10 | Identity | Medium | 8-20 hrs | SSO integrations require cross-org coordination with external lead times |
+| 11 | SSL/TLS | Medium | 4-16 hrs | ACM certs are non-transferable. Certificate pinning causes hard failures |
+| 12 | Monitoring | Low-Medium | 4-12 hrs | Must be rebuilt but rarely blocks migration. Biggest risk is flying blind post-cutover |
+| 13 | Storage/Media | Low-Medium | 4-16 hrs | Usually straightforward but large media libraries (100GB+) need dedicated transfer planning |
+| 14 | CDN | Low-Medium | 4-16 hrs | Lambda@Edge functions are the wild card — simple CDN configs migrate easily |
+| 15 | DNS | Low | 2-8 hrs | Critical for cutover but low effort. Main risk is undiscovered high TTLs |
+| 16 | Backup/DR | Low-Medium | 4-40 hrs | Simple for backup-restore DR, but active-active or sub-1h RTO fundamentally changes architecture |
+| | **Platform Dimensions** | | | |
+| 17 | Customization | Critical | 24-120 hrs | Pipeline count and code quality directly determine code migration effort. Deep customization can 2x the estimate |
+| 18 | Content & Data Volume | High | 16-80 hrs | Item count and language versions drive content migration duration. Large volumes require phased approach |
+| 19 | Frontend Architecture | High | 20-80 hrs | MVC-to-JSS transitions are 40+ hour efforts. Mixed rendering adds infrastructure complexity |
+| 20 | Third-Party Modules | High | 16-60 hrs | Deprecated or forked modules are late-stage blockers. Each incompatible module adds a testing cycle |
+| 21 | Team & Timeline | Medium | 8-40 hrs | Inexperienced teams add 20-30% overhead. Imminent deadlines compress testing and increase risk |
+| 22 | Performance Baselines | Medium | 8-24 hrs | High SLA requirements fundamentally change Azure architecture. Missing baselines prevent post-migration validation |
+
+### Reading This Matrix
+- **Priority 1-3**: Must-have before estimation. Gaps here make estimates unreliable.
+- **Priority 4-6**: Should-have. Assumptions in these dimensions carry significant widening hours.
+- **Priority 7-11**: Important for accuracy but can be estimated with moderate confidence from topology defaults.
+- **Priority 11-16**: Lower impact. Reasonable defaults usually produce acceptable estimates.
 
 ---
 
@@ -23,16 +61,17 @@ This document describes each of the 17 discovery dimensions used by the Sitecore
 
 ## 2. Database
 
-**What it covers.** This dimension inventories every SQL Server database supporting the Sitecore platform: the SQL Server version and edition, whether databases run on Amazon RDS or self-managed EC2 instances, high-availability configuration (Multi-AZ, Always On, log shipping), the complete list of databases (core, master, web, reporting, EXM, xDB shards, custom), their sizes, custom stored procedures or CLR objects, and collation settings.
+**What it covers.** This dimension inventories every SQL Server database supporting the Sitecore platform: the SQL Server version and edition, whether databases run on Amazon RDS or self-managed EC2 instances, high-availability configuration (Multi-AZ, Always On, log shipping), the complete list of databases (core, master, web, reporting, xDB shards, custom), their sizes, custom stored procedures or CLR objects, and collation settings.
 
 **Why it matters for AWS-to-Azure migration.** The database tier is typically the highest-risk component. RDS-managed databases cannot be lifted and shifted; they must be migrated via backup/restore, DMS, or export/import into Azure SQL Database, Azure SQL Managed Instance, or SQL Server on Azure VMs. Collation mismatches between source and target can cause silent data corruption. HA topology must be rebuilt using Azure-native constructs such as failover groups or availability groups.
 
 **Key things to look for / red flags.**
 - SQL Server versions that are not supported on the target Azure SQL platform (e.g., SQL 2014 targeting Azure SQL Database).
-- Custom CLR assemblies, linked servers, or cross-database queries that are not supported on Azure SQL Database and require Managed Instance or IaaS.
+- Custom CLR assemblies, linked servers, or cross-database queries that are not supported on Azure SQL Database and require Managed Instance or IaaS. These are platform blockers that force the database target decision.
 - Very large databases (over 500 GB) that will have extended migration windows and may exceed Azure SQL Database size limits.
 - Non-standard collation settings that differ from Sitecore defaults (`SQL_Latin1_General_CP1_CI_AS`).
 - RDS parameter group customizations that need equivalents in Azure.
+- Compliance requirements (HIPAA, GDPR, PCI DSS) that constrain database tier selection, encryption configuration, audit logging, and data residency region choices.
 
 **Impact of incomplete information.** Unknown database sizes make it impossible to estimate migration window duration. Missing custom object inventories guarantee late-stage blockers when stored procedures or CLR assemblies fail on the target platform. Without HA configuration details, the Azure architecture may not meet the same availability SLA.
 
@@ -140,20 +179,20 @@ This document describes each of the 17 discovery dimensions used by the Sitecore
 
 ---
 
-## 9. Email (EXM)
+## 9. Email / SMTP
 
-**What it covers.** This dimension assesses the Sitecore Email Experience Manager deployment: whether EXM is actively used, monthly and peak dispatch volumes, the mail transfer agent type (Sitecore's built-in MTA, Amazon SES, third-party ESP), dedicated sending IP addresses, email template count and complexity, and suppression/bounce list management.
+**What it covers.** This dimension captures the transactional email configuration: the SMTP relay or mail service in use (Amazon SES, SendGrid, on-premise relay, etc.), Sitecore's SMTP settings in configuration files, any custom email sending logic, and DNS records (SPF, DKIM, DMARC) tied to the sending infrastructure.
 
-**Why it matters for AWS-to-Azure migration.** Amazon SES is not available on Azure, so the sending infrastructure must move to a third-party ESP (SendGrid, Mailgun, etc.) or Azure Communication Services. Dedicated IP addresses and their sending reputation cannot be transferred; new IPs require a warm-up period that can take weeks. EXM dispatch configuration changes must be tested thoroughly to avoid deliverability regressions.
+**Why it matters for AWS-to-Azure migration.** If Amazon SES is used as the SMTP relay, it is not available on Azure and must be replaced with an alternative (SendGrid, Azure Communication Services, or another SMTP provider). SMTP connection strings in Sitecore config files must be updated. DNS records for email authentication (SPF, DKIM) may need updating if the sending infrastructure changes.
 
 **Key things to look for / red flags.**
-- High dispatch volumes (over 100,000 emails/month) that require careful IP warm-up planning on the new provider.
-- Dedicated sending IPs with established reputation that will be lost during migration.
-- Custom dispatch logic or MTA configurations that are tightly coupled to Amazon SES APIs.
-- SPF, DKIM, and DMARC records that must be updated for the new sending infrastructure.
-- Large suppression lists that must be exported and imported to the new provider to avoid sending to bad addresses.
+- SMTP relay configured to use Amazon SES endpoints that won't be accessible from Azure.
+- Hard-coded SMTP settings in Sitecore configuration files or custom code.
+- SPF, DKIM, and DMARC records that reference AWS SES infrastructure.
+- Custom email sending code that uses AWS SES SDK instead of standard SMTP.
+- Firewall rules that restrict outbound SMTP to specific AWS IP ranges.
 
-**Impact of incomplete information.** Unknown dispatch volumes prevent proper IP warm-up planning, risking deliverability drops and domain blacklisting. Missing suppression list data causes compliance violations and reputation damage. Undocumented SES integrations silently fail, and marketing emails stop flowing without alerts.
+**Impact of incomplete information.** Undocumented SMTP configuration causes transactional emails (password resets, form confirmations, workflow notifications) to silently fail after migration. Missing DNS record updates can cause email delivery failures or spam classification.
 
 ---
 
@@ -290,3 +329,111 @@ This document describes each of the 17 discovery dimensions used by the Sitecore
 - Compliance or regulatory requirements that mandate specific backup retention periods or geographic storage constraints.
 
 **Impact of incomplete information.** Without clear RPO/RTO requirements, the Azure architecture may be designed to a lower resilience standard than the business expects. Undocumented backup dependencies can lead to data loss if Azure-side backups are not configured before the AWS environment is decommissioned. Missing DR topology details result in an Azure deployment with no disaster recovery, creating unacceptable business risk.
+
+---
+
+# Platform Dimensions
+
+The following 6 dimensions cover the Sitecore application layer, content, customization, and organizational factors that directly drive platform-specific migration effort. Infrastructure dimensions alone typically account for only 30-40% of total migration effort; these platform dimensions capture the remaining 60-70%.
+
+---
+
+## 18. Content & Data Volume
+
+**What it covers.** This dimension quantifies the Sitecore content footprint: total item count across all databases, number of content languages and their fallback chains, content type (template) count, content tree depth, media library size, workflow complexity, publishing frequency, personalization rules, and shared content across sites or languages.
+
+**Why it matters for AWS-to-Azure migration.** Content volume is the primary driver of content migration duration. Every content item must be migrated with its field values, language versions, workflow states, and security settings intact. Deep content trees can exceed path length limits on Azure App Service. Complex workflows with branching approval logic require careful recreation and validation. Personalization rules that reference xDB data must be verified against the migrated analytics database.
+
+**Key things to look for / red flags.**
+- Very large content trees (100K+ items) that require phased migration strategies and extended cutover windows.
+- Deep content trees (20+ levels) that may hit path length limits on Azure or cause serialization issues.
+- Complex branching workflows that are difficult to validate automatically and require content editor involvement.
+- Extensive personalization rules that depend on xDB contact data, goals, and campaign data being migrated correctly.
+- Heavy content sharing across sites or languages, which complicates migration ordering and validation.
+
+**Impact of incomplete information.** Unknown content volume makes migration duration estimates guesswork. Missing workflow complexity details lead to broken approval processes on the target. Undiscovered personalization rules silently deliver wrong content to visitors after migration. Content tree depth issues surface late as failures in publishing or serialization.
+
+---
+
+## 19. Customization Depth
+
+**What it covers.** This dimension assesses the extent of custom code in the Sitecore solution: custom pipeline processors, renderings/components, configuration patch files, solution architecture (Helix compliance), ORM framework usage, scheduled agents, event handlers, custom API endpoints, and overall code quality (documentation, test coverage).
+
+**Why it matters for AWS-to-Azure migration.** Customization depth is the strongest predictor of code migration effort. Every custom pipeline processor, event handler, and API endpoint must be reviewed for AWS-specific dependencies and Sitecore version compatibility. Non-Helix codebases are harder to understand and migrate safely. Low code quality with no tests means changes cannot be validated automatically, requiring extensive manual testing.
+
+**Key things to look for / red flags.**
+- High pipeline processor counts (30+) indicating a heavily customized request pipeline that touches every page request.
+- No Helix architecture, making it difficult to identify module boundaries and dependencies.
+- Glass Mapper on older versions (v4.x) that may not be compatible with target Sitecore versions.
+- Low code quality with no documentation or tests, which forces the migration team to reverse-engineer behavior.
+- Many event handlers that may fire during content migration and cause unexpected side effects.
+
+**Impact of incomplete information.** Under-estimated customization depth is the most common cause of migration timeline overruns. Every undiscovered pipeline processor or event handler is a potential runtime failure on Azure. Unknown code quality forces the team to discover test gaps during UAT rather than during planning.
+
+---
+
+## 20. Frontend Architecture
+
+**What it covers.** This dimension documents the rendering technology stack: primary rendering approach (MVC, SXA, JSS, Headless Next.js, or mixed), rendering host configuration, frontend build pipeline, JavaScript framework, component count, design system or CSS framework, and responsive design complexity.
+
+**Why it matters for AWS-to-Azure migration.** The rendering approach determines whether the migration involves just infrastructure changes (pure MVC stays on IIS) or a significant architectural shift (JSS/Headless requires Node.js hosting on Azure). Mixed MVC + JSS deployments are the most complex, requiring two rendering pipelines. Frontend build pipelines tied to the CI/CD system must be migrated alongside the application code.
+
+**Key things to look for / red flags.**
+- Mixed MVC + JSS rendering, which doubles the frontend infrastructure footprint and adds routing complexity.
+- JSS or Headless rendering hosts that require separate Azure App Service or VM provisioning.
+- Large component counts (100+) that require systematic migration and visual regression testing.
+- Custom build pipelines that reference AWS services or local tooling not available on Azure.
+- SXA themes that include custom rendering variants needing compatibility validation.
+
+**Impact of incomplete information.** Unknown rendering approaches lead to missing infrastructure requirements (Node.js hosts, additional App Services). Undiscovered component counts result in under-scoped frontend testing. Missing build pipeline details block deployment to Azure environments during migration.
+
+---
+
+## 21. Team & Timeline
+
+**What it covers.** This dimension captures the human factors: total migration team size, Sitecore platform experience level, Azure/target platform experience level, number of parallel workstreams possible, deadline pressure, and training requirements across Azure fundamentals, Sitecore on Azure, Infrastructure as Code, CI/CD, and monitoring.
+
+**Why it matters for AWS-to-Azure migration.** Team experience directly affects migration velocity and error rate. A team with limited Sitecore experience will take 20-30% longer on platform-specific tasks (content migration, code migration) and make more mistakes that require rework. Imminent deadlines compress testing cycles and force parallel work that increases coordination overhead and risk. Training needs that are not addressed before migration starts cause on-the-job learning that slows progress.
+
+**Key things to look for / red flags.**
+- Teams with no Sitecore experience attempting a platform migration — requires significant training investment.
+- Imminent deadlines (< 6 weeks) that may not allow adequate testing or training time.
+- Single-person teams that cannot parallelize workstreams, extending the critical path.
+- No Azure experience combined with complex infrastructure requirements (hub-spoke, ExpressRoute, HA).
+- Training needs identified but no time budgeted for training delivery.
+
+**Impact of incomplete information.** Unknown team experience levels lead to optimistic estimates that assume expert velocity. Missing deadline information prevents risk-adjusted planning. Undiscovered training gaps surface as mistakes during migration execution that require rework.
+
+---
+
+## 22. Third-Party Module Inventory
+
+**What it covers.** This dimension inventories all third-party and marketplace modules: total count, specific modules in use (SXA, Forms, EXM, Coveo, Commerce, etc.), whether any modules have been custom-forked from their original source, version compatibility with the target Sitecore version, license portability to Azure, and whether any deprecated modules (WFFM, legacy EXM) are still in use.
+
+**Why it matters for AWS-to-Azure migration.** Third-party modules are common sources of late-stage blockers. Deprecated modules like WFFM must be replaced with supported alternatives (Sitecore Forms), requiring data migration and re-testing. Custom-forked modules cannot be upgraded via standard vendor packages and must be manually merged or reimplemented. Version incompatibilities discovered during testing require unplanned code changes with their own testing cycles.
+
+**Key things to look for / red flags.**
+- WFFM or other deprecated modules still in active use, requiring a replacement project within the migration.
+- Heavily forked modules (3+) that cannot be updated to target-compatible versions without significant effort.
+- Unknown version compatibility, which means compatibility testing will happen during migration rather than during planning.
+- Modules with non-portable licenses that require re-licensing negotiation with vendors.
+- Large module counts (15+) that multiply compatibility testing effort.
+
+**Impact of incomplete information.** Undiscovered deprecated modules become migration blockers when they fail on the target version. Unknown forks surface as version upgrade failures during testing. Missing license information creates commercial blockers that can halt migration at go-live.
+
+---
+
+## 23. Performance Baselines
+
+**What it covers.** This dimension records current performance metrics that must be maintained or improved post-migration: page load times (p50), time to first byte (TTFB), cache hit rates, full site publish duration, peak concurrent user counts, contractual or business availability SLAs, and whether load test results exist as a comparison baseline.
+
+**Why it matters for AWS-to-Azure migration.** Performance baselines serve two critical purposes: they inform Azure sizing decisions (ensuring the target can handle peak traffic), and they provide comparison targets for post-migration validation. High availability SLAs (99.95%+) fundamentally change the Azure architecture, requiring hot standby, automated failover, and zero-downtime deployment strategies that add significant complexity and cost.
+
+**Key things to look for / red flags.**
+- High availability SLAs (99.95%+) that require active-passive or active-active Azure architecture.
+- Slow publish times (60+ minutes) that may indicate database or content tree issues that will carry over to Azure.
+- Low cache hit rates (< 50%) that put higher load on compute infrastructure and may require CDN optimization.
+- High peak concurrent users (10K+) requiring careful Azure VM sizing and auto-scaling configuration.
+- No existing load test results, which means post-migration performance cannot be compared to a known baseline.
+
+**Impact of incomplete information.** Unknown performance baselines make post-migration validation impossible — the team cannot determine if performance has degraded. Missing SLA requirements lead to under-architected Azure deployments that fail to meet business expectations. Unknown peak traffic patterns result in under-provisioned infrastructure that fails under real load.

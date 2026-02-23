@@ -1,0 +1,1 @@
+import"../chunks/Nq2m2xDw.js";import{p as r,b as i,g as m,u as n}from"../chunks/DcamcR-f.js";import{C as o}from"../chunks/BaMsmqDw.js";function d(s,e){r(e,!0);{let a=n(()=>{var t;return((t=e.data.assessment)==null?void 0:t.id)??""});o(s,{step:"estimate",stepLabel:"Estimate",get reviews(){return e.data.reviews},get assessmentId(){return m(a)}})}i()}export{d as component};

@@ -1,0 +1,19 @@
+{
+  "dimension": "search",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "search_solr_version": {
+      "value": "8.8",
+      "confidence": "assumed",
+      "basis": "inferred: Sitecore 10.4 ships with Solr 8.8+ compatibility",
+      "notes": ""
+    },
+    "search_solr_ssl": {
+      "value": true,
+      "confidence": "assumed",
+      "basis": "inferred: Solr SSL required since Sitecore 9.1",
+      "notes": ""
+    }
+  }
+}

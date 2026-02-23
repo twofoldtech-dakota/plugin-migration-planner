@@ -1,0 +1,14 @@
+{
+  "dimension": "networking",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "vpc_count": { "value": 1, "confidence": "confirmed" },
+    "subnet_count": { "value": 6, "confidence": "confirmed" },
+    "vpn_site_to_site": { "value": true, "confidence": "confirmed" },
+    "vpn_throughput": { "value": "unknown", "confidence": "unknown", "basis": "Not disclosed" },
+    "vpn_destination": { "value": "On-premises data center", "confidence": "confirmed" },
+    "security_groups": { "value": 12, "confidence": "confirmed" },
+    "nat_gateway": { "value": true, "confidence": "confirmed" }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "dimension": "identity",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "identity_server_deployed": {
+      "value": true,
+      "confidence": "assumed",
+      "basis": "inferred: Identity Server present since Sitecore 9.1",
+      "notes": ""
+    },
+    "identity_server_hosting": {
+      "value": "Same EC2 instance as CM",
+      "confidence": "assumed",
+      "basis": "inferred: single CM instance typically hosts Identity Server on same box",
+      "notes": ""
+    }
+  }
+}

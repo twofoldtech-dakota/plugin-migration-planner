@@ -2,10 +2,8 @@
 	import { page } from '$app/state';
 	import Card from '$lib/components/ui/Card.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
-	import Stat from '$lib/components/ui/Stat.svelte';
 	import Tabs from '$lib/components/ui/Tabs.svelte';
 	import CollapsibleSection from '$lib/components/ui/CollapsibleSection.svelte';
-	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
 	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import ScenarioSelector from '$lib/components/ScenarioSelector.svelte';
 	import AiToolToggles from '$lib/components/AiToolToggles.svelte';
@@ -27,6 +25,12 @@
 	const assumptions = $derived((data.analysis?.assumptions ?? []) as any[]);
 	const estimateVersions = $derived(data.estimateVersions ?? []);
 
+	const statusBadge = $derived(
+		estimate
+			? { variant: 'success' as const, label: 'Estimated' }
+			: { variant: 'muted'   as const, label: 'No Estimate' }
+	);
+
 	// Compare mode
 	const compareEstimate = $derived(data.compareEstimate as any);
 	const isCompareMode = $derived(!!compareEstimate);
@@ -37,8 +41,12 @@
 	);
 
 	// AI tool state
-	let aiToggles = $state<Record<string, boolean>>({ ...(data.aiSelections?.selections ?? {}) });
+	let aiToggles = $state<Record<string, boolean>>({});
 	const aiTools = $derived((data.aiAlternatives ?? []) as any[]);
+
+	$effect(() => {
+		aiToggles = { ...(data.aiSelections?.selections ?? {}) };
+	});
 
 	// Proficiency data for adoption overhead
 	const profData = $derived(data.proficiencyData as ProficiencyData | undefined);
@@ -52,7 +60,7 @@
 
 	// Tab from URL param or default
 	const urlTab = $derived(page.url.searchParams.get('tab'));
-	let activeTab = $state(urlTab ?? 'phases');
+	let activeTab = $state('phases');
 
 	$effect(() => {
 		if (urlTab && ['phases', 'ai-tools', 'roles'].includes(urlTab)) {
@@ -60,11 +68,11 @@
 		}
 	});
 
-	const tabs = [
+	const tabs = $derived([
 		{ id: 'phases', label: 'Phases' },
 		{ id: 'ai-tools', label: 'AI Tools', count: aiTools.length },
 		{ id: 'roles', label: 'By Role' }
-	];
+	]);
 
 	// Scenario totals from shared engine
 	const scenarioTotals = $derived(computeScenarioTotals(phases, aiToggles, profData));
@@ -109,6 +117,64 @@
 		return aiTools.filter((t: any) => t.applicable_components?.includes(comp.id));
 	}
 
+	function getRoleDescription(role: string, compId: string, compName: string): string {
+		const ctx = (compId + ' ' + compName).toLowerCase();
+		const isDb = /database|db|sql|mysql|postgres|mssql/.test(ctx);
+		const isCompute = /compute|vm|server|ec2|container|app.?service/.test(ctx);
+		const isNetworking = /network|dns|ssl|tls|cdn|load.?balanc|firewall/.test(ctx);
+		const isCicd = /ci.?cd|pipeline|deploy|build|release/.test(ctx);
+		const isMonitoring = /monitor|log|alert|observ|telemetry/.test(ctx);
+		const isStorage = /storage|blob|s3|file.?share/.test(ctx);
+		const isSearch = /search|solr|elastic/.test(ctx);
+		const isIdentity = /identity|auth|sso|oauth|oidc/.test(ctx);
+		const isCaching = /cach|redis|session/.test(ctx);
+		const isXconnect = /xconnect|xdb|analytic|tracker/.test(ctx);
+
+		const r = role.toLowerCase().replace(/-/g, '_');
+
+		if (r.includes('infrastructure') || r === 'infra_eng') {
+			if (isDb) return 'Provision the target database service, configure networking and security groups, set up backup and high-availability policies.';
+			if (isCompute) return 'Size and provision target compute resources, configure auto-scaling groups, set up load balancers and health checks.';
+			if (isNetworking) return 'Configure DNS records, SSL/TLS certificates, firewall rules, and network peering between source and target environments.';
+			if (isCicd) return 'Set up build agents and runners, configure deployment pipeline infrastructure, manage secrets and environment variable injection.';
+			if (isMonitoring) return 'Deploy monitoring agents and collectors, configure dashboards, set up alerting rules and on-call escalation paths.';
+			if (isStorage) return 'Provision storage accounts, configure replication and geo-redundancy, define access policies and lifecycle management rules.';
+			if (isSearch) return 'Provision and configure search cluster, set up node roles and replication, tune JVM heap and memory settings.';
+			if (isCaching) return 'Provision cache cluster, configure eviction policies and persistence mode, set up connection pooling and failover.';
+			return 'Provision required infrastructure resources, configure networking and security boundaries, validate service connectivity.';
+		}
+
+		if (r === 'dba' || r.includes('database')) {
+			if (isDb) return 'Assess schema compatibility, execute data migration scripts, validate row counts and referential integrity, tune query performance on target.';
+			if (isXconnect) return 'Migrate xDB collections, validate analytics records completeness, assess and convert any custom schema extensions.';
+			return 'Assess data dependencies, support schema conversion, validate data integrity and query correctness post-migration.';
+		}
+
+		if (r.includes('sitecore') || r.includes('developer') || r.includes('dev')) {
+			if (isIdentity) return 'Reconfigure Sitecore Identity Server, update SSO provider settings, validate token issuance and role claim mapping.';
+			if (isXconnect) return 'Update xConnect connection strings and certificates, validate tracker and collection service configuration, test analytics pipeline end-to-end.';
+			if (isSearch) return 'Reconfigure Sitecore search providers for target environment, rebuild indexes, validate content search queries and results.';
+			if (isCaching) return 'Update cache provider connection strings and session state configuration, validate caching behaviour under load.';
+			if (isCicd) return 'Update deployment scripts and environment transforms for target, configure publish targets, validate end-to-end release pipeline.';
+			if (isDb) return 'Update connection strings and ORM configuration, validate data access layer against migrated schema, fix any compatibility issues.';
+			return 'Update application configuration for the target environment, validate Sitecore functionality, resolve any custom code compatibility issues.';
+		}
+
+		if (r.includes('qa') || r.includes('test')) {
+			if (isDb) return 'Validate data completeness and integrity via regression queries, verify application behaviour against migrated data set.';
+			if (isNetworking) return 'Validate SSL certificate chain and expiry, confirm DNS propagation, run end-to-end connectivity and redirect tests.';
+			if (isMonitoring) return 'Verify alert firing and routing, confirm dashboards reflect accurate metrics, execute synthetic monitoring tests.';
+			if (isCicd) return 'Validate pipeline stages and approval gates, run integration tests in the new environment, document pass/fail criteria.';
+			return 'Execute smoke tests and regression suite, validate functional requirements against acceptance criteria, document sign-off status.';
+		}
+
+		if (r.includes('project') || r === 'pm' || r.includes('manager')) {
+			return 'Coordinate cross-team dependencies and sequencing, track progress against milestones, communicate status to stakeholders, update the risk log.';
+		}
+
+		return 'Execute assigned tasks, collaborate with other roles on blockers, and validate completion against acceptance criteria.';
+	}
+
 	async function setAllTools(enabled: boolean) {
 		const all: Record<string, boolean> = {};
 		aiTools.forEach((t: any) => all[t.id] = enabled);
@@ -137,6 +203,7 @@
 		<div>
 			<div class="flex items-center gap-2">
 				<h1 class="text-xl font-extrabold uppercase tracking-wider">Estimate</h1>
+				<Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
 				<button onclick={() => drawerSection = 'page'} class="flex items-center justify-center w-5 h-5 text-text-muted hover:text-primary transition-colors" aria-label="About this page">
 					<span class="text-[10px] font-mono opacity-60">(i)</span>
 				</button>
@@ -145,16 +212,9 @@
 				Phase and component breakdown
 			</p>
 		</div>
-		<div class="flex items-center gap-3">
-			{#if estimate && estimateVersions.length > 0}
-				<VersionSwitcher versions={estimateVersions} currentVersion={estimate.version} />
-			{/if}
-			{#if estimate}
-				<Badge variant={confidenceVariant(estimate.confidence_score)}>
-					{estimate.confidence_score}% confidence
-				</Badge>
-			{/if}
-		</div>
+		{#if estimate && estimateVersions.length > 0}
+			<VersionSwitcher versions={estimateVersions} currentVersion={estimate.version} />
+		{/if}
 	</div>
 
 	{#if isCompareMode && comparison}
@@ -482,33 +542,51 @@
 		<!-- Scenario Selector -->
 		<ScenarioSelector {scenario} onchange={(s) => scenario = s} totals={scenarioTotals} />
 
-		<!-- Summary Cards -->
-		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-			<Card>
-				<Stat label="Total Hours" value="{Math.round(totalHours).toLocaleString()}h" detail="{phases.length} phases" tooltip="Sum of all component hours for the active scenario, after multipliers and AI savings." />
-			</Card>
-			<Card>
-				<Stat
-					label="AI Savings"
-					value="{savings > 0 ? '-' : ''}{Math.round(Math.abs(savings))}h"
-					detail="{savingsPercent}% reduction"
-					tooltip="Hours reduced by enabled AI tools vs. manual baseline. Capped at 50% per component."
-				/>
-			</Card>
-			<Card>
-				<div class="space-y-3">
-					<Stat label="Confidence" value="{estimate.confidence_score}%" tooltip="Based on confirmed vs. assumed answers. Higher = more reliable estimate." />
-					<ProgressBar value={estimate.confidence_score} variant={confidenceVariant(estimate.confidence_score)} />
+		<!-- Summary Bar -->
+		<div class="brutal-border bg-surface px-5 py-3 flex items-center gap-6 flex-wrap">
+			<Tooltip text="Sum of all component hours for the active scenario, after multipliers and AI savings." position="bottom">
+				<div class="flex items-baseline gap-1.5 cursor-help">
+					<span class="text-2xl font-extrabold font-mono tracking-tight">{Math.round(totalHours).toLocaleString()}h</span>
+					<span class="text-xs font-bold uppercase tracking-wider text-text-muted">{phases.length} phases</span>
 				</div>
-			</Card>
-			<Card>
-				<Stat
-					label="Assumptions"
-					value={assumptions.length}
-					detail="{assumptions.filter((a: any) => a.validation_status === 'validated').length} validated"
-					tooltip="Unconfirmed inputs. Each unvalidated assumption adds widening hours."
-				/>
-			</Card>
+			</Tooltip>
+
+			<span class="w-px h-6 bg-border-light hidden sm:block" aria-hidden="true"></span>
+
+			{#if savings > 0}
+				<Tooltip text="Hours reduced by enabled AI tools vs. manual baseline. Capped at 50% per component." position="bottom">
+					<div class="flex items-baseline gap-1.5 cursor-help">
+						<span class="text-sm font-extrabold font-mono text-success">-{Math.round(savings)}h</span>
+						<span class="text-xs text-text-muted">AI savings ({savingsPercent}%)</span>
+					</div>
+				</Tooltip>
+
+				<span class="w-px h-6 bg-border-light hidden sm:block" aria-hidden="true"></span>
+			{/if}
+
+			<Tooltip text="Based on confirmed vs. assumed answers. Higher = more reliable estimate." position="bottom">
+				<div class="flex items-center gap-2 cursor-help">
+					<span class="text-sm font-extrabold font-mono">{estimate.confidence_score}%</span>
+					<div class="w-20 h-1.5 bg-border-light border border-brutal">
+						<div
+							class="h-full transition-all duration-300
+								{estimate.confidence_score >= 70 ? 'bg-success' : estimate.confidence_score >= 40 ? 'bg-warning' : 'bg-danger'}"
+							style="width: {estimate.confidence_score}%"
+						></div>
+					</div>
+					<span class="text-xs text-text-muted">confidence</span>
+				</div>
+			</Tooltip>
+
+			<span class="w-px h-6 bg-border-light hidden sm:block" aria-hidden="true"></span>
+
+			<Tooltip text="Unconfirmed inputs. Each unvalidated assumption adds widening hours." position="bottom">
+				<div class="flex items-baseline gap-1.5 cursor-help">
+					<span class="text-sm font-extrabold font-mono">{assumptions.length}</span>
+					<span class="text-xs text-text-muted">assumptions</span>
+					<span class="text-[10px] font-mono text-success">({assumptions.filter((a: any) => a.validation_status === 'validated').length} validated)</span>
+				</div>
+			</Tooltip>
 		</div>
 
 		<!-- Main Content Tabs -->
@@ -580,112 +658,142 @@
 												</td>
 											</tr>
 											{#if expanded}
+												{@const compHours = comp.hours as any}
+												{@const linkedAssumptions = (comp.assumptions_affecting ?? []) as string[]}
+												{@const validatedCount = linkedAssumptions.filter(id => assumptions.find((a: any) => a.id === id)?.validation_status === 'validated').length}
+												{@const multipliers = (comp.multipliers_applied ?? []) as any[]}
+												{@const roles = Object.entries(comp.by_role ?? {}) as [string, number][]}
+												{@const maxRoleH = Math.max(...roles.map(([,h]) => h), 1)}
 												<tr>
 													<td colspan="6" class="px-4 py-4 bg-bg border-b border-border-light">
-														<div class="grid gap-4 sm:grid-cols-2">
-															<div>
-																<Tooltip text="Optimistic / Expected / Pessimistic hours for each scenario" position="right">
-																<h4 class="text-xs font-extrabold uppercase tracking-wider text-text-muted mb-2 cursor-help">Hours Breakdown</h4>
-															</Tooltip>
-																<div class="space-y-1 text-xs font-mono">
-																	{#if comp.hours}
-																		{@const h = comp.hours as any}
-																		<div class="flex justify-between">
-																			<span class="text-text-muted">Manual (opt/exp/pess)</span>
-																			<span>{h.without_ai?.optimistic ?? '-'} / {h.without_ai?.expected ?? '-'} / {h.without_ai?.pessimistic ?? '-'}</span>
-																		</div>
-																		<div class="flex justify-between">
-																			<span class="text-text-muted">AI-Assisted (opt/exp/pess)</span>
-																			<span class="text-success">{h.with_ai?.optimistic ?? '-'} / {h.with_ai?.expected ?? '-'} / {h.with_ai?.pessimistic ?? '-'}</span>
-																		</div>
-																	{/if}
-																	{#if comp.gotcha_hours > 0}
-																		<div class="flex justify-between text-warning">
-																			<Tooltip text="Extra hours from known gotcha patterns — common pitfalls for this component type" position="right">
-																				<span class="cursor-help">Gotcha hours</span>
-																			</Tooltip>
-																			<span>+{comp.gotcha_hours}h</span>
-																		</div>
-																	{/if}
-																	{#if comp.assumption_dependent_hours > 0}
-																		<div class="flex justify-between text-danger">
-																			<Tooltip text="Hours that depend on unvalidated assumptions. May change when assumptions are validated." position="right">
-																				<span class="cursor-help">Assumption-dependent</span>
-																			</Tooltip>
-																			<span>{comp.assumption_dependent_hours}h</span>
-																		</div>
-																	{/if}
-																</div>
+														<!-- ── Metric cards ──────────────────────── -->
+														<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+															<div class="bg-surface brutal-border-thin px-3 py-2">
+																<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block">Manual</span>
+																<span class="text-sm font-extrabold font-mono">{compHours?.without_ai?.expected ?? comp.base_hours ?? '-'}h</span>
+																{#if compHours?.without_ai}
+																	<span class="text-[10px] font-mono text-text-faint block">{compHours.without_ai.optimistic} – {compHours.without_ai.pessimistic}</span>
+																{/if}
 															</div>
-
-															{#if comp.by_role && Object.keys(comp.by_role).length > 0}
-																<div>
-																	<h4 class="text-xs font-extrabold uppercase tracking-wider text-text-muted mb-2">By Role</h4>
-																	<div class="space-y-1 text-xs">
-																		{#each Object.entries(comp.by_role) as [role, hours]}
-																			<div class="flex justify-between items-center">
-																				<span class="text-text-secondary">{formatRole(role)}</span>
-																				<span class="font-mono font-bold">{hours}h</span>
-																			</div>
-																		{/each}
-																	</div>
+															<div class="bg-surface brutal-border-thin px-3 py-2">
+																<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block">AI-Assisted</span>
+																<span class="text-sm font-extrabold font-mono text-success">{compHours?.with_ai?.expected ?? '-'}h</span>
+																{#if compHours?.with_ai}
+																	<span class="text-[10px] font-mono text-text-faint block">{compHours.with_ai.optimistic} – {compHours.with_ai.pessimistic}</span>
+																{/if}
+															</div>
+															{#if comp.gotcha_hours > 0}
+																<div class="bg-surface brutal-border-thin px-3 py-2">
+																	<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block">Gotcha</span>
+																	<span class="text-sm font-extrabold font-mono text-warning">+{comp.gotcha_hours}h</span>
+																	<span class="text-[10px] text-text-faint block">known pitfalls</span>
 																</div>
 															{/if}
-
-															{#if comp.multipliers_applied && (comp.multipliers_applied as any[]).length > 0}
-																<div>
-																	<h4 class="text-xs font-extrabold uppercase tracking-wider text-text-muted mb-2">Multipliers</h4>
-																	<div class="flex flex-wrap gap-1">
-																		{#each comp.multipliers_applied as mult}
-																			<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-warning-light text-warning border border-warning">
-																				{typeof mult === 'string' ? mult : (mult as any).name ?? (mult as any).id}
-																				{#if typeof mult === 'object' && (mult as any).factor}
-																					&times;{(mult as any).factor}
-																				{/if}
-																			</span>
-																		{/each}
-																	</div>
-																</div>
-															{/if}
-
-															{#if compTools.length > 0}
-																<div>
-																	<h4 class="text-xs font-extrabold uppercase tracking-wider text-text-muted mb-2">AI Tools</h4>
-																	<div class="space-y-2">
-																		{#each compTools as tool}
-																			<div class="flex items-center justify-between gap-2">
-																				<div class="min-w-0">
-																					<span class="text-xs font-bold">{tool.name}</span>
-																					<span class="text-[10px] text-text-muted ml-1">-{tool.hours_saved?.expected ?? 0}h</span>
-																				</div>
-																				<Toggle
-																					checked={aiToggles[tool.id] !== false}
-																					onchange={(v) => toggleAiTool(tool.id, v)}
-																					size="sm"
-																				/>
-																			</div>
-																		{/each}
-																	</div>
-																</div>
-															{/if}
-
-															{#if comp.assumptions_affecting && (comp.assumptions_affecting as string[]).length > 0}
-																<div class="sm:col-span-2">
-																	<h4 class="text-xs font-extrabold uppercase tracking-wider text-text-muted mb-2">Linked Assumptions</h4>
-																	<div class="flex flex-wrap gap-1">
-																		{#each comp.assumptions_affecting as aId}
-																			{@const assumption = assumptions.find((a: any) => a.id === aId)}
-																			<span class="inline-flex items-center px-2 py-0.5 text-xs font-mono
-																				{assumption?.validation_status === 'validated'
-																				? 'bg-success-light text-success border border-success'
-																				: 'bg-warning-light text-warning border border-warning'}">
-																				{aId}
-																			</span>
-																		{/each}
-																	</div>
+															{#if comp.assumption_dependent_hours > 0}
+																<div class="bg-surface brutal-border-thin px-3 py-2">
+																	<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block">At Risk</span>
+																	<span class="text-sm font-extrabold font-mono text-danger">{comp.assumption_dependent_hours}h</span>
+																	<span class="text-[10px] text-text-faint block">assumption-dep.</span>
 																</div>
 															{/if}
 														</div>
+
+														<!-- ── Compact metadata strip ───────────── -->
+														<div class="flex flex-wrap items-start gap-x-6 gap-y-3 text-xs">
+															<!-- Multipliers -->
+															{#if multipliers.length > 0}
+																<div>
+																	<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1">Multipliers</span>
+																	<div class="flex flex-wrap gap-1">
+																		{#each multipliers as mult}
+																			{@const name = typeof mult === 'string' ? mult : (mult.name ?? mult.id ?? '')}
+																			{@const factor = typeof mult === 'object' ? mult.factor : null}
+																			{@const shortName = name.length > 30 ? name.split(/\s/).slice(0, 3).join(' ') + '...' : name}
+																			<Tooltip text={name} position="top">
+																				<span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold bg-warning-light text-warning border border-warning cursor-help">
+																					{shortName}{#if factor}&nbsp;&times;{factor}{/if}
+																				</span>
+																			</Tooltip>
+																		{/each}
+																	</div>
+																</div>
+															{/if}
+
+															<!-- Linked Assumptions -->
+															{#if linkedAssumptions.length > 0}
+																<div>
+																	<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1">Assumptions</span>
+																	<a href="/assessments/{data.assessment.id}/analysis?tab=assumptions" class="inline-flex items-center gap-1.5 px-2 py-0.5 font-bold border no-underline hover:opacity-80 transition-opacity
+																		{validatedCount === linkedAssumptions.length
+																			? 'bg-success-light text-success border-success'
+																			: 'bg-warning-light text-warning border-warning'}">
+																		{linkedAssumptions.length} linked
+																		<span class="text-[10px] font-normal">({validatedCount} validated)</span>
+																	</a>
+																</div>
+															{/if}
+														</div>
+
+														<!-- ── Effort by Role (full width) ──────── -->
+														{#if roles.length > 0}
+															<div class="mt-3">
+																<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1">Effort by Role</span>
+																<div class="space-y-2">
+																	{#each roles.sort((a, b) => b[1] - a[1]) as [role, hours]}
+																		<div>
+																			<div class="flex items-center gap-2">
+																				<span class="text-[11px] font-bold w-[140px] shrink-0 truncate">{formatRole(role)}</span>
+																				<div class="flex-1 h-[6px] bg-border-light">
+																					<div class="h-full bg-primary transition-all duration-300" style="width: {(hours / maxRoleH) * 100}%"></div>
+																				</div>
+																				<span class="text-[11px] font-mono font-bold w-10 shrink-0 text-right">{hours}h</span>
+																			</div>
+																			<p class="text-[10px] text-text-muted leading-snug mt-0.5 ml-[148px]">{getRoleDescription(role, comp.id ?? '', comp.name ?? '')}</p>
+																		</div>
+																	{/each}
+																</div>
+															</div>
+														{/if}
+
+														<!-- ── AI Acceleration (full width) ──────── -->
+														{#if compTools.length > 0}
+															{@const enabledTools = compTools.filter(t => aiToggles[t.id] !== false)}
+															{@const totalSavings = enabledTools.reduce((s, t) => s + (t.hours_saved?.expected ?? 0), 0)}
+															<div class="mt-3">
+																<div class="flex items-center justify-between mb-1.5">
+																	<span class="text-[10px] font-bold uppercase tracking-wider text-text-muted">AI Acceleration</span>
+																	{#if totalSavings > 0}
+																		<span class="text-[10px] font-mono font-bold text-success">-{totalSavings}h with {enabledTools.length} tool{enabledTools.length !== 1 ? 's' : ''}</span>
+																	{:else}
+																		<span class="text-[10px] font-mono text-text-faint">no tools enabled</span>
+																	{/if}
+																</div>
+																<div class="grid gap-px bg-border-light brutal-border-thin overflow-hidden">
+																	{#each compTools as tool}
+																		{@const isEnabled = aiToggles[tool.id] !== false}
+																		<div class="px-3 py-2 bg-surface {isEnabled ? '' : 'opacity-50'}">
+																			<div class="flex items-center justify-between gap-3">
+																				<div class="flex items-center gap-2 min-w-0">
+																					<span class="text-xs font-bold">{tool.name}</span>
+																					{#if tool.vendor}
+																						<span class="text-[10px] text-text-faint">{tool.vendor}</span>
+																					{/if}
+																				</div>
+																				<div class="flex items-center gap-2 shrink-0">
+																					<span class="text-[10px] font-mono font-bold {isEnabled ? 'text-success' : 'text-text-faint'}">-{tool.hours_saved?.expected ?? 0}h</span>
+																					{#if tool.cost}
+																						<span class="text-[10px] px-1 py-px border border-border-light text-text-muted">{tool.cost.type === 'free' ? 'Free' : tool.cost.type}</span>
+																					{/if}
+																				</div>
+																			</div>
+																			{#if tool.description}
+																				<p class="text-[10px] text-text-muted leading-snug mt-1">{tool.description}</p>
+																			{/if}
+																		</div>
+																	{/each}
+																</div>
+															</div>
+														{/if}
 													</td>
 												</tr>
 											{/if}

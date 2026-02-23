@@ -1,0 +1,13 @@
+{
+  "dimension": "session_state",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "session_private_provider": {
+      "value": "InProc (in-memory on each server)",
+      "confidence": "assumed",
+      "basis": "inferred: single CD instance typically uses InProc session state",
+      "notes": ""
+    }
+  }
+}

@@ -6,9 +6,11 @@ Feed back actual hours from a completed (or in-progress) migration to compare ag
 
 ### 1. Load Existing Data
 
-1. Read `.migration/assessment.json` — verify assessment exists
-2. Read `.migration/estimate.json` — the original estimates to compare against
-3. Read existing calibration files in `.migration/calibration/` if any
+1. Call `get_assessment` with `project_path` (current working directory). Fall back to `.migration/assessment.json`. Verify an assessment exists.
+2. Call `get_estimate` with the assessment ID. Fall back to `.migration/estimate.json`. This provides the original estimates to compare against (including AI alternatives used).
+3. Read AI selections from the estimate data or fall back to `.migration/ai-alternatives-selection.json`.
+4. Read `skills/migrate-knowledge/heuristics/ai-alternatives.json` — for tool details
+5. Read existing calibration files in `.migration/calibration/` if any
 
 ### 2. Gather Actuals
 
@@ -24,6 +26,8 @@ For each data point, also ask:
 - Were there any surprises or unexpected issues? (helps identify new gotcha patterns)
 - What went smoother than expected? (helps calibrate overestimates)
 - What took longer than expected and why?
+- Which AI tools were actually used? (from the list of enabled tools in the estimate)
+- For each AI tool used: How many hours did it actually save compared to the estimate?
 
 ### 3. Calculate Variance
 
@@ -46,6 +50,7 @@ Look for systemic patterns:
 - **Multiplier accuracy**: Were the complexity multipliers accurate?
 - **Gotcha pattern accuracy**: Did the predicted gotchas actually materialize?
 - **Unpredicted issues**: What happened that wasn't in the gotcha patterns?
+- **AI tool accuracy**: Did the estimated AI savings match actual savings? Which tools over/under-delivered?
 
 ### 5. Generate Calibration Insights
 
@@ -56,7 +61,9 @@ For each significant variance:
 
 ### 6. Write Calibration Data
 
-Write `.migration/calibration/<engagement-name>.json`:
+**Step 1 — Save to MCP (primary):** Call the `save_calibration` MCP tool with the assessment ID, engagement name, phases, components, AI tool actuals, surprises, and suggested adjustments.
+
+**Step 2 — Write JSON snapshot:** Write `.migration/calibration/<engagement-name>.json`:
 ```json
 {
   "generated_at": "ISO date",
@@ -107,6 +114,34 @@ Write `.migration/calibration/<engagement-name>.json`:
       "component": "solr_standalone",
       "reason": "Index rebuild was faster than estimated on Premium SSD",
       "hours_saved": 8
+    }
+  ],
+  "ai_tools_actuals": [
+    {
+      "id": "terraform_opentofu",
+      "name": "Terraform / OpenTofu",
+      "was_used": true,
+      "estimated_savings_hours": 16,
+      "actual_savings_hours": 20,
+      "variance_percent": 25,
+      "notes": "IaC saved even more time on second environment deployment"
+    },
+    {
+      "id": "github_copilot",
+      "name": "GitHub Copilot",
+      "was_used": true,
+      "estimated_savings_hours": 10,
+      "actual_savings_hours": 6,
+      "variance_percent": -40,
+      "notes": "Sitecore-specific code suggestions were often inaccurate"
+    },
+    {
+      "id": "azure_dms",
+      "name": "Azure Database Migration Service",
+      "was_used": false,
+      "estimated_savings_hours": 5,
+      "actual_savings_hours": 0,
+      "notes": "Team chose manual migration due to VPN constraints"
     }
   ],
   "suggested_heuristic_adjustments": [
@@ -162,10 +197,16 @@ Key Insights:
   2. Database migration was faster than expected (Premium SSD performance)
   3. New gotcha discovered: SQL MI subnet delegation conflicts
 
+AI Tool Performance:
+  ✓ Terraform/OpenTofu:  Estimated 16 hrs saved → Actual 20 hrs (+25%)
+  ⚠ GitHub Copilot:      Estimated 10 hrs saved → Actual 6 hrs (-40%)
+  ✗ Azure DMS:           Not used (VPN constraints)
+
 Suggested Heuristic Updates:
   - networking_vnet base hours: 16 → 20
   - vpn_connectivity multiplier: 1.3 → 1.5
   - New gotcha pattern: sql_mi_subnet_prep (+8 hrs)
+  - GitHub Copilot savings: Reduce expected from 10 → 6 hrs for Sitecore projects
 ```
 
 ### 8. Update Assessment Status

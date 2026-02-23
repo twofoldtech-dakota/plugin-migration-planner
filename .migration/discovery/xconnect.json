@@ -1,0 +1,12 @@
+{
+  "dimension": "xconnect",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "xconnect_enabled": { "value": true, "confidence": "confirmed" },
+    "collection_db_shards": { "value": 2, "confidence": "confirmed" },
+    "estimated_contacts": { "value": "500K-2M", "confidence": "assumed", "basis": "Range given by client, not verified" },
+    "custom_facets": { "value": "suspected", "confidence": "assumed", "basis": "Client mentioned loyalty data in xDB, unconfirmed schema" },
+    "xdb_rebuild_needed": { "value": "likely", "confidence": "assumed" }
+  }
+}

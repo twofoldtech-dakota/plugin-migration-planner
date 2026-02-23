@@ -17,14 +17,14 @@
     {
       "id": "compute_before_sitecore_roles",
       "predecessor": "compute_single_role",
-      "successors": ["identity_server", "xconnect_xdb", "exm_dispatch"],
+      "successors": ["identity_server", "xconnect_xdb"],
       "type": "hard",
       "reason": "VMs must exist and be configured before Sitecore roles can be deployed"
     },
     {
       "id": "database_before_sitecore",
       "predecessor": "database_single",
-      "successors": ["identity_server", "xconnect_xdb", "exm_dispatch", "testing_validation"],
+      "successors": ["identity_server", "xconnect_xdb", "content_serialization_sync", "testing_validation"],
       "type": "hard",
       "reason": "Databases must be migrated and accessible before Sitecore can start with valid connection strings"
     },
@@ -106,11 +106,67 @@
       "reason": "Final data sync and validation must complete before DNS switch"
     },
     {
-      "id": "xconnect_before_exm",
-      "predecessor": "xconnect_xdb",
-      "successors": ["exm_dispatch"],
+      "id": "keyvault_before_sitecore",
+      "predecessor": "managed_identity_keyvault",
+      "successors": ["identity_server", "xconnect_xdb", "compute_single_role"],
       "type": "hard",
-      "reason": "xConnect must be operational before EXM can function (contact data dependency)"
+      "reason": "Managed Identity and Key Vault must be configured before Sitecore roles can reference secrets and connection strings"
+    },
+    {
+      "id": "compute_before_publishing_service",
+      "predecessor": "compute_single_role",
+      "successors": ["publishing_service"],
+      "type": "hard",
+      "reason": "Publishing Service VM must be provisioned after base compute infrastructure is in place"
+    },
+    {
+      "id": "database_before_publishing_service",
+      "predecessor": "database_single",
+      "successors": ["publishing_service"],
+      "type": "hard",
+      "reason": "Publishing Service requires database connection strings to Core, Master, and Web databases"
+    },
+    {
+      "id": "database_before_content",
+      "predecessor": "database_single",
+      "successors": ["content_migration"],
+      "type": "hard",
+      "reason": "Content migration requires target databases to be provisioned and accessible with valid schemas"
+    },
+    {
+      "id": "content_before_testing",
+      "predecessor": "content_migration",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "Content must be migrated before functional testing can validate content rendering, workflows, and personalization"
+    },
+    {
+      "id": "code_migration_before_testing",
+      "predecessor": "code_migration",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "Custom code must be migrated and deployed before functional and regression testing can begin"
+    },
+    {
+      "id": "frontend_before_testing",
+      "predecessor": "frontend_rebuild",
+      "successors": ["testing_validation"],
+      "type": "hard",
+      "reason": "Frontend rendering must be functional before visual regression and cross-browser testing can proceed"
+    },
+    {
+      "id": "training_before_cutover",
+      "predecessor": "training",
+      "successors": ["cutover_execution"],
+      "type": "soft",
+      "reason": "Team should complete training before production cutover, though cutover can proceed with experienced team members"
+    },
+    {
+      "id": "go_live_planning_before_cutover",
+      "predecessor": "go_live_planning",
+      "successors": ["cutover_execution"],
+      "type": "hard",
+      "reason": "Cutover runbook, rollback plan, and go/no-go criteria must be finalized before production cutover begins"
     }
   ],
   "critical_path_template": {
@@ -121,7 +177,12 @@
       "database_single",
       "identity_server",
       "xconnect_xdb",
+      "content_migration",
+      "code_migration",
+      "frontend_rebuild",
       "testing_validation",
+      "training",
+      "go_live_planning",
       "backup_dr",
       "cutover_execution",
       "dns_cutover"

@@ -1,0 +1,12 @@
+{
+  "dimension": "backup_dr",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "backup_provider": { "value": "AWS Backup", "confidence": "confirmed" },
+    "rpo_hours": { "value": 4, "confidence": "confirmed" },
+    "rto_hours": { "value": 8, "confidence": "confirmed" },
+    "dr_region": { "value": "us-west-2 (secondary)", "confidence": "confirmed" },
+    "db_backup_retention_days": { "value": 30, "confidence": "confirmed" }
+  }
+}

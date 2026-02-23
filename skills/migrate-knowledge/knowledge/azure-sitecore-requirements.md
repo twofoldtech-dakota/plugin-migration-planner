@@ -104,6 +104,40 @@
 - Limitations: Custom Solr plugins won't work, some advanced search features differ
 - Benefits: Fully managed, no infrastructure to maintain
 
+## Identity & Access Management
+
+### Managed Identity
+- **System-assigned**: Use for single-purpose resources (each Sitecore VM gets its own identity). Lifecycle tied to the resource — deleted when VM is deleted
+- **User-assigned**: Use for shared access patterns (e.g., multiple CD instances accessing the same Key Vault and SQL MI). Lifecycle independent — persists across resource recreation
+- **Recommendation**: Use user-assigned Managed Identity for Sitecore role groups (one identity per role type: CM, CD, xConnect) to simplify access policy management and VM reprovisioning
+- **SQL MI access**: Configure Azure AD authentication on SQL MI and grant Managed Identity the `db_datareader`/`db_datawriter` roles per Sitecore database — eliminates password-based connection strings
+- **Key Vault access**: Grant Managed Identity `Key Vault Secrets User` RBAC role (preferred) or configure access policies for secret read access
+
+### Azure Key Vault
+- **Secrets management**: Store all Sitecore connection strings, API keys, and service credentials in Key Vault
+- **Certificate storage**: Upload all SSL/TLS certificates (CM, CD, xConnect client certs, Identity Server) to Key Vault
+- **Certificate rotation**: Enable auto-renewal for Key Vault-generated certificates. For imported certificates (third-party CA), configure rotation policies with alerts at 30/60/90 days before expiry
+- **xConnect certificates**: xConnect client certificate thumbprints are referenced in Sitecore config. When rotating, update both the Key Vault certificate and the Sitecore `AppSettings.config` thumbprint reference. Automate with a Key Vault Event Grid notification → Azure Function that updates config
+- **Configuration provider**: Use the Azure Key Vault configuration provider for .NET to inject secrets at runtime instead of storing them in `ConnectionStrings.config` files on disk
+- **Access model**: Prefer Azure RBAC for Key Vault over legacy access policies. RBAC supports condition-based access and is consistent with other Azure resource permissions
+
+### Application Gateway WAF for Sitecore
+
+#### Recommended WAF Rules
+- Enable OWASP Core Rule Set (CRS) 3.2+ on Application Gateway WAF v2
+- **Sitecore-specific exclusions** (required to avoid false positives):
+  - Exclude request body inspection for `/sitecore/shell/` paths (CM admin uses complex POST bodies)
+  - Exclude rule 942430 (SQL injection detection) for Sitecore Experience Editor requests containing rendering parameters
+  - Exclude rules 920230/920240 for requests to `/sitecore/api/` (Sitecore API uses non-standard content types)
+  - Exclude rule 941100 for `/sitecore/shell/Applications/` (admin UI contains inline scripts)
+- **Custom rules**:
+  - Block direct access to `/App_Config/`, `/App_Data/`, `/temp/` paths from external traffic
+  - Rate-limit `/sitecore/login` to prevent brute-force attacks (max 10 requests/minute per IP)
+  - Geo-restrict CM access to allowed countries if CMS users are in known regions
+- **Mode**: Start in Detection mode during migration testing, switch to Prevention mode after validating no false positives on Sitecore traffic
+
+---
+
 ## SSL/TLS Requirements
 
 ### Certificates

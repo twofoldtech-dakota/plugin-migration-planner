@@ -1,0 +1,13 @@
+{
+  "dimension": "custom_integrations",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "integrations_sitecore_modules": {
+      "value": ["Unicorn serialization"],
+      "confidence": "assumed",
+      "basis": "extracted from initial overview: uses Unicorn for item serialization",
+      "notes": ""
+    }
+  }
+}

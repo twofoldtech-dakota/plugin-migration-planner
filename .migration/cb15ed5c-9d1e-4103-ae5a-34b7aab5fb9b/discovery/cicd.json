@@ -1,0 +1,31 @@
+{
+  "dimension": "cicd",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "cicd_platform": {
+      "value": "TeamCity",
+      "confidence": "assumed",
+      "basis": "extracted from initial overview",
+      "notes": "~30 build configurations representing ~30 repos. Planning to migrate to Azure Pipelines."
+    },
+    "cicd_item_serialization": {
+      "value": "Unicorn",
+      "confidence": "assumed",
+      "basis": "extracted from initial overview: uses Unicorn, can spin up clean install and sync",
+      "notes": ""
+    },
+    "cicd_environment_count": {
+      "value": 3,
+      "confidence": "assumed",
+      "basis": "extracted from initial overview: dev, qa, prod",
+      "notes": ""
+    },
+    "cicd_environment_names": {
+      "value": "Dev → QA → Prod",
+      "confidence": "assumed",
+      "basis": "extracted from initial overview",
+      "notes": ""
+    }
+  }
+}

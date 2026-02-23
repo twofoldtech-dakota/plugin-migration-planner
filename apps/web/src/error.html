@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>500 — Server Error | MigrateIQ</title>
+		<style>
+			:root {
+				--bg: #f0ece4;
+				--surface: #ffffff;
+				--text: #1a1a1a;
+				--text-secondary: #4a4a4a;
+				--brutal: #1a1a1a;
+				--primary: #4f46e5;
+				--primary-hover: #4338ca;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--bg: #111111;
+					--surface: #1e1e1e;
+					--text: #f0f0f0;
+					--text-secondary: #b0b0b0;
+					--brutal: #e0e0e0;
+					--primary: #818cf8;
+					--primary-hover: #a5b4fc;
+				}
+			}
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body {
+				font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+				background: var(--bg);
+				color: var(--text);
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.container {
+				text-align: center;
+				padding: 2rem;
+				max-width: 28rem;
+			}
+			.code-box {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border: 3px solid var(--brutal);
+				border-radius: 4px;
+				background: var(--surface);
+				box-shadow: 6px 6px 0 var(--brutal);
+				padding: 1.25rem 2rem;
+				margin-bottom: 2rem;
+			}
+			.code {
+				font-family: 'JetBrains Mono', ui-monospace, monospace;
+				font-size: 4.5rem;
+				font-weight: 800;
+				letter-spacing: -0.05em;
+				line-height: 1;
+				color: var(--primary);
+			}
+			h1 {
+				font-size: 1.5rem;
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				margin-bottom: 0.75rem;
+			}
+			p {
+				font-size: 0.875rem;
+				color: var(--text-secondary);
+				line-height: 1.6;
+				margin-bottom: 2rem;
+			}
+			.detail {
+				border: 2px solid var(--brutal);
+				border-radius: 4px;
+				background: var(--surface);
+				padding: 0.75rem 1rem;
+				margin-bottom: 2rem;
+				text-align: left;
+			}
+			.detail-label {
+				font-size: 0.625rem;
+				font-weight: 800;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				color: var(--text-secondary);
+				margin-bottom: 0.25rem;
+			}
+			.detail-msg {
+				font-family: 'JetBrains Mono', ui-monospace, monospace;
+				font-size: 0.75rem;
+				word-break: break-word;
+			}
+			a {
+				display: inline-block;
+				border: 2px solid var(--brutal);
+				border-radius: 4px;
+				padding: 0.75rem 1.5rem;
+				font-size: 0.875rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.1em;
+				text-decoration: none;
+				background: var(--primary);
+				color: #ffffff;
+				transition: background 0.15s;
+			}
+			a:hover { background: var(--primary-hover); }
+			@media (prefers-reduced-motion: reduce) {
+				* { animation-duration: 0s !important; transition-duration: 0s !important; }
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="code-box">
+				<span class="code">500</span>
+			</div>
+			<h1>Server Error</h1>
+			<p>MigrateIQ encountered a critical error and couldn't render the page. This is usually temporary.</p>
+			<div class="detail">
+				<div class="detail-label">Error</div>
+				<div class="detail-msg">%sveltekit.error.message%</div>
+			</div>
+			<a href="/">Back to Dashboard</a>
+		</div>
+	</body>
+</html>

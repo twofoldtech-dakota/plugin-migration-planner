@@ -1,0 +1,158 @@
+{
+  "id": "assess-e2e-20260220",
+  "generated": "2026-02-20",
+  "version": "2.0.0",
+  "summary": {
+    "total_assumptions": 12,
+    "validated": 0,
+    "unvalidated": 12,
+    "confirmed_answers": 34,
+    "confidence_score": 68
+  },
+  "assumptions": [
+    {
+      "id": "ASMP-001",
+      "dimension": "database",
+      "assumed_value": "Total database size ~120GB",
+      "basis": "CloudWatch storage metrics observed, but not exact export measurement",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Run sp_spaceused on each database; sum actual data + log sizes",
+      "pessimistic_widening_hours": 12,
+      "affected_components": ["database_single"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-002",
+      "dimension": "xconnect",
+      "assumed_value": "Contact count between 500K and 2M",
+      "basis": "Client verbal estimate; no xDB analytics export reviewed",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Query xDB collection database: SELECT COUNT(*) FROM Contacts",
+      "pessimistic_widening_hours": 8,
+      "affected_components": ["xconnect_xdb", "database_single"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-003",
+      "dimension": "search",
+      "assumed_value": "3 custom Solr indexes (product_catalog, knowledge_base, store_locator)",
+      "basis": "Client mentioned 3 custom indexes; names and schemas not confirmed",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "List Solr collections via API: /solr/admin/collections?action=LIST",
+      "pessimistic_widening_hours": 6,
+      "affected_components": ["solr_cloud"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-004",
+      "dimension": "email",
+      "assumed_value": "~200K emails/month with 2 dedicated IPs",
+      "basis": "Client estimate; not verified via SendGrid analytics dashboard",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Export SendGrid activity feed; verify 90-day send volume and IP usage",
+      "pessimistic_widening_hours": 12,
+      "affected_components": ["exm_dispatch"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-005",
+      "dimension": "integrations",
+      "assumed_value": "AWS SDK usage in integrations unknown",
+      "basis": "Integration endpoints confirmed, but underlying code not reviewed",
+      "confidence": "unknown",
+      "validation_status": "unvalidated",
+      "validation_method": "Code review: grep for AWSSDK, Amazon.*, boto3 in solution",
+      "pessimistic_widening_hours": 10,
+      "affected_components": ["custom_integration"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-006",
+      "dimension": "networking",
+      "assumed_value": "VPN throughput requirements unknown",
+      "basis": "Site-to-site VPN confirmed, but bandwidth and latency needs not disclosed",
+      "confidence": "unknown",
+      "validation_status": "unvalidated",
+      "validation_method": "Review VPN monitoring metrics in CloudWatch; interview network team",
+      "pessimistic_widening_hours": 8,
+      "affected_components": ["networking_vnet"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-007",
+      "dimension": "storage",
+      "assumed_value": "Blob provider module type unknown",
+      "basis": "S3 storage confirmed, but Sitecore blob provider module (standard vs custom) not identified",
+      "confidence": "unknown",
+      "validation_status": "unvalidated",
+      "validation_method": "Check Sitecore config: App_Config/Include for blob provider patch files",
+      "pessimistic_widening_hours": 6,
+      "affected_components": ["blob_storage"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-008",
+      "dimension": "caching",
+      "assumed_value": "Redis eviction policy unknown",
+      "basis": "ElastiCache Redis confirmed, but eviction policy not disclosed",
+      "confidence": "unknown",
+      "validation_status": "unvalidated",
+      "validation_method": "Check ElastiCache parameter group: maxmemory-policy setting",
+      "pessimistic_widening_hours": 4,
+      "affected_components": ["redis_session"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-009",
+      "dimension": "database",
+      "assumed_value": "Database collation is SQL_Latin1_General_CP1_CI_AS (Sitecore default)",
+      "basis": "Assumed Sitecore default; not verified on RDS instance",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Query: SELECT DATABASEPROPERTYEX(db, 'Collation') for each Sitecore DB",
+      "pessimistic_widening_hours": 8,
+      "affected_components": ["database_single"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-010",
+      "dimension": "cicd",
+      "assumed_value": "Pipeline complexity is moderate (2 pipelines)",
+      "basis": "Pipeline count confirmed; internal steps, plugins, and custom scripts not reviewed",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Export Jenkinsfile / pipeline configs; review stage count and plugin dependencies",
+      "pessimistic_widening_hours": 6,
+      "affected_components": ["cicd_pipeline"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-011",
+      "dimension": "monitoring",
+      "assumed_value": "Custom dashboard count unknown",
+      "basis": "CloudWatch + Datadog confirmed, but custom dashboards not inventoried",
+      "confidence": "unknown",
+      "validation_status": "unvalidated",
+      "validation_method": "List Datadog dashboards via API; count CloudWatch custom dashboards",
+      "pessimistic_widening_hours": 4,
+      "affected_components": ["monitoring_setup"],
+      "created": "2026-02-20"
+    },
+    {
+      "id": "ASMP-012",
+      "dimension": "xconnect",
+      "assumed_value": "Custom xDB facets unconfirmed (loyalty data suspected)",
+      "basis": "Client mentioned loyalty data in xDB; custom facet schema not reviewed",
+      "confidence": "assumed",
+      "validation_status": "unvalidated",
+      "validation_method": "Review Sitecore xDB model config: check for custom FacetKey registrations",
+      "pessimistic_widening_hours": 12,
+      "affected_components": ["xconnect_xdb", "database_single"],
+      "created": "2026-02-20"
+    }
+  ]
+}

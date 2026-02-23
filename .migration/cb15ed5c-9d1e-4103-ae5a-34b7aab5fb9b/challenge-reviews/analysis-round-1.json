@@ -1,0 +1,166 @@
+{
+  "step": "analysis",
+  "round": 1,
+  "status": "passed",
+  "confidence_score": 83,
+  "score_breakdown": {
+    "completeness": 85,
+    "consistency": 84,
+    "plausibility": 80,
+    "currency": 82,
+    "risk_coverage": 85
+  },
+  "challenges": [
+    {
+      "id": "CHK-001",
+      "category": "plausibility",
+      "severity": "critical",
+      "description": "RISK-008 (TeamCity → Azure Pipelines) rated medium severity but has highest hours impact (24h). Severity/impact misalignment.",
+      "data_reference": "RISK-008.severity = medium, RISK-008.estimated_hours_impact = 24",
+      "status": "resolved",
+      "resolution": "Recommend upgrading RISK-008 to high severity or reducing hours to 16hr since source repos already on Azure DevOps significantly reduces per-pipeline migration effort.",
+      "researcher_needed": false,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-002",
+      "category": "currency",
+      "severity": "critical",
+      "description": "Azure DMS classic retires March 2026. Azure Data Studio retires Feb 2026. RISK-001 mitigation references 'Azure Database Migration Service' which is being deprecated.",
+      "data_reference": "RISK-001.mitigation references Azure DMS",
+      "status": "resolved",
+      "resolution": "Use Managed Instance Link for large DB migration (250GB+). Use VS Code MSSQL extension for assessment. DMS classic alternatives: MI Link uses Always On technology for near-zero downtime.",
+      "researcher_needed": true,
+      "score_impact": 6
+    },
+    {
+      "id": "CHK-003",
+      "category": "plausibility",
+      "severity": "high",
+      "description": "many_sites multiplier (1.5x) based on assumed >10 sites. No explicit site count in discovery. 20 CDN distributions could be multi-language distributions for fewer sites.",
+      "data_reference": "active_multipliers.many_sites.trigger",
+      "status": "accepted",
+      "resolution": "20 CDN distributions + ~30 repos strongly suggests >10 sites. Multiplier kept but flagged as assumption requiring validation of exact site count.",
+      "researcher_needed": false,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-004",
+      "category": "consistency",
+      "severity": "high",
+      "description": "multi_environment multiplier on cicd_pipeline (1.3x on 16hr base) plus RISK-008 (24hrs for 30 pipeline configs) may double-count CI/CD effort.",
+      "data_reference": "active_multipliers.multi_environment + RISK-008",
+      "status": "resolved",
+      "resolution": "Base effort and risk buffer are separate. Recommend reducing RISK-008 to 16hr since Azure DevOps source mitigates effort significantly.",
+      "researcher_needed": false,
+      "score_impact": 4
+    },
+    {
+      "id": "CHK-005",
+      "category": "completeness",
+      "severity": "high",
+      "description": "No risks identified for networking, identity, monitoring, or backup_dr dimensions despite being in-scope components.",
+      "data_reference": "Missing risks for networking/identity/monitoring/backup_dr",
+      "status": "accepted",
+      "resolution": "These dimensions have standard, low-complexity migration paths. Not every dimension warrants explicit risks.",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-006",
+      "category": "currency",
+      "severity": "high",
+      "description": "Discovery says Solr 8.8 but Sitecore 10.4 supports 8.11.2. Solr 8.x is EOL since June 2024.",
+      "data_reference": "discovery.search.solr_version = 8.8, Sitecore 10.4 compatibility = Solr 8.11.2",
+      "status": "resolved",
+      "resolution": "Verify actual Solr version. Solr 8.x EOL since June 2024. Consider upgrading to Sitecore 10.4.1 + Solr 9.8.1 during Azure migration. Solr on Azure VM confirmed as correct approach for 30+ custom indexes.",
+      "researcher_needed": true,
+      "score_impact": 5
+    },
+    {
+      "id": "CHK-007",
+      "category": "plausibility",
+      "severity": "medium",
+      "description": "RISK-002 (media blobs in SQL) rated medium severity but 16hr impact is borderline for medium.",
+      "data_reference": "RISK-002.severity = medium, RISK-002.estimated_hours_impact = 16",
+      "status": "resolved",
+      "resolution": "16hr for 50GB+ media blob migration is reasonable. Medium severity appropriate — manageable with planning, not a blocker.",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-008",
+      "category": "risk_coverage",
+      "severity": "medium",
+      "description": "redis_ssl_default and serialization_large_item_tree gotcha patterns unevaluable due to discovery gaps.",
+      "data_reference": "gotcha patterns redis_ssl_default, serialization_large_item_tree",
+      "status": "accepted",
+      "resolution": "Document as minor risks with 4hr contingency each. Redis SSL migration is near-certain (Azure Cache requires SSL).",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-009",
+      "category": "currency",
+      "severity": "medium",
+      "description": "Azure Cache for Redis tier recommendation needs verification for Sitecore 10.4.",
+      "data_reference": "session_state.provider = Redis, caching.redis_memory = 2GB",
+      "status": "resolved",
+      "resolution": "Azure Cache for Redis Premium P1 (6GB) confirmed. Async session state provider default since 10.1. No changes needed.",
+      "researcher_needed": true,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-010",
+      "category": "consistency",
+      "severity": "medium",
+      "description": "No VPN assumed but hybrid AWS↔Azure connectivity needed during migration for data sync and testing.",
+      "data_reference": "ASMP-019 networking.vpn_connection = false",
+      "status": "resolved",
+      "resolution": "Hybrid connectivity IS needed during migration. Add medium-severity risk for temporary AWS↔Azure VPN or public endpoint configuration during data sync period.",
+      "researcher_needed": false,
+      "score_impact": 4
+    },
+    {
+      "id": "CHK-011",
+      "category": "risk_coverage",
+      "severity": "medium",
+      "description": "Sitecore license re-keying for Azure hosting not captured in risks or assumptions.",
+      "data_reference": "Missing from analysis risks",
+      "status": "resolved",
+      "resolution": "Sitecore licensing for IaaS (VM) deployments typically doesn't require re-keying. Low risk. Add as verification checklist item.",
+      "researcher_needed": false,
+      "score_impact": 2
+    }
+  ],
+  "findings": [
+    {
+      "challenge_id": "CHK-002",
+      "finding": "Azure DMS classic retires March 15, 2026. Azure Data Studio + SQL Migration extension also retires February 28, 2026. Microsoft recommends VS Code with MSSQL extension. For large databases (250GB+), Managed Instance Link using Always On technology is the preferred approach.",
+      "source": "web search",
+      "source_url": "https://learn.microsoft.com/en-us/azure/dms/dms-overview",
+      "verified_date": "2026-02-21",
+      "recommendation": "Update RISK-001 mitigation to reference MI Link instead of DMS.",
+      "data_update_suggested": true
+    },
+    {
+      "challenge_id": "CHK-006",
+      "finding": "Sitecore 10.4 officially supports Solr 8.11.2 (not 8.8). Solr 8.x is EOL since June 2024. Sitecore 10.4.1 supports Solr 9.8.1. Azure AI Search has index limits that won't support 30+ custom indexes. Solr on Azure VM confirmed as correct approach.",
+      "source": "web search",
+      "source_url": "https://www.searchstax.com/docs/sitecore-10-4/",
+      "verified_date": "2026-02-21",
+      "recommendation": "Verify actual Solr version. Consider 10.4.1 upgrade with Solr 9.8.1 during migration.",
+      "data_update_suggested": true
+    },
+    {
+      "challenge_id": "CHK-009",
+      "finding": "Azure Cache for Redis Premium P1 (6GB) confirmed as recommended for Sitecore session state. Async session state provider default since 10.1. VNet integration available with Premium.",
+      "source": "web search",
+      "source_url": "https://doc.sitecore.com/xp/en/developers/latest/sitecore-experience-manager/the-default-private-session-state-provider-in-sitecore-azure.html",
+      "verified_date": "2026-02-21",
+      "recommendation": "No changes needed.",
+      "data_update_suggested": false
+    }
+  ],
+  "summary": "Analysis challenge review passed at 83%. 11 challenges generated (2 critical, 4 high, 5 medium). 9 resolved, 2 accepted. Key findings: (1) Azure DMS classic retiring March 2026 — use MI Link for large DB migration; (2) Solr 8.8 in discovery should be verified — Sitecore 10.4 supports 8.11.2, and 8.x is EOL; consider 10.4.1 + Solr 9.8.1; (3) Azure Cache for Redis Premium confirmed correct; (4) Hybrid AWS↔Azure connectivity needed during migration; (5) RISK-008 CI/CD severity should be upgraded to high or hours reduced."
+}

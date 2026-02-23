@@ -1,0 +1,435 @@
+{
+  "id": "assess-e2e-20260220",
+  "generated": "2026-02-20",
+  "version": "2.0.0",
+  "confidence_score": 68,
+  "total_base_hours": 592,
+  "total_gotcha_hours": 84,
+  "total_expected_hours": 1046,
+  "assumption_widening_hours": 96,
+  "phases": [
+    {
+      "id": "phase_1_infrastructure",
+      "name": "Phase 1: Infrastructure Foundation",
+      "duration": "3-4 weeks",
+      "components": [
+        {
+          "id": "networking_vnet",
+          "name": "Networking & VNet",
+          "units": 1,
+          "base_hours": 16,
+          "multipliers_applied": ["multi_cd", "vpn", "multi_env"],
+          "gotcha_hours": 0,
+          "final_hours": 35,
+          "firm_hours": 28,
+          "assumption_dependent_hours": 7,
+          "assumptions_affecting": ["ASMP-006"],
+          "hours": {
+            "without_ai": { "optimistic": 28, "expected": 35, "pessimistic": 46 }
+          },
+          "ai_alternatives": [
+            { "id": "terraform_opentofu", "hours_saved": { "optimistic": 6, "expected": 4, "pessimistic": 2 } },
+            { "id": "azure_network_watcher", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } },
+            { "id": "azure_migrate", "hours_saved": { "optimistic": 3, "expected": 2, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 30, "project_manager": 5 }
+        },
+        {
+          "id": "compute_single_role",
+          "name": "Compute (5 roles)",
+          "units": 5,
+          "base_hours": 80,
+          "multipliers_applied": ["multi_cd", "multi_env"],
+          "gotcha_hours": 0,
+          "final_hours": 135,
+          "firm_hours": 135,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 108, "expected": 135, "pessimistic": 176 }
+          },
+          "ai_alternatives": [
+            { "id": "terraform_opentofu", "hours_saved": { "optimistic": 10, "expected": 7, "pessimistic": 3 } },
+            { "id": "azure_migrate", "hours_saved": { "optimistic": 5, "expected": 3, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 110, "sitecore_developer": 15, "project_manager": 10 }
+        },
+        {
+          "id": "ssl_tls",
+          "name": "SSL/TLS Certificates",
+          "units": 3,
+          "base_hours": 12,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 12,
+          "firm_hours": 12,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 10, "expected": 12, "pessimistic": 16 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "infrastructure_engineer": 12 }
+        },
+        {
+          "id": "cdn_setup",
+          "name": "CDN & WAF Setup",
+          "units": 2,
+          "base_hours": 16,
+          "multipliers_applied": ["multi_cd"],
+          "gotcha_hours": 0,
+          "final_hours": 21,
+          "firm_hours": 21,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 17, "expected": 21, "pessimistic": 27 }
+          },
+          "ai_alternatives": [
+            { "id": "terraform_opentofu", "hours_saved": { "optimistic": 3, "expected": 2, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 18, "qa_engineer": 3 }
+        }
+      ]
+    },
+    {
+      "id": "phase_2_data",
+      "name": "Phase 2: Data Migration",
+      "duration": "2-3 weeks",
+      "components": [
+        {
+          "id": "database_single",
+          "name": "Database Migration (11 DBs)",
+          "units": 11,
+          "base_hours": 132,
+          "multipliers_applied": ["xdb_large", "ha_db", "multi_env"],
+          "gotcha_hours": 20,
+          "final_hours": 380,
+          "firm_hours": 340,
+          "assumption_dependent_hours": 40,
+          "assumptions_affecting": ["ASMP-001", "ASMP-002", "ASMP-009"],
+          "hours": {
+            "without_ai": { "optimistic": 304, "expected": 380, "pessimistic": 494 }
+          },
+          "ai_alternatives": [
+            { "id": "azure_dms", "hours_saved": { "optimistic": 8, "expected": 5, "pessimistic": 3 } },
+            { "id": "dma", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } }
+          ],
+          "by_role": { "dba": 280, "infrastructure_engineer": 60, "sitecore_developer": 20, "project_manager": 20 }
+        },
+        {
+          "id": "blob_storage",
+          "name": "Blob Storage Migration",
+          "units": 2,
+          "base_hours": 24,
+          "multipliers_applied": ["large_media"],
+          "gotcha_hours": 0,
+          "final_hours": 31,
+          "firm_hours": 25,
+          "assumption_dependent_hours": 6,
+          "assumptions_affecting": ["ASMP-007"],
+          "hours": {
+            "without_ai": { "optimistic": 25, "expected": 31, "pessimistic": 40 }
+          },
+          "ai_alternatives": [
+            { "id": "azcopy", "hours_saved": { "optimistic": 6, "expected": 4, "pessimistic": 2 } }
+          ],
+          "by_role": { "infrastructure_engineer": 20, "sitecore_developer": 11 }
+        }
+      ]
+    },
+    {
+      "id": "phase_3_application",
+      "name": "Phase 3: Application & Services",
+      "duration": "3-4 weeks",
+      "components": [
+        {
+          "id": "solr_cloud",
+          "name": "SolrCloud Migration",
+          "units": 1,
+          "base_hours": 40,
+          "multipliers_applied": ["custom_indexes"],
+          "gotcha_hours": 0,
+          "final_hours": 52,
+          "firm_hours": 46,
+          "assumption_dependent_hours": 6,
+          "assumptions_affecting": ["ASMP-003"],
+          "hours": {
+            "without_ai": { "optimistic": 42, "expected": 52, "pessimistic": 68 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "infrastructure_engineer": 30, "sitecore_developer": 22 }
+        },
+        {
+          "id": "redis_session",
+          "name": "Redis & Session State",
+          "units": 1,
+          "base_hours": 8,
+          "multipliers_applied": [],
+          "gotcha_hours": 4,
+          "final_hours": 12,
+          "firm_hours": 8,
+          "assumption_dependent_hours": 4,
+          "assumptions_affecting": ["ASMP-008"],
+          "hours": {
+            "without_ai": { "optimistic": 10, "expected": 12, "pessimistic": 16 }
+          },
+          "ai_alternatives": [
+            { "id": "terraform_opentofu", "hours_saved": { "optimistic": 2, "expected": 1, "pessimistic": 0 } }
+          ],
+          "by_role": { "infrastructure_engineer": 8, "sitecore_developer": 4 }
+        },
+        {
+          "id": "identity_server",
+          "name": "Identity Server",
+          "units": 1,
+          "base_hours": 8,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 8,
+          "firm_hours": 8,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 6, "expected": 8, "pessimistic": 10 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "sitecore_developer": 8 }
+        },
+        {
+          "id": "xconnect_xdb",
+          "name": "xConnect & xDB",
+          "units": 1,
+          "base_hours": 24,
+          "multipliers_applied": ["xdb_large"],
+          "gotcha_hours": 12,
+          "final_hours": 48,
+          "firm_hours": 36,
+          "assumption_dependent_hours": 12,
+          "assumptions_affecting": ["ASMP-002", "ASMP-012"],
+          "hours": {
+            "without_ai": { "optimistic": 38, "expected": 48, "pessimistic": 62 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "sitecore_developer": 30, "dba": 18 }
+        },
+        {
+          "id": "exm_dispatch",
+          "name": "EXM & Email Dispatch",
+          "units": 1,
+          "base_hours": 20,
+          "multipliers_applied": ["exm_high_vol"],
+          "gotcha_hours": 40,
+          "final_hours": 66,
+          "firm_hours": 54,
+          "assumption_dependent_hours": 12,
+          "assumptions_affecting": ["ASMP-004"],
+          "hours": {
+            "without_ai": { "optimistic": 53, "expected": 66, "pessimistic": 86 }
+          },
+          "ai_alternatives": [
+            { "id": "sendgrid_ip_warmup", "hours_saved": { "optimistic": 16, "expected": 10, "pessimistic": 4 } }
+          ],
+          "by_role": { "sitecore_developer": 46, "infrastructure_engineer": 12, "qa_engineer": 8 }
+        },
+        {
+          "id": "custom_integration",
+          "name": "Custom Integrations (3)",
+          "units": 3,
+          "base_hours": 48,
+          "multipliers_applied": [],
+          "gotcha_hours": 8,
+          "final_hours": 56,
+          "firm_hours": 46,
+          "assumption_dependent_hours": 10,
+          "assumptions_affecting": ["ASMP-005"],
+          "hours": {
+            "without_ai": { "optimistic": 45, "expected": 56, "pessimistic": 73 }
+          },
+          "ai_alternatives": [
+            { "id": "github_copilot", "hours_saved": { "optimistic": 8, "expected": 5, "pessimistic": 2 } },
+            { "id": "claude_code", "hours_saved": { "optimistic": 6, "expected": 4, "pessimistic": 2 } }
+          ],
+          "by_role": { "sitecore_developer": 46, "qa_engineer": 10 }
+        },
+        {
+          "id": "cicd_pipeline",
+          "name": "CI/CD Pipeline Rebuild",
+          "units": 2,
+          "base_hours": 32,
+          "multipliers_applied": ["multi_env"],
+          "gotcha_hours": 0,
+          "final_hours": 42,
+          "firm_hours": 36,
+          "assumption_dependent_hours": 6,
+          "assumptions_affecting": ["ASMP-010"],
+          "hours": {
+            "without_ai": { "optimistic": 34, "expected": 42, "pessimistic": 55 }
+          },
+          "ai_alternatives": [
+            { "id": "github_copilot", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } },
+            { "id": "claude_code", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 30, "sitecore_developer": 12 }
+        },
+        {
+          "id": "monitoring_setup",
+          "name": "Monitoring & Alerting",
+          "units": 1,
+          "base_hours": 12,
+          "multipliers_applied": ["multi_env"],
+          "gotcha_hours": 0,
+          "final_hours": 16,
+          "firm_hours": 12,
+          "assumption_dependent_hours": 4,
+          "assumptions_affecting": ["ASMP-011"],
+          "hours": {
+            "without_ai": { "optimistic": 13, "expected": 16, "pessimistic": 21 }
+          },
+          "ai_alternatives": [
+            { "id": "azure_monitor_ai", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } },
+            { "id": "app_insights_smart", "hours_saved": { "optimistic": 2, "expected": 1, "pessimistic": 0 } }
+          ],
+          "by_role": { "infrastructure_engineer": 12, "sitecore_developer": 4 }
+        }
+      ]
+    },
+    {
+      "id": "phase_4_validation",
+      "name": "Phase 4: Validation & Testing",
+      "duration": "2-3 weeks",
+      "components": [
+        {
+          "id": "testing_validation",
+          "name": "Testing & Validation",
+          "units": 1,
+          "base_hours": 40,
+          "multipliers_applied": ["multi_cd"],
+          "gotcha_hours": 0,
+          "final_hours": 52,
+          "firm_hours": 52,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 42, "expected": 52, "pessimistic": 68 }
+          },
+          "ai_alternatives": [
+            { "id": "playwright_ai_testgen", "hours_saved": { "optimistic": 12, "expected": 8, "pessimistic": 3 } },
+            { "id": "k6_performance", "hours_saved": { "optimistic": 8, "expected": 5, "pessimistic": 2 } }
+          ],
+          "by_role": { "qa_engineer": 36, "sitecore_developer": 10, "infrastructure_engineer": 6 }
+        },
+        {
+          "id": "backup_dr",
+          "name": "Backup & DR Setup",
+          "units": 1,
+          "base_hours": 12,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 12,
+          "firm_hours": 12,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 10, "expected": 12, "pessimistic": 16 }
+          },
+          "ai_alternatives": [
+            { "id": "azure_backup_smart", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 10, "dba": 2 }
+        },
+        {
+          "id": "project_management",
+          "name": "Project Management",
+          "units": 1,
+          "base_hours": 40,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 40,
+          "firm_hours": 40,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 32, "expected": 40, "pessimistic": 52 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "project_manager": 40 }
+        }
+      ]
+    },
+    {
+      "id": "phase_5_cutover",
+      "name": "Phase 5: Cutover & Go-Live",
+      "duration": "1-2 weeks",
+      "components": [
+        {
+          "id": "cutover_execution",
+          "name": "Cutover Execution",
+          "units": 1,
+          "base_hours": 16,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 16,
+          "firm_hours": 16,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 13, "expected": 16, "pessimistic": 21 }
+          },
+          "ai_alternatives": [],
+          "by_role": { "infrastructure_engineer": 6, "sitecore_developer": 4, "dba": 3, "project_manager": 3 }
+        },
+        {
+          "id": "dns_cutover",
+          "name": "DNS Cutover",
+          "units": 3,
+          "base_hours": 12,
+          "multipliers_applied": [],
+          "gotcha_hours": 0,
+          "final_hours": 12,
+          "firm_hours": 12,
+          "assumption_dependent_hours": 0,
+          "assumptions_affecting": [],
+          "hours": {
+            "without_ai": { "optimistic": 10, "expected": 12, "pessimistic": 16 }
+          },
+          "ai_alternatives": [
+            { "id": "azure_traffic_manager", "hours_saved": { "optimistic": 4, "expected": 3, "pessimistic": 1 } }
+          ],
+          "by_role": { "infrastructure_engineer": 10, "qa_engineer": 2 }
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "without_ai": {
+      "optimistic": 837,
+      "expected": 1046,
+      "pessimistic": 1456
+    },
+    "with_ai": {
+      "optimistic": 685,
+      "expected": 884,
+      "pessimistic": 1296
+    },
+    "ai_savings": {
+      "optimistic": 152,
+      "expected": 162,
+      "pessimistic": 160
+    }
+  },
+  "total_by_role": {
+    "infrastructure_engineer": 372,
+    "dba": 303,
+    "sitecore_developer": 232,
+    "qa_engineer": 59,
+    "project_manager": 78
+  },
+  "client_summary": {
+    "recommended_hours": 884,
+    "low_hours": 685,
+    "high_hours": 1456,
+    "confidence_percent": 68,
+    "range_narrative": "This estimate carries 68% confidence due to 12 unvalidated assumptions. Validating the top 5 assumptions (database size, xDB contacts, EXM volume, custom xDB facets, and AWS SDK usage) would reduce the pessimistic scenario by ~54 hours and raise confidence to ~82%."
+  }
+}

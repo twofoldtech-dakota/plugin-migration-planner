@@ -1,0 +1,25 @@
+{
+  "dimension": "xconnect",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "xconnect_enabled": {
+      "value": true,
+      "confidence": "assumed",
+      "basis": "extracted from initial overview: XP Scaled topology with xConnect",
+      "notes": "User uncertain about analytics usage"
+    },
+    "xconnect_collection_db_type": {
+      "value": "SQL Server (on RDS or EC2)",
+      "confidence": "assumed",
+      "basis": "inferred: Sitecore 9.0+ uses SQL Server for xDB collection",
+      "notes": ""
+    },
+    "xconnect_processing_enabled": {
+      "value": true,
+      "confidence": "assumed",
+      "basis": "inferred: xConnect enabled implies processing role active",
+      "notes": ""
+    }
+  }
+}

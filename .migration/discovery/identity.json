@@ -1,0 +1,11 @@
+{
+  "dimension": "identity",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "identity_server": { "value": true, "confidence": "confirmed" },
+    "hosting": { "value": "EC2 t3.medium", "confidence": "confirmed" },
+    "custom_providers": { "value": false, "confidence": "confirmed" },
+    "sso_integration": { "value": "Azure AD (staff only)", "confidence": "confirmed" }
+  }
+}

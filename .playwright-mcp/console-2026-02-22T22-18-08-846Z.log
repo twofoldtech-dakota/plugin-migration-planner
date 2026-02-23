@@ -1,0 +1,100 @@
+[     242ms] [WARNING] Failed to hydrate:  HierarchyRequestError: Failed to execute 'appendChild' on 'Node': This node type does not support this method.
+
+	in <unknown>
+	in CollapsibleSection.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at Module.child (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:4295:27)
+    at Toggle (http://localhost:5173/src/lib/components/ui/Toggle.svelte:43:15)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:326:58
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:320:17
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21) @ http://localhost:5173/@fs/Users/dakotasmith/Documents/GitHub/plugin-migration-planner/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=c0001dfe:3211
+[   68726ms] [WARNING] Failed to hydrate:  HierarchyRequestError: Failed to execute 'appendChild' on 'Node': This node type does not support this method.
+
+	in <unknown>
+	in CollapsibleSection.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at Module.child (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:4295:27)
+    at Toggle (http://localhost:5173/src/lib/components/ui/Toggle.svelte:43:15)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:326:58
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:320:17
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21) @ http://localhost:5173/@fs/Users/dakotasmith/Documents/GitHub/plugin-migration-planner/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=c0001dfe:3211
+[   76895ms] [WARNING] Failed to hydrate:  HierarchyRequestError: Failed to execute 'appendChild' on 'Node': This node type does not support this method.
+
+	in <unknown>
+	in CollapsibleSection.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at Module.child (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:4295:27)
+    at Toggle (http://localhost:5173/src/lib/components/ui/Toggle.svelte:43:15)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:326:58
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:320:17
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21) @ http://localhost:5173/@fs/Users/dakotasmith/Documents/GitHub/plugin-migration-planner/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=c0001dfe:3211
+[   86606ms] [WARNING] Failed to hydrate:  HierarchyRequestError: Failed to execute 'appendChild' on 'Node': This node type does not support this method.
+
+	in <unknown>
+	in CollapsibleSection.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at Module.child (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:4295:27)
+    at Toggle (http://localhost:5173/src/lib/components/ui/Toggle.svelte:43:15)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:326:58
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:320:17
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21) @ http://localhost:5173/@fs/Users/dakotasmith/Documents/GitHub/plugin-migration-planner/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=c0001dfe:3211
+[   95562ms] [WARNING] Failed to hydrate:  HierarchyRequestError: Failed to execute 'appendChild' on 'Node': This node type does not support this method.
+
+	in <unknown>
+	in CollapsibleSection.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at Module.child (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:4295:27)
+    at Toggle (http://localhost:5173/src/lib/components/ui/Toggle.svelte:43:15)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:326:58
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:320:17
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21) @ http://localhost:5173/@fs/Users/dakotasmith/Documents/GitHub/plugin-migration-planner/node_modules/@sveltejs/kit/src/runtime/client/client.js?v=c0001dfe:3211

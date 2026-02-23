@@ -1,0 +1,3 @@
+[     151ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5181/assessments/assess-e2e-20260220/dashboard:0
+[     180ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5181/favicon.png:0
+[   77510ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5181/assessments/assess-e2e-20260220/dashboard:0

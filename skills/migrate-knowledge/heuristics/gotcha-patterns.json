@@ -2,7 +2,7 @@
   "patterns": [
     {
       "id": "session_redis_cd",
-      "pattern": "cd_instances >= 4 AND session.type != 'redis'",
+      "pattern": "compute_cd_instance_count >= 4 AND session_private_provider != 'Redis (via Sitecore Redis session provider)'",
       "risk": "high",
       "hours_impact": 12,
       "description": "At 4+ CD instances, in-proc or SQL sessions cause sticky session problems. Without shared session state, Application Gateway affinity becomes fragile under load.",
@@ -11,41 +11,34 @@
     },
     {
       "id": "solr_sxa_cdn",
-      "pattern": "search.has_sxa AND cdn.enabled",
+      "pattern": "integrations_sxa_site_count > 0 AND cdn_in_use == true",
       "risk": "medium",
       "hours_impact": 8,
       "description": "SXA search components + CDN caching layer interact during migration. Stale CDN cache can serve wrong search results or broken search pages.",
-      "mitigation": "Coordinate search rebuild, CDN purge, and cache warm-up sequence in cutover window. Add specific validation step."
-    },
-    {
-      "id": "exm_ip_warming",
-      "pattern": "email.enabled AND email.dedicated_ip",
-      "risk": "high",
-      "hours_impact": 40,
-      "description": "New Azure IPs have no sending reputation. Sending at full volume immediately will trigger spam filters and damage deliverability.",
-      "mitigation": "Plan 2-4 week IP warming ramp with gradual volume increase. Maintain old dispatch path as fallback during warming period.",
-      "affected_components": ["exm_dispatch"]
+      "mitigation": "Coordinate search rebuild, CDN purge, and cache warm-up sequence in cutover window. Add specific validation step.",
+      "affected_components": ["solr_standalone", "solr_cloud", "cdn_setup"]
     },
     {
       "id": "xdb_shard_map",
-      "pattern": "xconnect.enabled AND xconnect.sharding == 'custom'",
+      "pattern": "xconnect_enabled == true AND xconnect_collection_db_type == 'SQL Server (on RDS or EC2)'",
       "risk": "high",
       "hours_impact": 24,
-      "description": "Custom shard maps don't auto-migrate between SQL instances. Manual shard map recreation required on Azure SQL MI.",
+      "description": "SQL Server-based xDB uses shard maps that don't auto-migrate between SQL instances. Manual shard map recreation required on Azure SQL MI.",
       "mitigation": "Export shard map from source, validate mapping on target, plan extended maintenance window for shard migration.",
       "affected_components": ["xconnect_xdb", "database_single"]
     },
     {
       "id": "media_blob_references",
-      "pattern": "storage.type == 'database' AND storage.media_size_gb > 10",
+      "pattern": "storage_media_strategy == 'SQL Server database (default blob storage)' AND storage_media_total_size_gb > 10",
       "risk": "medium",
       "hours_impact": 16,
       "description": "Media stored in database (not blob) significantly increases DB migration time, database size, and backup complexity.",
-      "mitigation": "Consider migrating to Azure Blob storage during replatform. If keeping in DB, plan for larger DB migration window and increased storage costs."
+      "mitigation": "Consider migrating to Azure Blob storage during replatform. If keeping in DB, plan for larger DB migration window and increased storage costs.",
+      "affected_components": ["database_single", "blob_storage"]
     },
     {
       "id": "custom_handlers_aws",
-      "pattern": "integrations.custom_handlers > 0",
+      "pattern": "integrations_custom_api_count > 0",
       "risk": "medium",
       "hours_impact": 8,
       "description": "Custom HTTP handlers/modules may reference AWS-specific services (S3 SDK, SES, Secrets Manager, Parameter Store).",
@@ -54,15 +47,16 @@
     },
     {
       "id": "rds_collation_mismatch",
-      "pattern": "database.source == 'rds_sql_server'",
+      "pattern": "database_engine == 'Amazon RDS for SQL Server'",
       "risk": "medium",
       "hours_impact": 8,
       "description": "RDS SQL Server default collation (SQL_Latin1_General_CP1_CI_AS) usually matches Sitecore's requirement, but custom databases or non-default RDS configs may have mismatches.",
-      "mitigation": "Verify collation on all databases matches SQL_Latin1_General_CP1_CI_AS. Test with Sitecore before cutover."
+      "mitigation": "Verify collation on all databases matches SQL_Latin1_General_CP1_CI_AS. Test with Sitecore before cutover.",
+      "affected_components": ["database_single"]
     },
     {
       "id": "certificate_pinning",
-      "pattern": "ssl.pinning == true",
+      "pattern": "ssl_certificate_pinning == true",
       "risk": "high",
       "hours_impact": 16,
       "description": "Certificate pinning in integrations, mobile apps, or partner systems will break when new Azure certificates are issued.",
@@ -71,16 +65,16 @@
     },
     {
       "id": "publishing_service_separate",
-      "pattern": "sitecore.publishing_service == 'dedicated'",
+      "pattern": "integrations_publishing_service_hosting == 'Dedicated EC2 instance'",
       "risk": "low",
       "hours_impact": 8,
       "description": "Dedicated Publishing Service (.NET Core) needs its own VM and configuration on Azure, including separate connection strings.",
       "mitigation": "Include Publishing Service VM in compute provisioning. Update connection strings and service configuration.",
-      "affected_components": ["compute_single_role"]
+      "affected_components": ["compute_single_role", "publishing_service"]
     },
     {
       "id": "scheduled_tasks_aws",
-      "pattern": "integrations.scheduled_tasks > 0 AND integrations.task_scheduler == 'aws'",
+      "pattern": "customization_scheduled_agents != '0'",
       "risk": "medium",
       "hours_impact": 12,
       "description": "Scheduled tasks using AWS Lambda, CloudWatch Events, or EventBridge need Azure equivalents (Azure Functions, Logic Apps, or Windows Task Scheduler).",
@@ -89,7 +83,7 @@
     },
     {
       "id": "large_db_migration_window",
-      "pattern": "database.total_size_gb > 200",
+      "pattern": "database_total_size_gb > 200",
       "risk": "high",
       "hours_impact": 16,
       "description": "Large databases (200+ GB total) require extended migration windows. Network transfer time and index rebuild time can exceed maintenance windows.",
@@ -98,23 +92,25 @@
     },
     {
       "id": "redis_ssl_default",
-      "pattern": "caching.redis == true AND caching.ssl == false",
+      "pattern": "caching_redis_in_use == true AND caching_redis_encryption_transit == false",
       "risk": "medium",
       "hours_impact": 4,
       "description": "Azure Cache for Redis requires SSL by default (port 6380). If current ElastiCache uses non-SSL (port 6379), Sitecore Redis provider config must change.",
-      "mitigation": "Update Sitecore Redis connection strings to use SSL. Test session state behavior over SSL connection."
+      "mitigation": "Update Sitecore Redis connection strings to use SSL. Test session state behavior over SSL connection.",
+      "affected_components": ["redis_session"]
     },
     {
       "id": "multiple_content_databases",
-      "pattern": "database.web_db_count > 1",
+      "pattern": "database_custom_databases == true",
       "risk": "medium",
       "hours_impact": 8,
       "description": "Multiple web databases (for staging, A/B testing, or multi-site) multiply database migration and publish target configuration effort.",
-      "mitigation": "Map all web database publish targets, migrate each, update Sitecore publish target configurations."
+      "mitigation": "Map all web database publish targets, migrate each, update Sitecore publish target configurations.",
+      "affected_components": ["database_single"]
     },
     {
       "id": "geo_distributed",
-      "pattern": "infrastructure.regions > 1",
+      "pattern": "backup_dr_strategy == 'Hot standby / active-active'",
       "risk": "high",
       "hours_impact": 40,
       "description": "Multi-region deployments require Azure geo-replication, Traffic Manager, and region-specific resource provisioning.",
@@ -122,12 +118,148 @@
       "affected_components": ["networking_vnet", "database_single", "compute_single_role", "dns_cutover"]
     },
     {
+      "id": "unicorn_path_dependencies",
+      "pattern": "cicd_item_serialization == 'Unicorn' AND storage_shared_filesystem == true",
+      "risk": "medium",
+      "hours_impact": 12,
+      "description": "Unicorn serialization configs may reference shared filesystem paths (EFS/NFS mounts) that won't exist on Azure. File paths, role-specific serialization predicates, and transparent sync triggers need updating for Azure file shares or local disk paths.",
+      "mitigation": "Audit all Unicorn configuration files for path references. Update paths for Azure Files (SMB mount) or local disk. Test Unicorn sync on target before data migration. Verify transparent sync is working correctly on all roles.",
+      "affected_components": ["content_serialization_sync", "compute_single_role"]
+    },
+    {
+      "id": "serialization_large_item_tree",
+      "pattern": "content_total_item_count == '20,000-50,000' OR content_total_item_count == '50,000-100,000' OR content_total_item_count == '100,000+'",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "Large serialized item trees (10k+ items) increase initial Unicorn sync time significantly. First sync on Azure may take 30+ minutes and can time out or cause memory pressure on CM.",
+      "mitigation": "Run initial Unicorn sync during a low-traffic window. Consider breaking sync into batches by configuration. Monitor CM memory during sync. Pre-populate databases with a recent backup to minimize delta.",
+      "affected_components": ["content_serialization_sync"]
+    },
+    {
       "id": "custom_cache_clearing",
-      "pattern": "sitecore.custom_cache_clearing == true",
+      "pattern": "integrations_aws_services contains 'Amazon SNS' OR integrations_aws_services contains 'Amazon SQS'",
       "risk": "low",
       "hours_impact": 6,
       "description": "Custom cache clearing strategies that use AWS services (SNS/SQS for cache invalidation across instances) need Azure equivalents.",
-      "mitigation": "Replace with Azure Service Bus or Sitecore's built-in cache clearing. Test publish and cache clear flow."
+      "mitigation": "Replace with Azure Service Bus or Sitecore's built-in cache clearing. Test publish and cache clear flow.",
+      "affected_components": ["compute_single_role", "custom_integration"]
+    },
+    {
+      "id": "sql_advanced_features",
+      "pattern": "database_clr_assemblies == true OR database_linked_servers == true OR database_cross_db_queries == true",
+      "risk": "high",
+      "hours_impact": 24,
+      "description": "CLR assemblies, linked servers, and cross-database queries are not supported on Azure SQL Database. They require Azure SQL Managed Instance or SQL Server on Azure VMs, which changes the entire database migration approach.",
+      "mitigation": "Inventory all CLR assemblies, linked server references, and cross-DB queries. If found, target Azure SQL Managed Instance instead of Azure SQL Database. Test all stored procedures and functions on the target platform.",
+      "affected_components": ["database_single"]
+    },
+    {
+      "id": "hub_spoke_multi_env",
+      "pattern": "networking_topology_pattern == 'Hub-spoke (shared services VPC + application VPCs)' AND cicd_environment_count > 2",
+      "risk": "high",
+      "hours_impact": 20,
+      "description": "Hub-spoke topology combined with multiple environments creates a networking complexity explosion: each environment needs its own spoke VNet, peering to hub, UDR routes, and NSG rules.",
+      "mitigation": "Design spoke VNet template with parameterized CIDR ranges. Use Azure Policy for consistent NSG rules across spokes. Consider Azure Virtual WAN for simplified hub management at scale.",
+      "affected_components": ["networking_vnet"]
+    },
+    {
+      "id": "aggressive_rto",
+      "pattern": "backup_rto_hours < 1",
+      "risk": "high",
+      "hours_impact": 24,
+      "description": "Sub-1-hour RTO requires hot standby infrastructure, automated failover, and pre-warmed instances on Azure. This is a fundamentally different architecture from pilot-light or backup-restore DR.",
+      "mitigation": "Design active-passive with Azure Site Recovery or active-active with Traffic Manager. Pre-provision standby VMs and configure automated failover. Load-test failover procedure.",
+      "affected_components": ["backup_dr", "compute_single_role", "database_single"]
+    },
+    {
+      "id": "jss_node_rendering_host",
+      "pattern": "integrations_sitecore_modules contains 'Sitecore JavaScript Services (JSS)' AND compute_hosting_model != 'EKS (Kubernetes)'",
+      "risk": "medium",
+      "hours_impact": 12,
+      "description": "JSS rendering host (Node.js) needs separate Azure hosting (App Service, VM, or AKS), its own scaling rules, and health monitoring. Non-containerized deployments require additional provisioning work.",
+      "mitigation": "Provision separate Azure App Service (Linux) or VM for Node.js rendering host. Configure PM2 or similar process manager. Set up health checks and auto-restart. Update CDN origin rules to route to rendering host.",
+      "affected_components": ["compute_single_role", "cdn_setup"]
+    },
+    {
+      "id": "sxa_search_index_explosion",
+      "pattern": "integrations_sxa_site_count > 0 AND search_custom_indexes > 3",
+      "risk": "medium",
+      "hours_impact": 8,
+      "description": "SXA creates per-site search indexes. Combined with custom indexes, total index count can exceed 20+, significantly increasing Solr migration complexity and rebuild times.",
+      "mitigation": "Inventory all SXA-generated indexes. Plan parallel index rebuild during migration. Consider SolrCloud for better index management at scale.",
+      "affected_components": ["solr_standalone", "solr_cloud"]
+    },
+    {
+      "id": "deprecated_modules_in_use",
+      "pattern": "modules_deprecated == '2+ deprecated modules'",
+      "risk": "high",
+      "hours_impact": 40,
+      "description": "Multiple deprecated modules (e.g., WFFM, legacy EXM) require replacement with supported alternatives. Each deprecated module needs a migration path, data migration, and functional parity validation.",
+      "mitigation": "Inventory all deprecated modules. Plan replacement with supported equivalents (e.g., WFFM → Sitecore Forms). Budget for data migration and re-testing of all forms/functionality.",
+      "affected_components": ["code_migration", "testing_validation"]
+    },
+    {
+      "id": "forked_marketplace_modules",
+      "pattern": "modules_custom_forks == '3+ significantly modified'",
+      "risk": "high",
+      "hours_impact": 24,
+      "description": "Heavily forked third-party modules cannot be upgraded via standard vendor updates. Each fork must be manually merged with the target-compatible version or fully reimplemented.",
+      "mitigation": "Audit each forked module for custom changes. Determine if changes can be applied as patches to the latest version or if reimplementation is needed. Test thoroughly.",
+      "affected_components": ["code_migration", "testing_validation"]
+    },
+    {
+      "id": "deep_content_tree_path_limits",
+      "pattern": "content_tree_depth == 'Very deep (20+ levels)'",
+      "risk": "medium",
+      "hours_impact": 12,
+      "description": "Very deep content trees (20+ levels) can exceed URL path length limits on Azure App Service and cause issues with serialization tools, publishing, and caching.",
+      "mitigation": "Audit content tree for items exceeding 260-character path limits. Plan content restructuring if needed. Test publishing and serialization at maximum depth.",
+      "affected_components": ["content_migration", "content_serialization_sync"]
+    },
+    {
+      "id": "complex_workflows_migration",
+      "pattern": "content_workflow_complexity == 'Complex (branching, role-based)'",
+      "risk": "medium",
+      "hours_impact": 16,
+      "description": "Complex workflows with branching logic and role-based approvals require careful migration to ensure workflow states, actions, and security settings are preserved.",
+      "mitigation": "Document all workflow states, transitions, and role assignments. Migrate workflow definitions first, then validate with content editors. Test edge cases like parallel approvals.",
+      "affected_components": ["content_migration", "testing_validation"]
+    },
+    {
+      "id": "mvc_to_jss_mixed",
+      "pattern": "frontend_rendering_approach == 'Mixed (MVC + JSS)'",
+      "risk": "medium",
+      "hours_impact": 24,
+      "description": "Mixed MVC + JSS rendering requires two separate rendering pipelines on Azure: IIS for MVC and Node.js for JSS. This doubles frontend infrastructure complexity and creates routing challenges.",
+      "mitigation": "Plan separate hosting for MVC and JSS rendering. Configure routing rules to direct requests to the correct rendering pipeline. Test all pages across both rendering approaches.",
+      "affected_components": ["frontend_rebuild", "compute_single_role", "cdn_setup"]
+    },
+    {
+      "id": "many_config_patches",
+      "pattern": "customization_config_patch_count == '30-50' OR customization_config_patch_count == '50+'",
+      "risk": "medium",
+      "hours_impact": 16,
+      "description": "Large numbers of config patches (30+) increase the risk of configuration conflicts, ordering issues, and unintended overrides during migration. Each patch must be reviewed for Azure-specific settings.",
+      "mitigation": "Audit all config patches for AWS-specific or environment-specific settings. Consolidate redundant patches. Test config merge results on Azure before cutover.",
+      "affected_components": ["code_migration"]
+    },
+    {
+      "id": "personalization_rules_migration",
+      "pattern": "content_personalization_rules_count == '50-100' OR content_personalization_rules_count == '100+'",
+      "risk": "medium",
+      "hours_impact": 20,
+      "description": "Large numbers of personalization rules (50+) require careful migration and validation. Rules referencing xDB data, goals, or campaigns must be verified against the migrated analytics data.",
+      "mitigation": "Export and inventory all personalization rules. Validate rule conditions against migrated xDB data. Test personalized content delivery for key personas.",
+      "affected_components": ["content_migration", "testing_validation", "xconnect_xdb"]
+    },
+    {
+      "id": "high_availability_sla",
+      "pattern": "performance_availability_sla == '99.95%+'",
+      "risk": "high",
+      "hours_impact": 24,
+      "description": "99.95%+ SLA allows only ~22 minutes of downtime per month. Requires hot standby, automated failover, health probes, and zero-downtime deployment strategy on Azure.",
+      "mitigation": "Design active-passive or active-active Azure architecture. Implement automated health probes and failover. Plan zero-downtime cutover with DNS-based traffic shifting. Load test failover scenarios.",
+      "affected_components": ["compute_single_role", "database_single", "networking_vnet", "backup_dr"]
     }
   ]
 }

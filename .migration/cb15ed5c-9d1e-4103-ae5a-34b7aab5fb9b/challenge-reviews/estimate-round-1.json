@@ -1,0 +1,166 @@
+{
+  "step": "estimate",
+  "round": 1,
+  "status": "passed",
+  "confidence_score": 82,
+  "score_breakdown": {
+    "completeness": 85,
+    "consistency": 82,
+    "plausibility": 76,
+    "currency": 84,
+    "risk_coverage": 81
+  },
+  "challenges": [
+    {
+      "id": "CHK-001",
+      "category": "consistency",
+      "severity": "critical",
+      "description": "SSL/TLS final_hours math error. base_hours=40 (10 certs x 4hr) with many_sites 1.5x should yield 60hr, but final_hours=30. Unit count already accounts for many sites — multiplier double-counts.",
+      "data_reference": "ssl_tls.base_hours=40, ssl_tls.multipliers=[many_sites 1.5x], ssl_tls.final_hours=30",
+      "status": "resolved",
+      "resolution": "Remove many_sites multiplier from ssl_tls — unit count (10 certs) already reflects multi-site. Final_hours should be 40hr (+10hr to total estimate). Multiplier double-counts when applied on top of per-site unit count.",
+      "researcher_needed": false,
+      "score_impact": 5
+    },
+    {
+      "id": "CHK-002",
+      "category": "plausibility",
+      "severity": "high",
+      "description": "Three components (networking_vnet, cicd_pipeline, monitoring_setup) hit the 50% AI savings cap but ai_alternatives_summary.savings_capped_components is empty. Undisclosed cap application.",
+      "data_reference": "networking_vnet 20.8→10.4, cicd_pipeline 20.8→10.4, monitoring_setup 15.6→7.8",
+      "status": "resolved",
+      "resolution": "Document all three components in savings_capped_components. No impact on totals (caps were already applied), but transparency improves credibility.",
+      "researcher_needed": false,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-003",
+      "category": "currency",
+      "severity": "high",
+      "description": "Azure DMS / MI Link listed as AI alternative. DMS classic retires March 2026. Verify MI Link savings (expected 5hr) for 250GB database.",
+      "data_reference": "ai_alternatives.azure_dms for database_single",
+      "status": "resolved",
+      "resolution": "MI Link confirmed as recommended approach — only truly online migration option. Uses Always On technology for near-real-time replication. 5hr expected savings reasonable. Rename to 'MI Link (Managed Instance Link)'.",
+      "researcher_needed": true,
+      "score_impact": 4
+    },
+    {
+      "id": "CHK-004",
+      "category": "plausibility",
+      "severity": "high",
+      "description": "DNS cutover at 30hrs (5 zones x 4hr x 1.5x many_sites). 30 hours = ~4 engineer-days. Seems inflated for 5 Cloudflare zones.",
+      "data_reference": "dns_cutover.final_hours=30, dns_cutover.units=5",
+      "status": "accepted",
+      "resolution": "30hrs for 5-zone multi-site DNS cutover reasonable with TTL management, record migration, validation, rollback planning, and Cloudflare-specific configuration. Critical-path item shouldn't be underestimated.",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-005",
+      "category": "risk_coverage",
+      "severity": "high",
+      "description": "Analysis challenge CHK-010 recommended adding risk for temporary AWS↔Azure connectivity during migration. Risk not in estimate.",
+      "data_reference": "analysis challenge-reviews/analysis-round-1.json CHK-010",
+      "status": "accepted",
+      "resolution": "ASMP-019 (no VPN, 8hr widening) partially covers hybrid connectivity. Recommend adding explicit risk in next estimate version.",
+      "researcher_needed": false,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-006",
+      "category": "currency",
+      "severity": "medium",
+      "description": "Playwright AI test generation credited with 8hr expected savings. Verify current AI capabilities for Sitecore rendering validation.",
+      "data_reference": "testing_validation.ai_alternatives.playwright_ai_testgen.hours_saved.expected=8",
+      "status": "resolved",
+      "resolution": "Playwright Test Agents (new 2025) explore apps and generate test plans via AI. MCP server + Copilot integration. 8hr expected / 3hr pessimistic is reasonable range.",
+      "researcher_needed": true,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-007",
+      "category": "plausibility",
+      "severity": "medium",
+      "description": "Solr standalone at 38.4hrs with zero AI alternatives. No automation tooling for Solr migration.",
+      "data_reference": "solr_standalone.ai_alternatives=[]",
+      "status": "accepted",
+      "resolution": "Solr migration is genuinely manual — no AI tooling for schema review, config migration, or index rebuild. Realistic assessment.",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-008",
+      "category": "consistency",
+      "severity": "medium",
+      "description": "Project management at ~43hrs expected with no multipliers despite multi-site/multi-env complexity.",
+      "data_reference": "cross_cutting.project_management.final_hours=40",
+      "status": "accepted",
+      "resolution": "PM is per-engagement overhead, not per-component. 40hr base within typical range. Grows organically if engagement extends.",
+      "researcher_needed": false,
+      "score_impact": 2
+    },
+    {
+      "id": "CHK-009",
+      "category": "completeness",
+      "severity": "medium",
+      "description": "Cutover execution at 24hrs has no AI alternatives. Azure Migrate or ASR could potentially assist.",
+      "data_reference": "cutover_execution.ai_alternatives=[]",
+      "status": "resolved",
+      "resolution": "Cutover is inherently manual — go/no-go decisions, live validation, DNS switches, rollback readiness require human judgment. No appropriate AI alternatives.",
+      "researcher_needed": false,
+      "score_impact": 1
+    },
+    {
+      "id": "CHK-010",
+      "category": "currency",
+      "severity": "high",
+      "description": "Azure Cache for Redis is RETIRING. Premium tier creation blocked for new customers April 2026. Must use Azure Managed Redis instead.",
+      "data_reference": "redis_session references Azure Cache for Redis Premium P1",
+      "status": "resolved",
+      "resolution": "MAJOR: Azure Cache for Redis retiring all tiers. Premium creation blocked April 2026, retirement Sept 2028. Must use Azure Managed Redis (Redis Enterprise-based) for 2026 deployment. Sitecore session state compatible (Redis protocol). Update estimate and knowledge files.",
+      "researcher_needed": true,
+      "score_impact": 5
+    },
+    {
+      "id": "CHK-011",
+      "category": "risk_coverage",
+      "severity": "medium",
+      "description": "RISK-008 CI/CD hours_impact (24h) not reconciled with estimate CI/CD hours (20.8h). Analysis challenge recommended reducing to 16hr.",
+      "data_reference": "RISK-008.estimated_hours_impact=24, cicd_pipeline.final_hours=20.8",
+      "status": "resolved",
+      "resolution": "Risk buffer (24hr) and estimate base (20.8hr) serve different purposes — base is expected effort, risk is contingency in pessimistic range. Correctly separated. Recommend aligning RISK-008 to 16hr in future analysis update.",
+      "researcher_needed": false,
+      "score_impact": 2
+    }
+  ],
+  "findings": [
+    {
+      "challenge_id": "CHK-003",
+      "finding": "MI Link uses Always On availability group technology for near-real-time replication. Only truly online migration option — only downtime is instantaneous cutover. Can run for weeks/months before cutover. For 250GB, initial seeding takes hours but continuous replication means cutover is seconds. 5hr expected savings is conservative but reasonable.",
+      "source": "web search",
+      "source_url": "https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/managed-instance-link-migrate?view=azuresql",
+      "verified_date": "2026-02-21",
+      "recommendation": "No hours change needed. Rename AI alternative to 'MI Link (Managed Instance Link)' for clarity.",
+      "data_update_suggested": false
+    },
+    {
+      "challenge_id": "CHK-006",
+      "finding": "Playwright codegen records user interactions into test scripts. NEW: Playwright Test Agents explore apps and produce test plans via AI. MCP server integration with GitHub Copilot for AI-assisted test generation. 'Fix with AI' in VS Code extension. Limitations: doesn't handle complex logic, selectors may need manual review for dynamic Sitecore content.",
+      "source": "web search",
+      "source_url": "https://developer.microsoft.com/blog/the-complete-playwright-end-to-end-story-tools-ai-and-real-world-workflows",
+      "verified_date": "2026-02-21",
+      "recommendation": "8hr expected savings plausible with Test Agents + codegen. Pessimistic 3hr floor adequate. No change needed.",
+      "data_update_suggested": false
+    },
+    {
+      "challenge_id": "CHK-010",
+      "finding": "Azure Cache for Redis is RETIRING across ALL tiers. Premium: creation blocked for new customers April 1, 2026, full retirement September 2028. Enterprise: creation blocked April 2026, retirement March 2027. Replacement: Azure Managed Redis (built on Redis Enterprise). Different pricing tiers. Sitecore session state should work (Redis protocol compatible) but explicit verification recommended.",
+      "source": "web search",
+      "source_url": "https://techcommunity.microsoft.com/blog/azure-managed-redis/azure-cache-for-redis-retirement-what-to-know-and-how-to-prepare/4458721",
+      "verified_date": "2026-02-21",
+      "recommendation": "Must use Azure Managed Redis for 2026 deployment. Update estimate, migration plan, and knowledge files. Verify Sitecore 10.4 session state compatibility.",
+      "data_update_suggested": true
+    }
+  ],
+  "summary": "Estimate challenge review passed at 82%. 11 challenges (1 critical, 4 high, 6 medium). 7 resolved, 4 accepted. 0 open. Key findings: (1) SSL/TLS many_sites multiplier double-counts — unit count already reflects multi-site, recommend removing (+10hr to total); (2) 3 components hit 50% AI savings cap undisclosed; (3) MI Link confirmed for DB migration with 5hr savings; (4) MAJOR: Azure Cache for Redis retiring April 2026 — must use Azure Managed Redis; (5) Playwright Test Agents confirmed for AI test generation; (6) Hybrid AWS↔Azure connectivity risk gap documented."
+}

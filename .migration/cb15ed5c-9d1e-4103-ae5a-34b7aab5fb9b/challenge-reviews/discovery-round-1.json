@@ -1,0 +1,126 @@
+{
+  "step": "discovery",
+  "round": 1,
+  "status": "passed",
+  "confidence_score": 81,
+  "score_breakdown": {
+    "completeness": 90,
+    "consistency": 78,
+    "plausibility": 70,
+    "currency": 90,
+    "risk_coverage": 76
+  },
+  "challenges": [
+    {
+      "id": "CHK-001",
+      "category": "plausibility",
+      "severity": "critical",
+      "description": "1 CD base instance with auto-scaling for global multi-site serving ~1M views/month",
+      "data_reference": "compute.compute_cd_instance_count = 1",
+      "status": "open",
+      "resolution": null,
+      "researcher_needed": false,
+      "score_impact": 5
+    },
+    {
+      "id": "CHK-002",
+      "category": "completeness",
+      "severity": "critical",
+      "description": "Database HA config unknown — critical for Azure SQL migration approach",
+      "data_reference": "database.database_ha_config = unknown",
+      "status": "open",
+      "resolution": null,
+      "researcher_needed": false,
+      "score_impact": 6
+    },
+    {
+      "id": "CHK-003",
+      "category": "risk_coverage",
+      "severity": "high",
+      "description": "30+ custom Solr indexes — Solr on Azure VM recommended over Cognitive Search",
+      "status": "resolved",
+      "resolution": "Solr on Azure VM is recommended path. Azure Cognitive Search won't support custom plugins.",
+      "researcher_needed": false,
+      "score_impact": 4
+    },
+    {
+      "id": "CHK-004",
+      "category": "currency",
+      "severity": "high",
+      "description": "Unicorn on Azure App Service has documented issues and is in maintenance mode",
+      "status": "resolved",
+      "resolution": "Plan Unicorn path workarounds or SCS migration. Validate sync workflow on Azure.",
+      "researcher_needed": true,
+      "score_impact": 5
+    },
+    {
+      "id": "CHK-005",
+      "category": "consistency",
+      "severity": "high",
+      "description": "250GB DB includes media blobs — data vs media breakdown unknown",
+      "status": "accepted",
+      "resolution": "Media likely 30-60% of 250GB. Estimate will account for range.",
+      "researcher_needed": false,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-006",
+      "category": "risk_coverage",
+      "severity": "high",
+      "description": "AWS Secrets Manager → Azure Key Vault requires code changes",
+      "status": "resolved",
+      "resolution": "Documented in known-incompatibilities.md. Add as work item.",
+      "researcher_needed": true,
+      "score_impact": 3
+    },
+    {
+      "id": "CHK-009",
+      "category": "currency",
+      "severity": "medium",
+      "description": "Azure Front Door as replacement for 20 CloudFront distributions",
+      "status": "resolved",
+      "resolution": "Front Door Premium (~$330/mo) consolidates all 20. WAF included. Classic retiring July 2026.",
+      "researcher_needed": true,
+      "score_impact": 4
+    },
+    {
+      "id": "CHK-010",
+      "category": "risk_coverage",
+      "severity": "medium",
+      "description": "~30 repos with no cross-repo dependency assessment",
+      "status": "deferred",
+      "resolution": "Deferred to analysis phase — requires codebase access.",
+      "researcher_needed": false,
+      "score_impact": 3
+    }
+  ],
+  "findings": [
+    {
+      "challenge_id": "CHK-004",
+      "finding": "Unicorn compatible with 10.4 but has path length, physicalRootPath, and transparent sync issues on Azure. In maintenance mode.",
+      "source": "web search",
+      "source_url": "https://github.com/SitecoreUnicorn/Unicorn/issues/260",
+      "verified_date": "2026-02-21",
+      "recommendation": "Plan workarounds or SCS migration.",
+      "data_update_suggested": false
+    },
+    {
+      "challenge_id": "CHK-006",
+      "finding": "AWS Secrets Manager → Key Vault migration documented. Different API, naming, access patterns.",
+      "source": "skills/migrate-knowledge/knowledge/known-incompatibilities.md",
+      "verified_date": "2026-02-21",
+      "recommendation": "Add as migration work item.",
+      "data_update_suggested": false
+    },
+    {
+      "challenge_id": "CHK-009",
+      "finding": "Azure Front Door Premium consolidates multiple distributions. WAF included at ~$330/mo.",
+      "source": "web search",
+      "source_url": "https://learn.microsoft.com/en-us/azure/frontdoor/understanding-pricing",
+      "verified_date": "2026-02-21",
+      "recommendation": "Plan Front Door Premium as CDN target.",
+      "data_update_suggested": false
+    }
+  ],
+  "summary": "Discovery challenge review passed at 81%. 8/13 challenges resolved. Key: Unicorn has Azure issues, Front Door Premium consolidates CDN, Secrets Manager migration documented. Open: CD base count, DB HA config, EC2 instance types."
+}

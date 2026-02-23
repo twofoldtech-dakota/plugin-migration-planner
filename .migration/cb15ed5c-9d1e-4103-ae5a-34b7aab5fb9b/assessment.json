@@ -1,0 +1,16 @@
+{
+  "id": "cb15ed5c-9d1e-4103-ae5a-34b7aab5fb9b",
+  "project_name": "MCK - AWS to Azure",
+  "client_name": "MCK",
+  "architect": "Dakota Smith",
+  "project_path": "/Users/dakotasmith/Documents/GitHub/plugin-migration-planner",
+  "sitecore_version": "10.4",
+  "topology": "xp_scaled",
+  "source_cloud": "aws",
+  "target_cloud": "azure",
+  "target_timeline": "",
+  "environment_count": 3,
+  "environments": ["dev", "qa", "prod"],
+  "status": "planning",
+  "updated": "2026-02-21T18:30:00Z"
+}

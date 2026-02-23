@@ -1,0 +1,19 @@
+{
+  "dimension": "database",
+  "status": "partial",
+  "source": "overview_extraction",
+  "answers": {
+    "database_sql_version": {
+      "value": "SQL Server 2019",
+      "confidence": "assumed",
+      "basis": "inferred: Sitecore 10.4 typically paired with SQL Server 2019",
+      "notes": ""
+    },
+    "database_encryption_at_rest": {
+      "value": true,
+      "confidence": "assumed",
+      "basis": "domain knowledge: virtually all production RDS/SQL instances enable encryption at rest",
+      "notes": ""
+    }
+  }
+}

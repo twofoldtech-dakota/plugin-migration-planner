@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCK - AWS to Azure — Migration Estimate Dashboard</title>
+<style>
+  :root {
+    --bg: #f5f5f0; --surface: #ffffff; --surface-raised: #fafaf7;
+    --text: #1a1a1a; --text-muted: #555555; --text-faint: #888888;
+    --border: #000000; --border-light: #d0d0d0;
+    --primary: #2563eb; --primary-light: #dbeafe;
+    --success: #16a34a; --success-light: #dcfce7;
+    --warning: #facc15; --warning-dark: #a16207; --warning-light: #fef9c3;
+    --danger: #dc2626; --danger-light: #fee2e2;
+    --shadow: 4px 4px 0 #000; --shadow-sm: 2px 2px 0 #000;
+    --border-width: 3px; --radius: 0px; --gap: 14px;
+    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  /* --- Summary Bar (sticky top) --- */
+  .summary-bar { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: var(--border-width) solid var(--border); padding: 14px 24px; }
+  .summary-bar-inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); }
+  .summary-bar .card { background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius); padding: 12px 16px; box-shadow: var(--shadow-sm); }
+
+  /* --- Main Tab Bar (sticky below summary) --- */
+  .main-tab-bar { position: sticky; top: 0; z-index: 90; background: var(--surface); border-bottom: var(--border-width) solid var(--border); padding: 0 24px; display: flex; align-items: stretch; }
+  .main-tab-bar-inner { max-width: 1280px; margin: 0 auto; display: flex; width: 100%; }
+  .main-tab { padding: 12px 20px; font-size: 13px; font-weight: 700; cursor: pointer; border-bottom: 4px solid transparent; margin-bottom: -3px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; transition: color 0.15s, border-color 0.15s; user-select: none; text-transform: uppercase; letter-spacing: 0.04em; }
+  .main-tab:hover { color: var(--text); }
+  .main-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  kbd { display: inline-block; padding: 1px 6px; border: 2px solid var(--border); border-radius: var(--radius); background: var(--bg); font-family: var(--mono); font-size: 11px; color: var(--text-faint); line-height: 1.3; vertical-align: baseline; }
+
+  /* --- Tab Panels --- */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* --- Status Bar (sticky bottom) --- */
+  .status-bar { position: sticky; bottom: 0; z-index: 100; background: var(--surface); border-top: var(--border-width) solid var(--border); padding: 8px 24px; font-size: 11px; color: var(--text-faint); display: flex; justify-content: space-between; align-items: center; }
+  .status-bar-inner { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; width: 100%; }
+  .status-counts { display: flex; gap: 16px; }
+  .status-counts span { white-space: nowrap; }
+  .status-modified { display: none; color: var(--danger); font-weight: 700; }
+  .status-modified.visible { display: inline; }
+
+  /* --- Container --- */
+  .container { max-width: 1280px; margin: 0 auto; padding: 16px 24px 24px; }
+  header { padding: 16px 24px; border-bottom: var(--border-width) solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .header-left h1 { font-size: 1.25rem; font-weight: 800; }
+  .header-left .subtitle { color: var(--text-muted); font-size: 0.8125rem; margin-top: 2px; }
+  .header-actions { display: flex; gap: 8px; }
+
+  /* --- Grid --- */
+  .grid { display: grid; gap: var(--gap); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+  /* --- Cards --- */
+  .card { background: var(--surface); border: var(--border-width) solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); transition: transform 0.1s, box-shadow 0.1s; }
+  .card:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #000; }
+  .card-header { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+  .card-value { font-size: 1.75rem; font-weight: 800; line-height: 1.2; font-family: var(--mono); }
+  .card-detail { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+  .card-value.primary { color: var(--primary); }
+  .card-value.success { color: var(--success); }
+  .card-value.warning { color: var(--warning-dark); }
+  .card-value.danger { color: var(--danger); }
+
+  /* --- Sections --- */
+  section { margin-bottom: 24px; }
+  section > h2 { font-size: 1rem; font-weight: 800; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 4px solid var(--primary); text-transform: uppercase; letter-spacing: 0.03em; }
+
+  /* --- Confidence --- */
+  .confidence-meter { height: 10px; background: var(--border-light); border-radius: var(--radius); overflow: hidden; margin: 6px 0; border: 2px solid var(--border); }
+  .confidence-fill { height: 100%; border-radius: var(--radius); transition: width 0.4s ease; }
+  .confidence-fill.high { background: var(--success); }
+  .confidence-fill.medium { background: var(--warning); }
+  .confidence-fill.low { background: var(--danger); }
+  .callout { background: var(--primary-light); border-left: 6px solid var(--primary); border: var(--border-width) solid var(--border); padding: 10px 14px; border-radius: var(--radius); font-size: 0.8125rem; margin: 10px 0; color: var(--text); box-shadow: var(--shadow-sm); }
+
+  /* --- Confidence Gauge (SVG) --- */
+  .confidence-gauge { display: flex; align-items: center; gap: 20px; }
+  .confidence-gauge-label { font-size: 0.8125rem; font-weight: 800; }
+  .confidence-gauge svg text { font-family: var(--mono); }
+
+  /* --- Tables --- */
+  table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 2px solid var(--border); }
+  th { background: #1a1a1a; color: #ffffff; font-weight: 800; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; }
+  td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tr:hover { background: var(--surface-raised); }
+
+  /* --- Bar Charts --- */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; cursor: pointer; border: 2px solid transparent; padding: 4px 6px; border-radius: var(--radius); transition: border-color 0.15s; }
+  .bar-row:hover { border-color: var(--primary); }
+  .bar-row:hover .bar-label { color: var(--primary); }
+  .bar-label { width: 130px; font-size: 0.75rem; flex-shrink: 0; text-align: right; font-weight: 700; }
+  .bar-track { flex: 1; height: 28px; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; position: relative; }
+  .bar-segment { height: 100%; display: inline-block; transition: width 0.4s ease; }
+  .bar-segment.firm { background: var(--primary); }
+  .bar-segment.assumption { background: #93c5fd; }
+  .bar-segment.ai-savings { background: var(--success); opacity: 0.8; }
+  .bar-value { width: 60px; font-size: 0.75rem; font-weight: 800; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* --- Toggles --- */
+  .toggle-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .toggle-row label { font-size: 0.8125rem; cursor: pointer; flex: 1; }
+  .toggle-row .savings { font-size: 0.75rem; color: var(--success); font-weight: 800; min-width: 60px; text-align: right; font-family: var(--mono); }
+  input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+
+  /* --- Buttons --- */
+  .btn-group { display: flex; gap: 8px; margin-bottom: 10px; }
+  .btn { padding: 6px 14px; border-radius: var(--radius); border: var(--border-width) solid var(--border); background: var(--surface); color: var(--text); font-size: 0.75rem; cursor: pointer; font-weight: 700; transition: transform 0.05s, box-shadow 0.05s; box-shadow: var(--shadow-sm); text-transform: uppercase; letter-spacing: 0.03em; }
+  .btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #000; }
+  .btn:active { transform: translate(2px, 2px); box-shadow: none; }
+  .btn-primary { background: var(--primary); color: #ffffff; border-color: var(--border); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-danger { background: var(--danger); color: #ffffff; border-color: var(--border); }
+  .btn-success { background: var(--success); color: #ffffff; border-color: var(--border); }
+
+  /* --- Assumptions --- */
+  .assumption-item { padding: 12px; border: var(--border-width) solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface); box-shadow: var(--shadow-sm); }
+  .assumption-item.high { border-left: 8px solid var(--danger); }
+  .assumption-item.medium { border-left: 8px solid var(--warning); }
+  .assumption-item.low { border-left: 8px solid var(--success); }
+  .assumption-header { display: flex; justify-content: space-between; align-items: center; }
+  .assumption-id { font-weight: 800; font-size: 0.75rem; }
+  .assumption-widening { font-size: 0.75rem; font-weight: 800; font-family: var(--mono); }
+  .assumption-widening.high { color: var(--danger); }
+  .assumption-widening.medium { color: var(--warning-dark); }
+  .assumption-widening.low { color: var(--success); }
+  .assumption-body { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* --- Badges --- */
+  .badge { display: inline-block; padding: 3px 8px; border-radius: var(--radius); font-size: 0.625rem; font-weight: 800; text-transform: uppercase; border: 2px solid var(--border); }
+  .badge-danger { background: var(--danger); color: #ffffff; }
+  .badge-warning { background: var(--warning); color: #1a1a1a; }
+  .badge-success { background: var(--success); color: #ffffff; }
+  .comparison-highlight { background: var(--primary-light); font-weight: 800; }
+
+  /* --- AI Ranked Table --- */
+  .rank-num { font-family: var(--mono); font-weight: 800; font-size: 0.8125rem; color: var(--text-faint); text-align: center; width: 32px; }
+  .rank-num.top3 { color: var(--primary); }
+  .tool-name { font-weight: 800; font-size: 0.8125rem; }
+  .tool-meta { font-size: 0.6875rem; color: var(--text-muted); margin-top: 1px; }
+  .tool-desc { font-size: 0.6875rem; color: var(--text-faint); margin-top: 2px; max-width: 480px; }
+  .tool-row-disabled td { opacity: 0.45; }
+  .tool-row-disabled td:last-child { opacity: 1; }
+  .cost-badge { display: inline-block; padding: 2px 8px; border-radius: var(--radius); font-size: 0.5625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; border: 2px solid var(--border); }
+  .cost-free { background: var(--success); color: #ffffff; }
+  .cost-included { background: var(--success); color: #ffffff; }
+  .cost-pay { background: var(--warning); color: #1a1a1a; }
+  .cost-sub { background: var(--primary); color: #ffffff; }
+  .mutual-tag { font-size: 0.5625rem; color: var(--text-faint); border: 2px solid var(--border); border-radius: var(--radius); padding: 1px 5px; margin-left: 6px; white-space: nowrap; font-weight: 700; }
+  .tool-row { cursor: pointer; }
+  .tool-row td:first-child { position: relative; }
+  .tool-arrow { font-size: 0.5rem; color: var(--text-faint); transition: transform 0.2s; display: inline-block; margin-right: 4px; }
+  .tool-arrow.open { transform: rotate(90deg); }
+  .tool-detail-row { display: none; }
+  .tool-detail-row.open { display: table-row; }
+  .tool-detail-row:hover { background: transparent; }
+  .tool-detail-cell { padding: 14px 16px !important; background: var(--surface-raised); border-bottom: 2px solid var(--border); border-left: 4px solid var(--primary); }
+  .tool-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .tool-detail-full { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; }
+  .tool-detail-section h4 { font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-bottom: 5px; }
+  .tool-detail-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .tool-detail-chip { font-size: 0.625rem; padding: 2px 8px; border-radius: var(--radius); border: 2px solid var(--border); color: var(--text-muted); font-weight: 700; }
+  .tool-detail-list { list-style: none; font-size: 0.6875rem; }
+  .tool-detail-list li { padding: 2px 0; color: var(--text-muted); }
+  .tool-detail-list li::before { margin-right: 5px; }
+  .tool-detail-list.pros li::before { content: '+'; color: var(--success); font-weight: 800; }
+  .tool-detail-list.cons li::before { content: '\2212'; color: var(--danger); font-weight: 800; }
+  .tool-detail-list.prereqs li::before { content: '\2022'; color: var(--text-faint); }
+  .tool-savings-range { display: flex; gap: 16px; margin-top: 8px; font-size: 0.6875rem; }
+  .tool-savings-range span { font-family: var(--mono); }
+  .tool-savings-range .label { color: var(--text-faint); font-family: inherit; }
+
+  /* --- Component Detail Rows --- */
+  .comp-row { cursor: pointer; }
+  .comp-row:hover { background: var(--surface-raised); }
+  .comp-row td:first-child { position: relative; padding-left: 22px; }
+  .comp-arrow { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--text-faint); transition: transform 0.2s; }
+  .comp-arrow.open { transform: translateY(-50%) rotate(90deg); }
+  .comp-detail-row { display: none; }
+  .comp-detail-row.open { display: table-row; }
+  .comp-detail-row:hover { background: transparent; }
+  .comp-detail-cell { padding: 12px 14px !important; background: var(--surface-raised); border-bottom: 2px solid var(--border); border-left: 4px solid var(--primary); }
+  .comp-detail { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .comp-detail-section h4 { font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); margin-bottom: 6px; }
+  .comp-detail-list { list-style: none; font-size: 0.75rem; }
+  .comp-detail-list li { padding: 3px 0; display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border-light); }
+  .comp-detail-list li:last-child { border-bottom: none; }
+  .comp-detail-list .detail-label { color: var(--text-muted); flex: 1; min-width: 0; }
+  .comp-detail-list .detail-value { font-family: var(--mono); font-weight: 800; white-space: nowrap; }
+  .comp-detail-list .detail-enabled { color: var(--success); }
+  .comp-detail-list .detail-disabled { color: var(--text-faint); }
+  .comp-detail-none { font-size: 0.6875rem; color: var(--text-faint); font-style: italic; }
+
+  /* --- Role Detail Rows --- */
+  .role-row { cursor: pointer; }
+  .role-row:hover { background: var(--surface-raised); }
+  .role-row td:first-child { position: relative; padding-left: 22px; }
+  .role-arrow { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 0.5rem; color: var(--text-faint); transition: transform 0.2s; }
+  .role-arrow.open { transform: translateY(-50%) rotate(90deg); }
+  .role-detail-row { display: none; }
+  .role-detail-row.open { display: table-row; }
+  .role-detail-row:hover { background: transparent; }
+  .role-detail-cell { padding: 12px 14px !important; background: var(--surface-raised); border-bottom: 2px solid var(--border); border-left: 4px solid var(--primary); }
+
+  /* --- Phase Groups --- */
+  .phase-group { margin-bottom: 4px; }
+  .phase-header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 16px; background: #1a1a1a; border: var(--border-width) solid var(--border); border-radius: var(--radius); cursor: pointer; user-select: none; color: #ffffff; }
+  .phase-header:hover { background: #2a2a2a; }
+  .phase-header-top { display: flex; align-items: center; gap: 8px; width: 100%; }
+  .phase-summary { display: flex; align-items: center; gap: 10px; width: 100%; padding-top: 6px; font-size: 0.6875rem; color: #aaaaaa; flex-wrap: wrap; }
+  .phase-summary .badge { font-size: 0.5625rem; padding: 2px 6px; }
+  .phase-arrow { transition: transform 0.2s; font-size: 0.6875rem; color: #ffffff; }
+  .phase-arrow.open { transform: rotate(90deg); }
+  .phase-name { flex: 1; font-weight: 800; font-size: 0.8125rem; }
+  .phase-hours { font-weight: 800; font-size: 0.8125rem; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .comp-detail-summary { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .comp-detail-stat { padding: 6px 12px; border: 2px solid var(--border-light); border-radius: var(--radius); background: var(--surface); font-size: 0.6875rem; text-align: center; }
+  .comp-detail-stat .stat-label { color: var(--text-faint); font-size: 0.5625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+  .comp-detail-stat .stat-value { font-family: var(--mono); font-weight: 800; font-size: 0.8125rem; margin-top: 2px; }
+  .phase-body { display: none; border: var(--border-width) solid var(--border); border-top: 0; border-radius: var(--radius); overflow: hidden; }
+  .phase-body.open { display: block; }
+
+  /* --- Assumption Sub-Tabs --- */
+  .tab-bar { display: flex; border-bottom: var(--border-width) solid var(--border); margin-bottom: 12px; }
+  .tab { padding: 8px 16px; font-size: 0.8125rem; font-weight: 700; cursor: pointer; border-bottom: 4px solid transparent; margin-bottom: -3px; color: var(--text-muted); text-transform: uppercase; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* --- Donut Chart --- */
+  .donut-container { display: flex; align-items: center; gap: 16px; flex-wrap: nowrap; justify-content: center; }
+  .donut-legend { display: flex; flex-direction: column; gap: 6px; min-width: 180px; max-width: 260px; }
+  .donut-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
+  .donut-legend-swatch { width: 14px; height: 14px; border: 2px solid var(--border); flex-shrink: 0; }
+  .donut-legend-hours { font-family: var(--mono); font-weight: 800; margin-left: auto; min-width: 50px; text-align: right; }
+
+  /* --- Edit Mode --- */
+  .edit-toolbar { display: none; background: var(--warning); border-bottom: var(--border-width) solid var(--border); padding: 8px 24px; text-align: center; font-weight: 800; font-size: 0.8125rem; }
+  .edit-toolbar.active { display: block; }
+  .edit-toolbar .btn { margin-left: 12px; }
+  .editable { outline: none; }
+  .editable[contenteditable="true"] { background: var(--warning-light); border-bottom: 2px dashed var(--border); cursor: text; padding: 0 2px; }
+  .editable[contenteditable="true"]:focus { background: #ffffff; border-bottom-color: var(--primary); }
+
+  /* --- Filter Bar --- */
+  .filter-bar { display: none; margin-bottom: 14px; border: 2px solid var(--border-light); background: var(--surface); padding: 10px 14px; }
+  .filter-bar.active { display: flex; flex-direction: column; gap: 8px; }
+  .filter-bar-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .filter-search { padding: 6px 10px; border: 2px solid var(--border); border-radius: var(--radius); font-size: 0.8125rem; font-family: inherit; width: 100%; background: var(--bg); }
+  .filter-search:focus { outline: none; border-color: var(--primary); background: #ffffff; }
+  .filter-label { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em; }
+  .filter-chip { padding: 4px 10px; font-size: 0.6875rem; font-weight: 700; border: 2px solid var(--border); background: var(--bg); cursor: pointer; text-transform: uppercase; transition: transform 0.05s, box-shadow 0.05s; }
+  .filter-chip:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 #000; }
+  .filter-chip:active { transform: translate(1px, 1px); box-shadow: none; }
+  .filter-chip.active { background: var(--primary); color: #ffffff; }
+  .filter-chip.risk-high.active { background: var(--danger); color: #ffffff; }
+  .filter-chip.risk-medium.active { background: var(--warning); color: #1a1a1a; }
+  .filter-chip.risk-low.active { background: var(--success); color: #ffffff; }
+
+  /* --- Scenario Bar --- */
+  .scenario-bar { display: inline-flex; gap: 0; margin-bottom: 14px; border: var(--border-width) solid var(--border); overflow: hidden; }
+  .scenario-btn { padding: 8px 18px; font-size: 0.75rem; font-weight: 800; cursor: pointer; background: var(--surface); color: var(--text); border: none; border-right: var(--border-width) solid var(--border); text-transform: uppercase; transition: background 0.1s; }
+  .scenario-btn:last-child { border-right: none; }
+  .scenario-btn:hover { background: var(--bg); }
+  .scenario-btn.active { background: var(--primary); color: #ffffff; }
+
+  /* --- Animated Values --- */
+  .animated-value { transition: opacity 0.15s; }
+
+  /* --- Print Mode --- */
+  @media print {
+    :root {
+      --shadow: none; --shadow-sm: none;
+      --border-width: 1px;
+    }
+    body { background: white; font-size: 11px; }
+    .no-print { display: none !important; }
+    .edit-toolbar { display: none !important; }
+    .filter-bar { display: none !important; }
+    .scenario-bar { display: none !important; }
+    .summary-bar { position: static; border-bottom: 1px solid #ccc; }
+    .summary-bar .card { box-shadow: none; border: 1px solid #ccc; }
+    .main-tab-bar { display: none !important; }
+    .status-bar { display: none !important; }
+    .tab-panel { display: block !important; }
+    .tab-panel > section > h2 { break-before: auto; }
+    .container { max-width: 100%; padding: 0 12px; }
+    header { border: none; padding: 8px 0; }
+    .header-actions { display: none !important; }
+    .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+    .card:hover { transform: none; box-shadow: none; }
+    section { break-inside: avoid; }
+    .bar-segment { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .confidence-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .comparison-highlight { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .phase-header { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    th { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .comparison-table-print { display: table !important; }
+  }
+
+  /* --- Responsive --- */
+  @media (max-width: 768px) {
+    .summary-bar-inner { grid-template-columns: 1fr 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .bar-label { width: 90px; }
+    .container { padding: 10px; }
+    .donut-container { flex-direction: column; }
+    .filter-bar-row { flex-direction: column; align-items: stretch; }
+    .filter-search { width: 100%; }
+    .header-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <h1>MCK - AWS to Azure — Migration Estimate Dashboard</h1>
+    <div class="subtitle">MCK | Prepared February 21, 2026 | Assessment cb15ed5c-9d1e-4103-ae5a-34b7aab5fb9b</div>
+  </div>
+  <div class="header-actions no-print">
+    <button class="btn" id="edit-mode-btn" onclick="EditMode.toggle()">Edit Mode</button>
+    <button class="btn btn-success" id="export-btn" onclick="EditMode.exportJSON()" style="display:none;">Export JSON</button>
+  </div>
+</header>
+
+<!-- Edit Toolbar — shown when edit mode active -->
+<div class="edit-toolbar no-print" id="edit-toolbar">
+  Editing Mode — Click numeric values to edit
+  <button class="btn" onclick="EditMode.resetAll()">Reset All</button>
+  <button class="btn btn-success" onclick="EditMode.exportJSON()">Export JSON</button>
+</div>
+
+<!-- Summary Bar — always visible -->
+<div class="summary-bar">
+  <div class="summary-bar-inner" id="summary-cards"></div>
+</div>
+
+<!-- Main Tab Bar -->
+<nav class="main-tab-bar no-print">
+  <div class="main-tab-bar-inner">
+    <div class="main-tab active" data-panel="overview" onclick="MainTabs.show('overview')">Overview <kbd>1</kbd></div>
+    <div class="main-tab" data-panel="estimate" onclick="MainTabs.show('estimate')">Estimate <kbd>2</kbd></div>
+    <div class="main-tab" data-panel="ai-tools" onclick="MainTabs.show('ai-tools')">AI Tools <kbd>3</kbd></div>
+    <div class="main-tab" data-panel="risk" onclick="MainTabs.show('risk')">Risk <kbd>4</kbd></div>
+    <div class="main-tab" data-panel="deliverables" onclick="MainTabs.show('deliverables')">Deliverables <kbd>5</kbd></div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Tab 1: Overview -->
+  <div class="tab-panel active" id="panel-overview">
+    <section>
+      <h2>Estimate Confidence</h2>
+      <div class="card" id="confidence-panel"></div>
+    </section>
+    <section>
+      <h2>Hours by Phase</h2>
+      <div class="card">
+        <div class="donut-container" id="donut-chart"></div>
+      </div>
+    </section>
+    <section>
+      <h2>Scenario Comparison</h2>
+      <div class="scenario-bar no-print" id="scenario-bar"></div>
+      <div class="card" id="comparison-table"></div>
+    </section>
+  </div>
+
+  <!-- Tab 2: Estimate -->
+  <div class="tab-panel" id="panel-estimate">
+    <div class="filter-bar no-print" id="filter-bar"></div>
+    <section>
+      <h2>Phase Breakdown</h2>
+      <div class="btn-group no-print" style="margin-bottom:10px;">
+        <button class="btn btn-primary" onclick="Toggles.enableAllComponents()">Include All</button>
+        <button class="btn" onclick="Toggles.disableAllComponents()">Exclude All</button>
+      </div>
+      <div id="phase-breakdown"></div>
+    </section>
+    <section>
+      <h2>Role Breakdown</h2>
+      <div class="card" id="role-breakdown"></div>
+    </section>
+  </div>
+
+  <!-- Tab 3: AI Tools -->
+  <div class="tab-panel" id="panel-ai-tools">
+    <section>
+      <h2>AI Tools &amp; Automation</h2>
+      <div class="no-print">
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="Toggles.enableAllAI()">Enable All</button>
+          <button class="btn" onclick="Toggles.disableAllAI()">Disable All</button>
+        </div>
+      </div>
+      <div id="ai-cards"></div>
+      <div class="card" style="margin-top: var(--gap);" id="ai-summary"></div>
+    </section>
+  </div>
+
+  <!-- Tab 4: Risk -->
+  <div class="tab-panel" id="panel-risk">
+    <section>
+      <h2>Assumptions &amp; Sensitivity</h2>
+      <div class="no-print" style="margin-bottom: 10px;">
+        <div class="tab-bar" id="assumption-tabs">
+          <div class="tab active" data-tab="unvalidated" onclick="Tabs.show('assumption', 'unvalidated')">Unvalidated</div>
+          <div class="tab" data-tab="validated" onclick="Tabs.show('assumption', 'validated')">Validated</div>
+          <div class="tab" data-tab="all" onclick="Tabs.show('assumption', 'all')">All</div>
+        </div>
+      </div>
+      <div id="assumptions-panel"></div>
+    </section>
+    <section>
+      <h2>Risk Summary</h2>
+      <div class="card" id="risk-summary"></div>
+    </section>
+  </div>
+
+  <!-- Tab 5: Deliverables -->
+  <div class="tab-panel" id="panel-deliverables">
+    <section>
+      <h2>Client Deliverables</h2>
+      <p style="margin-bottom: var(--gap); color: var(--fg-muted);">Generated documents ready for client review. Click to download.</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--gap);">
+
+        <div class="card" style="padding: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="font-size: 28px; line-height: 1;">&#128203;</span>
+            <h3 style="margin: 0; font-size: 18px;">Migration Plan</h3>
+          </div>
+          <p style="color: var(--fg-muted); margin-bottom: 16px; font-size: 14px;">
+            Comprehensive migration plan covering current/target state architecture, 5-phase approach, timeline, resource requirements, risk register, assumptions, AI tools, testing strategy, and rollback procedures.
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
+            <span class="badge" style="font-size: 11px;">Executive Summary</span>
+            <span class="badge" style="font-size: 11px;">5 Phases</span>
+            <span class="badge" style="font-size: 11px;">9 Risks</span>
+            <span class="badge" style="font-size: 11px;">25 Assumptions</span>
+            <span class="badge" style="font-size: 11px;">17 AI Tools</span>
+          </div>
+          <div style="font-size: 13px; color: var(--fg-muted); border-top: 2px solid var(--border); padding-top: 12px;">
+            <code style="font-size: 12px; word-break: break-all;">migration-plan.md</code>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="font-size: 28px; line-height: 1;">&#9888;&#65039;</span>
+            <h3 style="margin: 0; font-size: 18px;">Risk Register</h3>
+          </div>
+          <p style="color: var(--fg-muted); margin-bottom: 16px; font-size: 14px;">
+            Detailed risk register with severity matrix, interdependency analysis, residual risk assessment after mitigations, and individual risk write-ups for all 9 identified risks.
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
+            <span class="badge" style="font-size: 11px;">3 High</span>
+            <span class="badge" style="font-size: 11px;">5 Medium</span>
+            <span class="badge" style="font-size: 11px;">1 Low</span>
+            <span class="badge" style="font-size: 11px;">4 Interdependencies</span>
+            <span class="badge" style="font-size: 11px;">49hr Residual</span>
+          </div>
+          <div style="font-size: 13px; color: var(--fg-muted); border-top: 2px solid var(--border); padding-top: 12px;">
+            <code style="font-size: 12px; word-break: break-all;">risk-register.md</code>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 24px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="font-size: 28px; line-height: 1;">&#128221;</span>
+            <h3 style="margin: 0; font-size: 18px;">Cutover Runbook</h3>
+          </div>
+          <p style="color: var(--fg-muted); margin-bottom: 16px; font-size: 14px;">
+            Step-by-step cutover execution guide with 44 steps across 6 phases, go/no-go checkpoints, rollback procedure, communication cadence, and post-migration validation checklists.
+          </p>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;">
+            <span class="badge" style="font-size: 11px;">44 Steps</span>
+            <span class="badge" style="font-size: 11px;">4 Checkpoints</span>
+            <span class="badge" style="font-size: 11px;">10 Rollback Steps</span>
+            <span class="badge" style="font-size: 11px;">8-12hr Window</span>
+          </div>
+          <div style="font-size: 13px; color: var(--fg-muted); border-top: 2px solid var(--border); padding-top: 12px;">
+            <code style="font-size: 12px; word-break: break-all;">runbook.md</code>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card" style="margin-top: var(--gap); padding: 20px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px;">Fields Requiring Client Input</h3>
+        <p style="color: var(--fg-muted); font-size: 14px; margin: 0;">
+          The following placeholder fields in the deliverables need to be filled in before client delivery:
+        </p>
+        <ul style="color: var(--fg-muted); font-size: 14px; margin: 12px 0 0 0; padding-left: 20px;">
+          <li>Contacts &amp; escalation table (names, phones, emails) — <strong>Runbook</strong></li>
+          <li>Exact cutover date and maintenance window — <strong>Runbook</strong></li>
+          <li>SMTP provider details — <strong>Runbook, Migration Plan</strong></li>
+          <li>Target timeline — <strong>Migration Plan</strong></li>
+          <li>Sign-off sections — <strong>Runbook</strong></li>
+        </ul>
+      </div>
+
+    </section>
+  </div>
+
+</div>
+
+<!-- Status Bar -->
+<footer class="status-bar no-print">
+  <div class="status-bar-inner">
+    <span id="status-date"></span>
+    <span class="status-modified" id="status-modified">Data Modified</span>
+    <div class="status-counts" id="status-counts"></div>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+// DATA — Injected by /migrate dashboard skill
+// ============================================================
+const DATA = {
+  project: {"id":"cb15ed5c-9d1e-4103-ae5a-34b7aab5fb9b","project_name":"MCK - AWS to Azure","client_name":"MCK","architect":"Dakota Smith","project_path":"/Users/dakotasmith/Documents/GitHub/plugin-migration-planner","sitecore_version":"10.4","topology":"xp_scaled","source_cloud":"aws","target_cloud":"azure","target_timeline":"","environment_count":3,"environments":["dev","qa","prod"],"status":"estimation","updated":"2026-02-21T17:43:00Z"},
+  estimate: {"generated_at":"2026-02-21T17:43:00Z","based_on_analysis":"2026-02-21T17:30:00Z","version":1,"discovery_completeness":0.91,"confidence_score":52,"client_summary":{"recommended_hours":496,"low_hours":369,"high_hours":913,"confidence_percent":52,"range_narrative":"Estimate confidence: 52% — validate 3 assumptions (DB HA config, compliance requirements, DB total size) to reach ~65% confidence with a ±40hr narrower range"},"phases":[{"id":"phase_1","name":"Phase 1: Infrastructure Foundation","duration":"2-3 weeks","components":[{"id":"networking_vnet","name":"VNet & Networking","base_hours":16,"multipliers_applied":[{"id":"multi_environment","factor":1.3}],"gotcha_hours":0,"final_hours":20.8,"firm_hours":12.8,"assumption_dependent_hours":8,"assumptions_affecting":["ASMP-019"],"hours":{"without_ai":{"optimistic":16.6,"expected":20.8,"pessimistic":35},"with_ai":{"optimistic":6.2,"expected":10.4,"pessimistic":24.6}},"ai_alternatives":[{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}},{"id":"azure_network_watcher","name":"Network Watcher","hours_saved":{"optimistic":4,"expected":3,"pessimistic":1}},{"id":"claude_code","name":"Claude Code","hours_saved":{"optimistic":5,"expected":3,"pessimistic":1.2}},{"id":"azure_migrate","name":"Azure Migrate","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}}],"by_role":{"infrastructure_engineer":20.8}},{"id":"compute_single_role","name":"Compute (CM + CD + xConnect)","units":3,"base_hours":48,"multipliers_applied":[{"id":"many_sites","factor":1.5},{"id":"multi_environment","factor":1.3}],"gotcha_hours":0,"final_hours":93.6,"firm_hours":73.6,"assumption_dependent_hours":20,"assumptions_affecting":["ASMP-007","ASMP-008","ASMP-010","ASMP-011"],"hours":{"without_ai":{"optimistic":74.9,"expected":93.6,"pessimistic":137.7},"with_ai":{"optimistic":62.9,"expected":83.3,"pessimistic":127.4}},"ai_alternatives":[{"id":"azure_migrate","name":"Azure Migrate","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}},{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}},{"id":"defender_for_cloud","name":"Defender for Cloud","hours_saved":{"optimistic":2.7,"expected":1.7,"pessimistic":0.7}},{"id":"aws_app_discovery","name":"AWS App Discovery","hours_saved":{"optimistic":4,"expected":2.5,"pessimistic":1}},{"id":"azure_advisor","name":"Azure Advisor","hours_saved":{"optimistic":1.3,"expected":0.75,"pessimistic":0.3}}],"by_role":{"sitecore_developer":23.4,"infrastructure_engineer":70.2}},{"id":"managed_identity_keyvault","name":"Managed Identity & Key Vault","base_hours":10,"multipliers_applied":[],"gotcha_hours":0,"final_hours":10,"firm_hours":10,"assumption_dependent_hours":0,"assumptions_affecting":[],"hours":{"without_ai":{"optimistic":8,"expected":10,"pessimistic":13},"with_ai":{"optimistic":6,"expected":8,"pessimistic":11}},"ai_alternatives":[{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":3,"expected":2,"pessimistic":1}}],"by_role":{"sitecore_developer":4,"infrastructure_engineer":6}},{"id":"ssl_tls","name":"SSL/TLS Certificates","units":10,"base_hours":40,"multipliers_applied":[{"id":"many_sites","factor":1.5}],"gotcha_hours":0,"final_hours":30,"firm_hours":22,"assumption_dependent_hours":8,"assumptions_affecting":["ASMP-006"],"hours":{"without_ai":{"optimistic":24,"expected":30,"pessimistic":47},"with_ai":{"optimistic":22,"expected":28,"pessimistic":45}},"ai_alternatives":[],"by_role":{"sitecore_developer":7.5,"infrastructure_engineer":22.5}}],"hours":{"without_ai":{"optimistic":123.5,"expected":154.4,"pessimistic":232.7},"with_ai":{"optimistic":97.1,"expected":129.7,"pessimistic":208}}},{"id":"phase_2","name":"Phase 2: Data Migration","duration":"2-3 weeks","components":[{"id":"database_single","name":"SQL Server Databases (Core, Master, Web, xDB)","units":4,"base_hours":48,"multipliers_applied":[{"id":"multi_environment","factor":1.3}],"gotcha_hours":24,"final_hours":86.4,"firm_hours":42.4,"assumption_dependent_hours":44,"assumptions_affecting":["ASMP-001","ASMP-003","ASMP-004","ASMP-016","ASMP-017"],"hours":{"without_ai":{"optimistic":69.1,"expected":86.4,"pessimistic":156.3},"with_ai":{"optimistic":59.1,"expected":75.9,"pessimistic":145.8}},"ai_alternatives":[{"id":"azure_dms","name":"Azure DMS / MI Link","hours_saved":{"optimistic":8,"expected":5,"pessimistic":3}},{"id":"dma","name":"Database Migration Assistant","hours_saved":{"optimistic":4,"expected":3,"pessimistic":1}},{"id":"azure_advisor","name":"Azure Advisor","hours_saved":{"optimistic":1.3,"expected":0.75,"pessimistic":0.3}},{"id":"defender_for_cloud","name":"Defender for Cloud","hours_saved":{"optimistic":2.7,"expected":1.7,"pessimistic":0.7}}],"by_role":{"dba":57.6,"sitecore_developer":28.8}},{"id":"blob_storage","name":"Media / Blob Storage","base_hours":12,"multipliers_applied":[],"gotcha_hours":0,"final_hours":12,"firm_hours":4,"assumption_dependent_hours":8,"assumptions_affecting":["ASMP-004","ASMP-021"],"hours":{"without_ai":{"optimistic":9.6,"expected":12,"pessimistic":25.6},"with_ai":{"optimistic":5.6,"expected":8,"pessimistic":21.6}},"ai_alternatives":[{"id":"azcopy","name":"AzCopy","hours_saved":{"optimistic":6,"expected":4,"pessimistic":2}}],"by_role":{"sitecore_developer":6,"infrastructure_engineer":6}},{"id":"solr_standalone","name":"Solr Standalone (30+ Custom Indexes)","base_hours":24,"multipliers_applied":[{"id":"many_custom_solr_indexes","factor":1.6}],"gotcha_hours":0,"final_hours":38.4,"firm_hours":34.4,"assumption_dependent_hours":4,"assumptions_affecting":["ASMP-009"],"hours":{"without_ai":{"optimistic":30.7,"expected":38.4,"pessimistic":53.9},"with_ai":{"optimistic":30.7,"expected":38.4,"pessimistic":53.9}},"ai_alternatives":[],"by_role":{"sitecore_developer":12.8,"infrastructure_engineer":25.6}},{"id":"redis_session","name":"Redis Session & Caching","base_hours":8,"multipliers_applied":[],"gotcha_hours":4,"final_hours":12,"firm_hours":2,"assumption_dependent_hours":10,"assumptions_affecting":["ASMP-010","ASMP-018","ASMP-023"],"hours":{"without_ai":{"optimistic":9.6,"expected":12,"pessimistic":25.6},"with_ai":{"optimistic":7.6,"expected":9.3,"pessimistic":22.9}},"ai_alternatives":[{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":3,"expected":2.7,"pessimistic":1.3}}],"by_role":{"sitecore_developer":6,"infrastructure_engineer":6}},{"id":"content_serialization_sync","name":"Unicorn Serialization Sync","base_hours":12,"multipliers_applied":[],"gotcha_hours":0,"final_hours":12,"firm_hours":12,"assumption_dependent_hours":0,"assumptions_affecting":[],"hours":{"without_ai":{"optimistic":9.6,"expected":12,"pessimistic":15.6},"with_ai":{"optimistic":9.6,"expected":12,"pessimistic":15.6}},"ai_alternatives":[],"by_role":{"sitecore_developer":10,"infrastructure_engineer":2}}],"hours":{"without_ai":{"optimistic":128.6,"expected":160.8,"pessimistic":277},"with_ai":{"optimistic":112.6,"expected":143.6,"pessimistic":259.8}}},{"id":"phase_3","name":"Phase 3: Application & Services","duration":"2-4 weeks","components":[{"id":"identity_server","name":"Identity Server","base_hours":8,"multipliers_applied":[],"gotcha_hours":0,"final_hours":8,"firm_hours":8,"assumption_dependent_hours":0,"assumptions_affecting":[],"hours":{"without_ai":{"optimistic":6.4,"expected":8,"pessimistic":10.4},"with_ai":{"optimistic":3.9,"expected":5.5,"pessimistic":7.9}},"ai_alternatives":[{"id":"github_copilot","name":"GitHub Copilot","hours_saved":{"optimistic":4,"expected":2.5,"pessimistic":1}}],"by_role":{"sitecore_developer":5,"infrastructure_engineer":3}},{"id":"xconnect_xdb","name":"xConnect & xDB","base_hours":24,"multipliers_applied":[],"gotcha_hours":0,"final_hours":24,"firm_hours":14,"assumption_dependent_hours":10,"assumptions_affecting":["ASMP-005","ASMP-022"],"hours":{"without_ai":{"optimistic":19.2,"expected":24,"pessimistic":41.2},"with_ai":{"optimistic":16.7,"expected":21.5,"pessimistic":38.7}},"ai_alternatives":[{"id":"github_copilot","name":"GitHub Copilot","hours_saved":{"optimistic":4,"expected":2.5,"pessimistic":1}}],"by_role":{"dba":4,"sitecore_developer":12,"infrastructure_engineer":8}},{"id":"custom_integration","name":"Integrations (Secrets Manager → Key Vault)","base_hours":16,"multipliers_applied":[],"gotcha_hours":8,"final_hours":24,"firm_hours":24,"assumption_dependent_hours":0,"assumptions_affecting":["ASMP-012"],"hours":{"without_ai":{"optimistic":19.2,"expected":24,"pessimistic":35.2},"with_ai":{"optimistic":13.7,"expected":18.5,"pessimistic":29.7}},"ai_alternatives":[{"id":"github_copilot","name":"GitHub Copilot","hours_saved":{"optimistic":4,"expected":2.5,"pessimistic":1}},{"id":"claude_code","name":"Claude Code","hours_saved":{"optimistic":5,"expected":3,"pessimistic":1.2}}],"by_role":{"sitecore_developer":18,"infrastructure_engineer":6}},{"id":"cdn_setup","name":"Azure Front Door (20 Distributions)","base_hours":8,"multipliers_applied":[{"id":"many_sites","factor":1.5}],"gotcha_hours":0,"final_hours":12,"firm_hours":4,"assumption_dependent_hours":8,"assumptions_affecting":["ASMP-006","ASMP-013"],"hours":{"without_ai":{"optimistic":9.6,"expected":12,"pessimistic":27.6},"with_ai":{"optimistic":6.9,"expected":9.3,"pessimistic":24.9}},"ai_alternatives":[{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}}],"by_role":{"sitecore_developer":3,"infrastructure_engineer":9}},{"id":"cicd_pipeline","name":"CI/CD (TeamCity → Azure Pipelines)","base_hours":16,"multipliers_applied":[{"id":"multi_environment","factor":1.3}],"gotcha_hours":0,"final_hours":20.8,"firm_hours":18.8,"assumption_dependent_hours":2,"assumptions_affecting":["ASMP-015"],"hours":{"without_ai":{"optimistic":16.6,"expected":20.8,"pessimistic":29},"with_ai":{"optimistic":6.2,"expected":10.4,"pessimistic":18.6}},"ai_alternatives":[{"id":"azure_devops_pipelines","name":"Azure DevOps Pipelines","hours_saved":{"optimistic":8,"expected":5,"pessimistic":2}},{"id":"claude_code","name":"Claude Code","hours_saved":{"optimistic":5,"expected":3,"pessimistic":1.2}},{"id":"github_copilot","name":"GitHub Copilot","hours_saved":{"optimistic":4,"expected":2.5,"pessimistic":1}}],"by_role":{"sitecore_developer":5.2,"infrastructure_engineer":15.6}},{"id":"monitoring_setup","name":"Monitoring (New Relic → Azure Monitor)","base_hours":12,"multipliers_applied":[{"id":"multi_environment","factor":1.3}],"gotcha_hours":0,"final_hours":15.6,"firm_hours":15.6,"assumption_dependent_hours":0,"assumptions_affecting":[],"hours":{"without_ai":{"optimistic":12.5,"expected":15.6,"pessimistic":20.3},"with_ai":{"optimistic":4.7,"expected":7.8,"pessimistic":12.5}},"ai_alternatives":[{"id":"azure_monitor_ai","name":"Azure Monitor AI Insights","hours_saved":{"optimistic":6,"expected":4,"pessimistic":2}},{"id":"app_insights_smart","name":"App Insights Smart Detection","hours_saved":{"optimistic":4,"expected":3,"pessimistic":1}},{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":2.5,"expected":1.5,"pessimistic":0.8}}],"by_role":{"sitecore_developer":5.2,"infrastructure_engineer":10.4}}],"hours":{"without_ai":{"optimistic":83.5,"expected":104.4,"pessimistic":163.7},"with_ai":{"optimistic":52.1,"expected":73,"pessimistic":132.3}}},{"id":"phase_4","name":"Phase 4: Validation & Testing","duration":"1-2 weeks","components":[{"id":"testing_validation","name":"Testing & Validation","base_hours":40,"multipliers_applied":[{"id":"many_sites","factor":1.5}],"gotcha_hours":0,"final_hours":60,"firm_hours":60,"assumption_dependent_hours":0,"assumptions_affecting":[],"hours":{"without_ai":{"optimistic":48,"expected":60,"pessimistic":78},"with_ai":{"optimistic":33.5,"expected":45.5,"pessimistic":63.5}},"ai_alternatives":[{"id":"playwright_ai_testgen","name":"Playwright AI Test Gen","hours_saved":{"optimistic":12,"expected":8,"pessimistic":3}},{"id":"k6_performance","name":"K6 Performance Testing","hours_saved":{"optimistic":8,"expected":5,"pessimistic":2}},{"id":"app_insights_smart","name":"App Insights Smart Detection","hours_saved":{"optimistic":2,"expected":1.5,"pessimistic":0.5}}],"by_role":{"qa_engineer":36,"sitecore_developer":18,"infrastructure_engineer":6}},{"id":"backup_dr","name":"Backup & DR Configuration","base_hours":12,"multipliers_applied":[],"gotcha_hours":0,"final_hours":12,"firm_hours":8,"assumption_dependent_hours":4,"assumptions_affecting":["ASMP-014"],"hours":{"without_ai":{"optimistic":9.6,"expected":12,"pessimistic":19.6},"with_ai":{"optimistic":4.6,"expected":6.3,"pessimistic":13.9}},"ai_alternatives":[{"id":"azure_backup_smart","name":"Azure Backup Smart Tiering","hours_saved":{"optimistic":4,"expected":3,"pessimistic":1}},{"id":"terraform_opentofu","name":"Terraform/OpenTofu","hours_saved":{"optimistic":4,"expected":2.7,"pessimistic":1.3}}],"by_role":{"dba":2,"infrastructure_engineer":10}}],"hours":{"without_ai":{"optimistic":57.6,"expected":72,"pessimistic":97.6},"with_ai":{"optimistic":38.1,"expected":51.8,"pessimistic":77.4}}},{"id":"phase_5","name":"Phase 5: Cutover & Go-Live","duration":"1-3 days + hypercare","components":[{"id":"cutover_execution","name":"Cutover Execution","base_hours":16,"multipliers_applied":[],"gotcha_hours":8,"final_hours":24,"firm_hours":16,"assumption_dependent_hours":8,"assumptions_affecting":["ASMP-003"],"hours":{"without_ai":{"optimistic":19.2,"expected":24,"pessimistic":39.2},"with_ai":{"optimistic":19.2,"expected":24,"pessimistic":39.2}},"ai_alternatives":[],"by_role":{"dba":6,"project_manager":3,"sitecore_developer":6,"infrastructure_engineer":9}},{"id":"dns_cutover","name":"DNS Cutover (Cloudflare)","units":5,"base_hours":20,"multipliers_applied":[{"id":"many_sites","factor":1.5}],"gotcha_hours":0,"final_hours":30,"firm_hours":18,"assumption_dependent_hours":12,"assumptions_affecting":["ASMP-006","ASMP-020"],"hours":{"without_ai":{"optimistic":24,"expected":30,"pessimistic":51},"with_ai":{"optimistic":24,"expected":30,"pessimistic":51}},"ai_alternatives":[],"by_role":{"infrastructure_engineer":30}}],"hours":{"without_ai":{"optimistic":43.2,"expected":54,"pessimistic":90.2},"with_ai":{"optimistic":43.2,"expected":54,"pessimistic":90.2}}}],"cross_cutting":{"project_management":{"base_hours":40,"final_hours":40,"hours":{"without_ai":{"optimistic":34,"expected":43,"pessimistic":56},"with_ai":{"optimistic":34,"expected":43,"pessimistic":56}},"by_role":{"project_manager":40}}},"total":{"without_ai":{"optimistic":469,"expected":586,"pessimistic":913},"with_ai":{"optimistic":369,"expected":496,"pessimistic":823}},"total_by_role":{"infrastructure_engineer":{"without_ai":{"optimistic":204,"expected":255,"pessimistic":398},"with_ai":{"optimistic":164,"expected":215,"pessimistic":358}},"dba":{"without_ai":{"optimistic":56,"expected":70,"pessimistic":109},"with_ai":{"optimistic":48,"expected":62,"pessimistic":101}},"sitecore_developer":{"without_ai":{"optimistic":117,"expected":146,"pessimistic":228},"with_ai":{"optimistic":101,"expected":130,"pessimistic":212}},"qa_engineer":{"without_ai":{"optimistic":29,"expected":36,"pessimistic":47},"with_ai":{"optimistic":20,"expected":27,"pessimistic":38}},"project_manager":{"without_ai":{"optimistic":34,"expected":43,"pessimistic":56},"with_ai":{"optimistic":34,"expected":43,"pessimistic":56}}},"assumption_sensitivity":{"total_assumptions":25,"validated":0,"unvalidated":25,"total_pessimistic_widening_hours":152,"top_assumptions":[{"id":"ASMP-001","description":"Database HA config unknown","pessimistic_widening_hours":16,"affected_components":["database_single"]},{"id":"ASMP-002","description":"Compliance requirements unknown","pessimistic_widening_hours":16,"affected_components":["database_single","networking_vnet","compute_single_role","backup_dr"]},{"id":"ASMP-003","description":"Database size assumed 250GB","pessimistic_widening_hours":8,"affected_components":["database_single","cutover_execution"]},{"id":"ASMP-004","description":"Media size assumed ~50GB","pessimistic_widening_hours":8,"affected_components":["blob_storage","database_single"]},{"id":"ASMP-005","description":"xDB contact count assumed 100K-500K","pessimistic_widening_hours":8,"affected_components":["xconnect_xdb","database_single"]},{"id":"ASMP-019","description":"No VPN assumed","pessimistic_widening_hours":8,"affected_components":["networking_vnet"]},{"id":"ASMP-016","description":"No CLR assemblies assumed","pessimistic_widening_hours":8,"affected_components":["database_single"]}]},"ai_alternatives_summary":{"total_tools_enabled":17,"total_savings_hours":{"optimistic":100,"expected":90,"pessimistic":90},"savings_capped_components":[],"mutual_exclusion_applied":[{"group":"iac_tooling","selected":"terraform_opentofu","excluded":"azure_bicep"},{"group":"cicd_platform","selected":"azure_devops_pipelines","excluded":"github_actions_copilot"}]},"multipliers_applied":[{"id":"many_custom_solr_indexes","factor":1.6,"applies_to":["solr_standalone"],"reason":"30+ custom Solr indexes"},{"id":"many_sites","factor":1.5,"applies_to":["compute_single_role","cdn_setup","ssl_tls","testing_validation","dns_cutover"],"reason":"Global multi-site (assumed >10 sites)"},{"id":"multi_environment","factor":1.3,"applies_to":["networking_vnet","compute_single_role","database_single","monitoring_setup","cicd_pipeline"],"reason":"3 environments (dev, qa, prod)"}],"gotcha_patterns_matched":[{"id":"large_db_migration_window","hours_impact":16,"component":"database_single","reason":"250GB DB exceeds 200GB threshold"},{"id":"media_blob_references","hours_impact":16,"component":"database_single","reason":"Media stored in SQL DB (~50GB+)"},{"id":"custom_handlers_aws","hours_impact":8,"component":"custom_integration","reason":"AWS Secrets Manager integration requires code changes"},{"id":"redis_ssl_default","hours_impact":4,"component":"redis_session","reason":"Azure Cache for Redis requires SSL (challenge review finding)"}],"assumptions":["Single production environment with dev and QA (3 total)","Standard Sitecore XP 10.4 configuration with Unicorn serialization","Client provides timely access to AWS environment documentation","No Sitecore version upgrade included (staying on 10.4)","Azure subscription and permissions available at project start","Azure VMs (IaaS) for Sitecore roles — not App Service","Solr on Azure VM — not Azure AI Search","SQL Managed Instance for databases"],"exclusions":["Application code changes (except integration updates for Key Vault)","Content migration or content restructuring","Sitecore version upgrades","End-user training","Azure subscription and infrastructure costs","Third-party license costs (Sitecore, Solr, etc.)","Post-migration performance optimization beyond baseline validation","Custom SXA theme or rendering modifications"]},
+  assumptions: {"generated_at":"2026-02-21T17:30:00Z","summary":{"total_assumptions":25,"validated":0,"unvalidated":25,"by_confidence":{"assumed":15,"unknown":10},"total_hours_at_risk":152,"total_pessimistic_widening":152,"confidence_score":52,"discovery_completeness":0.91,"data_breakdown":{"total_data_points":124,"confirmed":65,"assumed":46,"unknown":13}},"assumptions":[{"id":"ASMP-001","source":"discovery/database.json#database_ha_config","dimension":"database","question_id":"database_ha_config","assumed_value":"unknown","basis":"User does not know HA configuration","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check SQL Server configuration — look for Always On AG, mirroring, or log shipping setup","affected_components":["database_single"],"hours_if_wrong":{"low":8,"expected":16,"high":32},"pessimistic_widening_hours":16,"priority":1},{"id":"ASMP-002","source":"discovery/database.json#database_compliance_requirements","dimension":"database","question_id":"database_compliance_requirements","assumed_value":"unknown","basis":"Not discussed during discovery","confidence":"unknown","validation_status":"unvalidated","validation_method":"Verify with client legal/security team — ask about PCI, HIPAA, GDPR, SOC2 requirements","affected_components":["database_single","networking_vnet","compute_single_role","backup_dr"],"hours_if_wrong":{"low":8,"expected":16,"high":40},"pessimistic_widening_hours":16,"priority":2},{"id":"ASMP-003","source":"discovery/database.json#database_total_size_gb","dimension":"database","question_id":"database_total_size_gb","assumed_value":"250GB","basis":"User estimate: 'lets assume 250gb'","confidence":"assumed","validation_status":"unvalidated","validation_method":"Run sp_spaceused on each database — sum Core + Master + Web + xDB sizes","affected_components":["database_single","cutover_execution"],"hours_if_wrong":{"low":4,"expected":8,"high":16},"pessimistic_widening_hours":8,"priority":3},{"id":"ASMP-004","source":"discovery/storage.json#storage_media_total_size_gb","dimension":"storage","question_id":"storage_media_total_size_gb","assumed_value":"50GB","basis":"User says 'larger side for Sitecore'. Conservative estimate for large Sitecore media library in SQL blob.","confidence":"assumed","validation_status":"unvalidated","validation_method":"Query Sitecore media library blob sizes in SQL database","affected_components":["blob_storage","database_single"],"hours_if_wrong":{"low":4,"expected":8,"high":16},"pessimistic_widening_hours":8,"priority":4},{"id":"ASMP-005","source":"discovery/xconnect.json#xconnect_contact_count","dimension":"xconnect","question_id":"xconnect_contact_count","assumed_value":"100,000 - 500,000","basis":"User estimate: 'probably hundreds of thousands'","confidence":"assumed","validation_status":"unvalidated","validation_method":"Query xDB collection database contact count","affected_components":["xconnect_xdb","database_single"],"hours_if_wrong":{"low":0,"expected":8,"high":24},"pessimistic_widening_hours":8,"priority":5},{"id":"ASMP-006","source":"discovery/cdn.json#cdn_distribution_count","dimension":"cdn","question_id":"cdn_distribution_count","assumed_value":"20","basis":"User estimate: 'probably 20 distribution IDs'","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check AWS CloudFront console — list all distributions","affected_components":["cdn_setup","ssl_tls","dns_cutover"],"hours_if_wrong":{"low":4,"expected":8,"high":16},"pessimistic_widening_hours":8,"priority":6},{"id":"ASMP-007","source":"discovery/compute.json#compute_ec2_instance_type_cm","dimension":"compute","question_id":"compute_ec2_instance_type_cm","assumed_value":"unknown","basis":"User does not know","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check AWS EC2 console for CM instance type","affected_components":["compute_single_role"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":7},{"id":"ASMP-008","source":"discovery/compute.json#compute_ec2_instance_type_cd","dimension":"compute","question_id":"compute_ec2_instance_type_cd","assumed_value":"unknown","basis":"User does not know","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check AWS EC2 console for CD instance type","affected_components":["compute_single_role"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":8},{"id":"ASMP-009","source":"discovery/search.json#search_total_index_size_gb","dimension":"search","question_id":"search_total_index_size_gb","assumed_value":"unknown","basis":"Not discussed during discovery","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check Solr data directory size on the Solr EC2 instance","affected_components":["solr_standalone"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":9},{"id":"ASMP-010","source":"discovery/session_state.json#session_peak_concurrent","dimension":"session_state","question_id":"session_peak_concurrent","assumed_value":"unknown","basis":"Not discussed — 1M views/month suggests moderate concurrency","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check New Relic or load balancer metrics for peak concurrent sessions","affected_components":["redis_session","compute_single_role"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":10},{"id":"ASMP-011","source":"discovery/compute.json#compute_asg_min_max","dimension":"compute","question_id":"compute_asg_min_max","assumed_value":"unknown","basis":"User does not know ASG configuration","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check AWS Auto Scaling Group configuration","affected_components":["compute_single_role"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":11},{"id":"ASMP-012","source":"discovery/email.json#email_smtp_provider","dimension":"email","question_id":"email_smtp_provider","assumed_value":"unknown","basis":"User unsure of SMTP provider","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check Sitecore SMTP configuration in web.config or connection strings","affected_components":["custom_integration"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":12},{"id":"ASMP-013","source":"discovery/cdn.json#cdn_waf_enabled","dimension":"cdn","question_id":"cdn_waf_enabled","assumed_value":"true","basis":"User thinks WAF but not sure","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check CloudFront distributions for WAF associations","affected_components":["cdn_setup"],"hours_if_wrong":{"low":0,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":13},{"id":"ASMP-014","source":"discovery/backup_dr.json#backup_rto_hours","dimension":"backup_dr","question_id":"backup_rto_hours","assumed_value":"4 hours","basis":"Domain knowledge: typical RTO for Sitecore production","confidence":"assumed","validation_status":"unvalidated","validation_method":"Verify with client — check SLA documents or DR policy","affected_components":["backup_dr"],"hours_if_wrong":{"low":0,"expected":4,"high":24},"pessimistic_widening_hours":4,"priority":14},{"id":"ASMP-015","source":"discovery/cicd.json#cicd_artifact_storage","dimension":"cicd","question_id":"cicd_artifact_storage","assumed_value":"Amazon S3","basis":"User thinks S3 but unsure","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check TeamCity artifact storage configuration","affected_components":["cicd_pipeline"],"hours_if_wrong":{"low":0,"expected":2,"high":4},"pessimistic_widening_hours":2,"priority":15},{"id":"ASMP-016","source":"discovery/database.json#database_clr_assemblies","dimension":"database","question_id":"database_clr_assemblies","assumed_value":"false","basis":"Domain knowledge: uncommon in standard Sitecore","confidence":"assumed","validation_status":"unvalidated","validation_method":"Query sys.assemblies on SQL Server","affected_components":["database_single"],"hours_if_wrong":{"low":8,"expected":8,"high":24},"pessimistic_widening_hours":8,"priority":16},{"id":"ASMP-017","source":"discovery/database.json#database_linked_servers","dimension":"database","question_id":"database_linked_servers","assumed_value":"false","basis":"Domain knowledge: uncommon in standard Sitecore","confidence":"assumed","validation_status":"unvalidated","validation_method":"Query sys.servers on SQL Server for linked server entries","affected_components":["database_single"],"hours_if_wrong":{"low":4,"expected":4,"high":12},"pessimistic_widening_hours":4,"priority":17},{"id":"ASMP-018","source":"discovery/session_state.json#session_private_provider","dimension":"session_state","question_id":"session_private_provider","assumed_value":"Redis","basis":"Best practice for XP Scaled with auto-scaling CDs","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check Sitecore session state config in web.config","affected_components":["redis_session","compute_single_role"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":18},{"id":"ASMP-019","source":"discovery/networking.json#networking_vpn_connection","dimension":"networking","question_id":"networking_vpn_connection","assumed_value":"false","basis":"Not mentioned, typical for SaaS-integrated Sitecore","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check AWS VPC for VPN connections or Direct Connect","affected_components":["networking_vnet"],"hours_if_wrong":{"low":8,"expected":8,"high":16},"pessimistic_widening_hours":8,"priority":19},{"id":"ASMP-020","source":"discovery/dns.json#dns_zone_count","dimension":"dns","question_id":"dns_zone_count","assumed_value":"unknown","basis":"Multi-site instance likely has multiple zones","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check Cloudflare dashboard for zone count","affected_components":["dns_cutover"],"hours_if_wrong":{"low":2,"expected":4,"high":8},"pessimistic_widening_hours":4,"priority":20},{"id":"ASMP-021","source":"discovery/storage.json#storage_media_item_count","dimension":"storage","question_id":"storage_media_item_count","assumed_value":"25,000","basis":"Domain knowledge: large Sitecore media library estimate","confidence":"assumed","validation_status":"unvalidated","validation_method":"Query Sitecore media library item count","affected_components":["blob_storage"],"hours_if_wrong":{"low":0,"expected":2,"high":4},"pessimistic_widening_hours":2,"priority":21},{"id":"ASMP-022","source":"discovery/xconnect.json#xconnect_instance_count","dimension":"xconnect","question_id":"xconnect_instance_count","assumed_value":"1 per environment","basis":"User estimate: 'maybe 1 per env'","confidence":"assumed","validation_status":"unvalidated","validation_method":"Verify xConnect instance count per environment in AWS","affected_components":["xconnect_xdb"],"hours_if_wrong":{"low":0,"expected":2,"high":8},"pessimistic_widening_hours":2,"priority":22},{"id":"ASMP-023","source":"discovery/caching.json#caching_redis_memory_gb","dimension":"caching","question_id":"caching_redis_memory_gb","assumed_value":"2GB","basis":"Domain knowledge: typical for Sitecore session-focused Redis","confidence":"assumed","validation_status":"unvalidated","validation_method":"Check Redis INFO memory on the EC2 instance","affected_components":["redis_session"],"hours_if_wrong":{"low":0,"expected":2,"high":4},"pessimistic_widening_hours":2,"priority":23},{"id":"ASMP-024","source":"discovery/cdn.json#cdn_provider","dimension":"cdn","question_id":"cdn_provider","assumed_value":"Amazon CloudFront","basis":"User believes CloudFront but not certain","confidence":"assumed","validation_status":"unvalidated","validation_method":"Verify CDN provider in AWS console","affected_components":["cdn_setup"],"hours_if_wrong":{"low":0,"expected":2,"high":4},"pessimistic_widening_hours":2,"priority":24},{"id":"ASMP-025","source":"discovery/compute.json#compute_asg_scaling_metric","dimension":"compute","question_id":"compute_asg_scaling_metric","assumed_value":"unknown","basis":"User does not know scaling metric","confidence":"unknown","validation_status":"unvalidated","validation_method":"Check ASG scaling policies in AWS console","affected_components":["compute_single_role"],"hours_if_wrong":{"low":0,"expected":2,"high":4},"pessimistic_widening_hours":2,"priority":25}]},
+  analysis: {"generated_at":"2026-02-21T17:30:00Z","discovery_completeness":0.91,"confidence_score":52,"risks":[{"id":"RISK-001","source":"gotcha:large_db_migration_window","severity":"high","category":"database","description":"250GB database exceeds 200GB threshold. Network transfer and index rebuild can take 6-12 hours, exceeding standard maintenance windows.","affected_components":["database_single","cutover_execution"],"mitigation":"Use Azure Database Migration Service with continuous sync. Pre-copy bulk data during business hours, then delta sync at cutover.","contingency":"If DMS sync fails, fall back to backup/restore with extended downtime window (12-16 hrs).","estimated_hours_impact":16,"linked_assumptions":["ASMP-003"]},{"id":"RISK-002","source":"gotcha:media_blob_references","severity":"medium","category":"storage","description":"Media stored in SQL DB (~50GB+) inflates database size, increases migration time, and causes ongoing performance and cost concerns on Azure SQL.","affected_components":["blob_storage","database_single"],"mitigation":"Consider migrating to Azure Blob Storage during replatform. If keeping in DB, plan for larger migration window and increased Azure SQL storage costs.","contingency":"Keep media in SQL initially, plan post-migration media externalization as phase 2.","estimated_hours_impact":16,"linked_assumptions":["ASMP-004"]},{"id":"RISK-003","source":"gotcha:custom_handlers_aws","severity":"medium","category":"integration","description":"AWS Secrets Manager to Azure Key Vault migration requires code changes. Different API, naming conventions, SDK, and access patterns.","affected_components":["custom_integration","managed_identity_keyvault"],"mitigation":"Audit all code for AWS SDK usage. Replace with Azure Key Vault SDK. Update connection string references and access patterns.","contingency":"Use environment variables as temporary bridge during migration.","estimated_hours_impact":8,"linked_assumptions":[]},{"id":"RISK-004","source":"challenge:CHK-004","severity":"high","category":"deployment","description":"Unicorn has documented issues on Azure App Service — path length bugs, physicalRootPath issues, transparent sync problems. In maintenance mode since 2020.","affected_components":["content_serialization_sync","compute_single_role"],"mitigation":"Deploy on Azure VMs (not App Service) to avoid path issues. Validate Unicorn sync on target VMs early. Consider SCS migration for long-term Azure strategy.","contingency":"If Unicorn fails on Azure VMs, use database backup/restore for initial content population.","estimated_hours_impact":12,"linked_assumptions":[]},{"id":"RISK-005","source":"gap:database_ha_config","severity":"high","category":"database","description":"Database HA configuration unknown. If Always On AG or mirroring exists, migration approach changes — SQL MI Business Critical tier required instead of General Purpose.","affected_components":["database_single"],"mitigation":"Verify HA configuration with client DBA before estimating. Plan for SQL MI Business Critical if HA required.","contingency":"Default to General Purpose tier, upgrade to Business Critical post-migration if needed.","estimated_hours_impact":16,"linked_assumptions":["ASMP-001"]},{"id":"RISK-006","source":"multiplier:many_custom_solr_indexes","severity":"medium","category":"search","description":"30+ custom Solr indexes require individual schema review, config migration, and rebuild validation. 1.6x effort multiplier on search migration.","affected_components":["solr_standalone"],"mitigation":"Inventory all indexes and custom schema configs. Deploy Solr on Azure VM. Plan parallel index rebuild. Validate search results post-rebuild.","contingency":"If index rebuild fails, restore Solr data directory from backup.","estimated_hours_impact":12,"linked_assumptions":[]},{"id":"RISK-007","source":"analysis:cdn_distribution_migration","severity":"medium","category":"cdn","description":"20 CloudFront distributions need mapping to Azure Front Door Premium. WAF rules need rewriting. Custom error pages need porting.","affected_components":["cdn_setup","ssl_tls"],"mitigation":"Consolidate into Front Door Premium (~$330/mo). Map each distribution's origin, rules, and behaviors. Rewrite WAF rules for Azure WAF.","contingency":"Migrate distributions in batches, keeping CloudFront active as fallback.","estimated_hours_impact":16,"linked_assumptions":["ASMP-006"]},{"id":"RISK-008","source":"analysis:cicd_pipeline_migration","severity":"medium","category":"cicd","description":"~30 TeamCity build configs need migration to Azure Pipelines. Includes Unicorn builds, npm builds, Snyk scans, and deployment automation.","affected_components":["cicd_pipeline"],"mitigation":"Source already on Azure DevOps Repos — simplifies migration. Plan phased migration by repo group. Template common pipeline patterns.","contingency":"Keep TeamCity operational in parallel during pipeline migration.","estimated_hours_impact":24,"linked_assumptions":[]},{"id":"RISK-009","source":"gap:database_compliance_requirements","severity":"medium","category":"compliance","description":"Compliance requirements unknown. If PCI/HIPAA/GDPR applies, could trigger 1.2-1.5x multiplier across all components.","affected_components":["all"],"mitigation":"Verify compliance requirements with client legal/security team before finalizing estimate.","contingency":"If compliance discovered late, add compliance remediation phase post-migration.","estimated_hours_impact":0,"linked_assumptions":["ASMP-002"]}],"dependency_chains":[{"chain":["networking_vnet","managed_identity_keyvault","compute_single_role","database_single","identity_server","xconnect_xdb","testing_validation","cutover_execution","dns_cutover"],"critical_path":true,"notes":"Main critical path. backup_dr also required before cutover_execution."}],"parallel_tracks":[{"name":"Search Track","chain":["solr_standalone"],"starts_after":"networking_vnet","merges_at":"testing_validation"},{"name":"Caching Track","chain":["redis_session"],"starts_after":"networking_vnet","merges_at":"testing_validation"},{"name":"CDN Track","chain":["ssl_tls","cdn_setup"],"starts_after":"networking_vnet","merges_at":"dns_cutover"},{"name":"Monitoring Track","chain":["monitoring_setup"],"starts_after":"compute_single_role"},{"name":"CI/CD Track","chain":["cicd_pipeline"],"starts_after":"compute_single_role"},{"name":"Storage Track","chain":["blob_storage"],"starts_after":"networking_vnet"}],"complexity_multipliers_active":[{"id":"many_custom_solr_indexes","multiplier":1.6,"reason":"30+ custom Solr indexes (> 5 threshold, supersedes custom_solr_indexes)","applies_to":["solr_standalone"],"evidence":"discovery.search.custom_indexes = 30+"},{"id":"many_sites","multiplier":1.5,"reason":"Global multi-site instance with 20 CDN distributions, ~30 repos — assumed > 10 sites","applies_to":["compute_single_role","cdn_setup","ssl_tls","testing_validation","dns_cutover"],"evidence":"discovery.cdn.distribution_count = 20, multi-site architecture confirmed"},{"id":"multi_environment","multiplier":1.3,"reason":"3 environments (dev, qa, prod) exceeds 2-environment threshold","applies_to":["networking_vnet","compute_single_role","database_single","monitoring_setup","cicd_pipeline"],"evidence":"assessment.environment_count = 3"}],"risk_clusters":[{"name":"Data Migration","severity":"high","contributing_factors":["250GB database","Media blobs in SQL (~50GB+)","HA config unknown","Extended migration window needed"],"combined_hours_impact":48,"risks":["RISK-001","RISK-002","RISK-005"],"description":"Large database with embedded media and unknown HA config creates significant data migration risk. Migration window could exceed 12 hours."},{"name":"Search Migration","severity":"medium","contributing_factors":["30+ custom Solr indexes","1.6x effort multiplier","Index size unknown"],"combined_hours_impact":12,"risks":["RISK-006"],"description":"High custom index count significantly increases Solr migration complexity and rebuild time."},{"name":"CI/CD Pipeline Migration","severity":"medium","contributing_factors":["~30 TeamCity configs","~30 repos","Unicorn + npm + Snyk builds"],"combined_hours_impact":24,"risks":["RISK-008"],"description":"Large pipeline migration effort, mitigated by source already being on Azure DevOps Repos."},{"name":"CDN & WAF Migration","severity":"medium","contributing_factors":["20 CloudFront distributions","WAF rules to migrate","Custom error pages"],"combined_hours_impact":16,"risks":["RISK-007"],"description":"Many CDN distributions need consolidated into Azure Front Door Premium with WAF rule rewriting."},{"name":"Integration & Secrets","severity":"medium","contributing_factors":["AWS Secrets Manager → Key Vault","Unicorn Azure compatibility issues"],"combined_hours_impact":20,"risks":["RISK-003","RISK-004"],"description":"Code changes needed for Key Vault migration and Unicorn Azure compatibility workarounds."}],"gaps":{"total_answers":124,"confirmed_answers":65,"assumed_answers":46,"unknown_answers":13,"top_gaps":[{"dimension":"database","question":"database_ha_config","impact":"Critical — determines SQL MI tier and migration approach"},{"dimension":"database","question":"database_compliance_requirements","impact":"High — could trigger 1.2-1.5x multiplier across all components"},{"dimension":"compute","question":"compute_ec2_instance_type_cm/cd","impact":"Medium — affects Azure VM SKU sizing ±15%"},{"dimension":"search","question":"search_total_index_size_gb","impact":"Medium — affects Solr VM disk provisioning and rebuild time"},{"dimension":"session_state","question":"session_peak_concurrent","impact":"Medium — affects Azure Cache for Redis tier selection"},{"dimension":"dns","question":"dns_zone_count","impact":"Medium — affects DNS cutover effort and planning"},{"dimension":"email","question":"email_smtp_provider","impact":"Low-Medium — affects SMTP relay configuration on Azure"}]}},
+  aiAlternatives: {"version":"2.0.0","description":"AI and automation tools catalog for AWS-to-Azure Sitecore migration. Each tool includes estimated effort savings, applicability conditions, and recommendation status.","savings_cap":{"max_percentage":50,"rationale":"AI tool savings are capped at 50% per component to keep estimates credible. Real-world savings vary; this cap prevents over-promising."},"mutual_exclusion_groups":[{"group":"iac_tooling","tools":["terraform_opentofu","azure_bicep"],"reason":"Choose one IaC approach per engagement — mixing creates maintenance burden"},{"group":"cicd_platform","tools":["azure_devops_pipelines","github_actions_copilot"],"reason":"Primary CI/CD platform choice — pick one to standardize"}],"categories":{"discovery_assessment":{"name":"Discovery & Assessment","description":"Tools that accelerate infrastructure discovery and migration readiness assessment"},"data_migration":{"name":"Data Migration","description":"Database migration and schema conversion tools"},"storage_migration":{"name":"Storage Migration","description":"Blob, file, and media library migration tools"},"code_assistance":{"name":"Code Assistance","description":"AI-powered code generation, refactoring, and migration assistance"},"infrastructure_automation":{"name":"Infrastructure Automation","description":"Infrastructure as Code tools for repeatable Azure provisioning"},"testing_validation":{"name":"Testing & Validation","description":"Automated testing, performance validation, and load testing"},"monitoring_observability":{"name":"Monitoring & Observability","description":"AI-enhanced monitoring, anomaly detection, and insights"},"security_compliance":{"name":"Security & Compliance","description":"Automated security scanning, compliance checking, and policy enforcement"},"cicd_devops":{"name":"CI/CD & DevOps","description":"Pipeline automation and deployment tooling"},"backup_dr":{"name":"Backup & DR","description":"Automated backup, disaster recovery, and business continuity"},"network_dns":{"name":"Network & DNS","description":"Network migration, traffic management, and DNS cutover tools"}},"alternatives":[{"id":"azure_migrate","name":"Azure Migrate","vendor":"Microsoft","category":"discovery_assessment","description":"Automated discovery and assessment of on-premises/AWS infrastructure. Generates Azure readiness reports, sizing recommendations, and cost estimates.","url":"https://learn.microsoft.com/en-us/azure/migrate/","applicable_components":["compute_single_role","networking_vnet","database_single"],"applicable_phases":["phase_1_infrastructure"],"hours_saved":{"optimistic":12,"expected":8,"pessimistic":4},"cost":{"type":"free","details":"Free Azure service"},"pros":["Automated VM inventory and dependency mapping","Azure sizing recommendations","Cost estimation for target state","Agentless discovery option"],"cons":["AWS discovery requires agent installation","Sitecore-specific topology not understood","May over-size VMs without Sitecore context"],"prerequisites":["Azure subscription","Network connectivity to source environment"],"recommendation":"recommended","applicability_conditions":{"min_vms":2,"description":"Most valuable when there are 2+ VMs to assess"}},{"id":"aws_app_discovery","name":"AWS Application Discovery Service","vendor":"AWS","category":"discovery_assessment","description":"Collects configuration, usage, and behavior data from AWS servers to support migration planning. Feeds into Azure Migrate for cross-cloud analysis.","url":"https://docs.aws.amazon.com/application-discovery/","applicable_components":["compute_single_role","networking_vnet"],"applicable_phases":["phase_1_infrastructure"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"free","details":"Free AWS service"},"pros":["Detailed AWS resource inventory","Server utilization metrics","Network dependency mapping","Integrates with Migration Hub"],"cons":["Requires agent on each EC2 instance","Data export needed for Azure tooling","No Sitecore-aware analysis"],"prerequisites":["AWS account access","Permission to install agents on EC2 instances"],"recommendation":"recommended","applicability_conditions":{"min_vms":3,"description":"Most valuable for larger deployments with 3+ instances"}},{"id":"azure_dms","name":"Azure Database Migration Service","vendor":"Microsoft","category":"data_migration","description":"Managed service for migrating SQL Server databases to Azure SQL. Supports online (minimal downtime) and offline migration modes.","url":"https://learn.microsoft.com/en-us/azure/dms/","applicable_components":["database_single"],"applicable_phases":["phase_2_data"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":3},"cost":{"type":"included","details":"Included with Azure SQL target"},"pros":["Online migration with minimal downtime","Automated schema and data migration","Pre-migration validation checks","Progress monitoring dashboard"],"cons":["Requires VPN/ExpressRoute for AWS source","Some SQL features may need manual adjustment","Sitecore DB-specific indexes may need rebuild"],"prerequisites":["Network connectivity between AWS RDS and Azure","Azure SQL target provisioned"],"recommendation":"recommended","applicability_conditions":{"description":"Recommended for all SQL Server database migrations"}},{"id":"ssma","name":"SQL Server Migration Assistant (SSMA)","vendor":"Microsoft","category":"data_migration","description":"Automates database schema conversion and data migration from various database engines to SQL Server/Azure SQL.","url":"https://learn.microsoft.com/en-us/sql/ssma/","applicable_components":["database_single"],"applicable_phases":["phase_2_data"],"hours_saved":{"optimistic":6,"expected":4,"pessimistic":2},"cost":{"type":"free","details":"Free Microsoft tool"},"pros":["Schema compatibility assessment","Automated conversion reports","Identifies breaking changes before migration"],"cons":["Desktop tool — not cloud-native","May flag false positives on Sitecore schemas","Limited to schema analysis — not data transfer"],"prerequisites":["Windows workstation","Connectivity to source and target databases"],"recommendation":"conditional","applicability_conditions":{"description":"Most useful when migrating from non-SQL Server sources or older SQL versions"}},{"id":"dma","name":"Database Migration Assistant (DMA)","vendor":"Microsoft","category":"data_migration","description":"Assesses SQL Server databases for compatibility issues, feature parity gaps, and performance recommendations for Azure SQL targets.","url":"https://learn.microsoft.com/en-us/sql/dma/","applicable_components":["database_single"],"applicable_phases":["phase_2_data"],"hours_saved":{"optimistic":4,"expected":3,"pessimistic":1},"cost":{"type":"free","details":"Free Microsoft tool"},"pros":["Detailed compatibility report","Azure SQL feature parity check","Performance recommendation baseline","SKU recommendation"],"cons":["Assessment only — no migration execution","Requires direct database connectivity","Reports can be verbose for large Sitecore DBs"],"prerequisites":["Windows workstation","SQL Server connectivity"],"recommendation":"recommended","applicability_conditions":{"description":"Run before migration to identify blockers early"}},{"id":"azcopy","name":"AzCopy","vendor":"Microsoft","category":"storage_migration","description":"High-performance command-line tool for copying data to/from Azure Blob Storage. Supports S3-to-Blob direct transfer.","url":"https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10","applicable_components":["blob_storage"],"applicable_phases":["phase_2_data"],"hours_saved":{"optimistic":6,"expected":4,"pessimistic":2},"cost":{"type":"free","details":"Free tool — only pay for data transfer/storage"},"pros":["Direct S3-to-Blob transfer (no intermediate step)","Parallel transfer with automatic retry","Supports incremental sync","Handles large files efficiently"],"cons":["CLI only — requires scripting for complex scenarios","S3 IAM credentials needed","No Sitecore media library metadata awareness"],"prerequisites":["AzCopy installed","S3 read access","Azure Storage write access"],"recommendation":"recommended","applicability_conditions":{"description":"Recommended for all S3-to-Blob media library migrations"}},{"id":"azure_storage_mover","name":"Azure Storage Mover","vendor":"Microsoft","category":"storage_migration","description":"Managed migration service for large-scale file and object storage migrations to Azure. Provides monitoring and scheduling.","url":"https://learn.microsoft.com/en-us/azure/storage-mover/","applicable_components":["blob_storage"],"applicable_phases":["phase_2_data"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"free","details":"Free service — only pay for data transfer/storage"},"pros":["Managed service with progress tracking","Scheduling and bandwidth management","Handles millions of files","Built-in validation"],"cons":["Requires agent VM in source environment","More setup overhead than AzCopy for small transfers","Newer service — fewer community resources"],"prerequisites":["Azure subscription","Agent VM deployed near source storage"],"recommendation":"conditional","applicability_conditions":{"min_storage_gb":100,"description":"Best for large media libraries (100GB+) where progress tracking and scheduling matter"}},{"id":"github_copilot","name":"GitHub Copilot","vendor":"GitHub/Microsoft","category":"code_assistance","description":"AI pair programmer that accelerates code changes, configuration updates, and integration refactoring during migration.","url":"https://github.com/features/copilot","applicable_components":["custom_integration","cicd_pipeline","xconnect_xdb","identity_server"],"applicable_phases":["phase_3_application"],"hours_saved":{"optimistic":16,"expected":10,"pessimistic":4},"cost":{"type":"subscription","details":"$19/user/month (Individual) or $39/user/month (Business)"},"pros":["Accelerates connection string and config updates","Helps refactor AWS SDK calls to Azure SDK","Generates boilerplate for Azure service integrations","Context-aware suggestions in familiar IDE"],"cons":["May suggest incorrect Azure API patterns","Sitecore-specific code suggestions can be inaccurate","Requires developer review of all suggestions","Not a substitute for migration expertise"],"prerequisites":["GitHub Copilot license","VS Code or Visual Studio"],"recommendation":"recommended","applicability_conditions":{"min_integrations":1,"description":"Valuable when there are custom integrations or code changes needed"}},{"id":"claude_code","name":"Claude Code (AI Coding)","vendor":"Anthropic","category":"code_assistance","description":"AI coding assistant for complex migration tasks: refactoring AWS SDK dependencies, updating configuration files, generating IaC templates, and writing migration scripts.","url":"https://claude.ai/claude-code","applicable_components":["custom_integration","cicd_pipeline","networking_vnet","monitoring_setup"],"applicable_phases":["phase_1_infrastructure","phase_3_application"],"hours_saved":{"optimistic":20,"expected":12,"pessimistic":5},"cost":{"type":"subscription","details":"Usage-based pricing"},"pros":["Handles complex multi-file refactoring","Can generate complete IaC templates","Understands migration context across codebase","Generates migration scripts and runbook steps"],"cons":["Requires clear migration context and constraints","Sitecore-specific patterns need verification","Not a substitute for infrastructure expertise"],"prerequisites":["Claude Code access"],"recommendation":"recommended","applicability_conditions":{"description":"Valuable for any engagement with significant code or configuration changes"}},{"id":"terraform_opentofu","name":"Terraform / OpenTofu","vendor":"HashiCorp / OpenTofu","category":"infrastructure_automation","description":"Infrastructure as Code for provisioning Azure resources. Codifies the entire target state for repeatable, auditable deployments.","url":"https://www.terraform.io/","applicable_components":["networking_vnet","compute_single_role","redis_session","cdn_setup","monitoring_setup","backup_dr"],"applicable_phases":["phase_1_infrastructure","phase_2_data","phase_3_application","phase_4_validation"],"hours_saved":{"optimistic":24,"expected":16,"pessimistic":8},"cost":{"type":"free","details":"Open source (OpenTofu) or free tier (Terraform). Terraform Cloud optional."},"pros":["Repeatable infrastructure across environments","Drift detection and state management","Large Azure provider with community modules","Multi-cloud support (can reference AWS for reads)"],"cons":["Learning curve if team is new to IaC","State file management complexity","Sitecore-specific modules don't exist — custom needed","Initial template creation takes time (but saves on subsequent environments)"],"prerequisites":["Terraform/OpenTofu installed","Azure service principal","Team IaC familiarity"],"recommendation":"recommended","applicability_conditions":{"min_environments":2,"description":"ROI increases with multiple environments. Essential for 2+ environments."},"mutual_exclusion":"azure_bicep"},{"id":"azure_bicep","name":"Azure Bicep","vendor":"Microsoft","category":"infrastructure_automation","description":"Azure-native IaC language. Simpler syntax than ARM templates, first-class Azure support, no state file management.","url":"https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/","applicable_components":["networking_vnet","compute_single_role","redis_session","cdn_setup","monitoring_setup","backup_dr"],"applicable_phases":["phase_1_infrastructure","phase_2_data","phase_3_application","phase_4_validation"],"hours_saved":{"optimistic":20,"expected":14,"pessimistic":6},"cost":{"type":"free","details":"Free — built into Azure CLI"},"pros":["Native Azure integration — always supports latest features","No state file to manage","Simpler syntax than ARM templates","Built-in what-if deployment preview"],"cons":["Azure-only — no multi-cloud","Smaller community than Terraform","Team may already know Terraform","Less mature module ecosystem"],"prerequisites":["Azure CLI installed","Azure subscription"],"recommendation":"conditional","applicability_conditions":{"description":"Preferred when team is Azure-native and not already using Terraform"},"mutual_exclusion":"terraform_opentofu"},{"id":"playwright_ai_testgen","name":"Playwright AI Test Gen","vendor":"Microsoft","category":"testing_validation","description":"AI-assisted test generation for Sitecore front-end validation. Records user interactions and generates automated test scripts.","url":"https://playwright.dev/","applicable_components":["testing_validation"],"applicable_phases":["phase_4_validation"],"hours_saved":{"optimistic":12,"expected":8,"pessimistic":3},"cost":{"type":"free","details":"Open source"},"pros":["Generates tests from recorded interactions","Cross-browser validation","Visual regression detection","Can validate Sitecore rendering consistency"],"cons":["Requires manual test scenario identification","Dynamic Sitecore content may cause false failures","Test maintenance overhead post-migration"],"prerequisites":["Node.js environment","Access to both source and target sites"],"recommendation":"recommended","applicability_conditions":{"description":"Valuable for validating front-end rendering consistency post-migration"}},{"id":"k6_performance","name":"K6 Performance Testing","vendor":"Grafana Labs","category":"testing_validation","description":"Load testing tool for validating Azure target performance matches or exceeds AWS baseline. Scriptable with JavaScript.","url":"https://k6.io/","applicable_components":["testing_validation"],"applicable_phases":["phase_4_validation"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"free","details":"Open source. Grafana Cloud K6 available for distributed testing."},"pros":["Developer-friendly JavaScript scripting","Can replicate production traffic patterns","Baseline vs target comparison","Integrates with CI/CD pipelines"],"cons":["Requires baseline metrics from AWS environment","Script creation takes effort","May need cloud execution for realistic load"],"prerequisites":["K6 installed","Performance baseline from AWS"],"recommendation":"recommended","applicability_conditions":{"description":"Recommended for all migrations to validate performance parity"}},{"id":"azure_load_testing","name":"Azure Load Testing","vendor":"Microsoft","category":"testing_validation","description":"Managed load testing service in Azure. Supports JMeter scripts and URL-based tests with integrated monitoring.","url":"https://learn.microsoft.com/en-us/azure/load-testing/","applicable_components":["testing_validation"],"applicable_phases":["phase_4_validation"],"hours_saved":{"optimistic":6,"expected":4,"pessimistic":2},"cost":{"type":"pay_per_use","details":"Pay per virtual user minute"},"pros":["Managed — no load generator infrastructure needed","Integrates with Azure Monitor for server-side metrics","Supports existing JMeter scripts","CI/CD pipeline integration"],"cons":["Cost can grow with large load tests","Azure-only — can't test AWS baseline directly","Less flexible than K6 for custom scenarios"],"prerequisites":["Azure subscription","Test scripts (JMeter or URL-based)"],"recommendation":"conditional","applicability_conditions":{"description":"Good complement to K6 for Azure-integrated monitoring during load tests"}},{"id":"azure_monitor_ai","name":"Azure Monitor AI Insights","vendor":"Microsoft","category":"monitoring_observability","description":"AI-powered anomaly detection, smart diagnostics, and proactive alerts for Azure resources. Accelerates post-migration monitoring setup.","url":"https://learn.microsoft.com/en-us/azure/azure-monitor/","applicable_components":["monitoring_setup"],"applicable_phases":["phase_3_application","phase_4_validation"],"hours_saved":{"optimistic":6,"expected":4,"pessimistic":2},"cost":{"type":"included","details":"Included with Azure Monitor (pay for data ingestion)"},"pros":["Automatic baseline detection","Smart alert grouping reduces noise","Pre-built Sitecore-compatible dashboards","Proactive diagnostics for common issues"],"cons":["Learning period for anomaly detection","Custom Sitecore metrics need manual instrumentation","Data ingestion costs can add up"],"prerequisites":["Azure Monitor enabled","Application Insights SDK in Sitecore"],"recommendation":"recommended","applicability_conditions":{"description":"Recommended for all migrations — accelerates monitoring setup and post-migration stability"}},{"id":"app_insights_smart","name":"Application Insights Smart Detection","vendor":"Microsoft","category":"monitoring_observability","description":"Automatic detection of performance anomalies, failure patterns, and degradation in Sitecore application telemetry.","url":"https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/proactive-diagnostics","applicable_components":["monitoring_setup","testing_validation"],"applicable_phases":["phase_3_application","phase_4_validation"],"hours_saved":{"optimistic":4,"expected":3,"pessimistic":1},"cost":{"type":"included","details":"Included with Application Insights"},"pros":["Zero-config anomaly detection","Automatic failure diagnostics","Proactive email alerts for degradation","Helps catch post-migration regressions"],"cons":["Needs 24-48 hours of data to establish baseline","Can be noisy during migration transition","Limited customization of detection rules"],"prerequisites":["Application Insights enabled in Sitecore"],"recommendation":"recommended","applicability_conditions":{"description":"Enable immediately post-migration for automatic regression detection"}},{"id":"defender_for_cloud","name":"Microsoft Defender for Cloud","vendor":"Microsoft","category":"security_compliance","description":"Cloud security posture management with continuous assessment, compliance scoring, and threat protection for Azure resources.","url":"https://learn.microsoft.com/en-us/azure/defender-for-cloud/","applicable_components":["networking_vnet","compute_single_role","database_single"],"applicable_phases":["phase_1_infrastructure","phase_4_validation"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"pay_per_use","details":"Free tier available. Enhanced plans per resource type."},"pros":["Automated security assessment of Azure resources","Compliance scoring against standards (CIS, PCI, SOC2)","Vulnerability scanning for VMs and databases","Actionable remediation recommendations"],"cons":["Enhanced plans add cost","Alert volume can be high initially","Sitecore-specific security patterns not built-in"],"prerequisites":["Azure subscription"],"recommendation":"recommended","applicability_conditions":{"description":"Recommended for all migrations. Essential when compliance requirements exist."}},{"id":"azure_policy","name":"Azure Policy Compliance","vendor":"Microsoft","category":"security_compliance","description":"Automated policy enforcement and compliance auditing. Ensures Azure resources meet organizational and regulatory standards.","url":"https://learn.microsoft.com/en-us/azure/governance/policy/","applicable_components":["networking_vnet","compute_single_role","backup_dr"],"applicable_phases":["phase_1_infrastructure"],"hours_saved":{"optimistic":6,"expected":4,"pessimistic":2},"cost":{"type":"free","details":"Included with Azure subscription"},"pros":["Automated compliance enforcement","Built-in policy definitions for common standards","Prevents non-compliant resource deployment","Audit trail for compliance reporting"],"cons":["Policy authoring requires Azure expertise","Overly strict policies can block deployments","No Sitecore-specific policy templates"],"prerequisites":["Azure subscription","Defined compliance requirements"],"recommendation":"conditional","applicability_conditions":{"has_compliance":true,"description":"Essential when compliance requirements (PCI, SOC2, HIPAA) are present"}},{"id":"azure_devops_pipelines","name":"Azure DevOps Pipeline Templates","vendor":"Microsoft","category":"cicd_devops","description":"Pre-built pipeline templates for Azure deployments. Accelerates CI/CD rebuild with Sitecore-compatible build and deploy stages.","url":"https://learn.microsoft.com/en-us/azure/devops/pipelines/","applicable_components":["cicd_pipeline"],"applicable_phases":["phase_3_application"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"free","details":"Free tier: 1 parallel job, 1800 min/month. Paid plans for more."},"pros":["Native Azure integration","Template marketplace with deployment patterns","Built-in artifact management","Environment approvals and gates"],"cons":["Migration from non-Azure DevOps CI requires full rebuild","Sitecore-specific templates need customization","YAML learning curve for complex pipelines"],"prerequisites":["Azure DevOps organization"],"recommendation":"conditional","applicability_conditions":{"description":"Preferred when team is already using Azure DevOps or plans to adopt it"},"mutual_exclusion":"github_actions_copilot"},{"id":"github_actions_copilot","name":"GitHub Actions with Copilot","vendor":"GitHub/Microsoft","category":"cicd_devops","description":"GitHub Actions CI/CD with Copilot-assisted workflow authoring. AI helps generate deployment workflows for Azure targets.","url":"https://github.com/features/actions","applicable_components":["cicd_pipeline"],"applicable_phases":["phase_3_application"],"hours_saved":{"optimistic":10,"expected":6,"pessimistic":3},"cost":{"type":"free","details":"Free tier: 2000 min/month. Copilot subscription separate."},"pros":["Copilot generates workflow YAML from descriptions","Large marketplace of Azure deployment actions","Tight GitHub integration","Easy to understand YAML syntax"],"cons":["Requires GitHub repository (or migration to GitHub)","Copilot suggestions need verification","Complex multi-stage deployments can be verbose"],"prerequisites":["GitHub repository","GitHub Copilot license (optional)"],"recommendation":"conditional","applicability_conditions":{"description":"Preferred when team uses GitHub for source control"},"mutual_exclusion":"azure_devops_pipelines"},{"id":"azure_site_recovery","name":"Azure Site Recovery","vendor":"Microsoft","category":"backup_dr","description":"Disaster recovery as a service. Replicates VMs from AWS to Azure for DR or as a migration pathway with minimal downtime.","url":"https://learn.microsoft.com/en-us/azure/site-recovery/","applicable_components":["backup_dr","compute_single_role"],"applicable_phases":["phase_4_validation","phase_5_cutover"],"hours_saved":{"optimistic":10,"expected":6,"pessimistic":3},"cost":{"type":"pay_per_use","details":"$25/instance/month for replication"},"pros":["Continuous replication — minimal cutover downtime","Test failover without production impact","Automated recovery plans with sequencing","Can serve as migration mechanism"],"cons":["Requires agent installation on source VMs","Network bandwidth for continuous replication","Sitecore role dependencies need manual sequencing","Post-failover config changes still needed"],"prerequisites":["Azure subscription","Recovery Services vault","Network connectivity"],"recommendation":"conditional","applicability_conditions":{"min_vms":3,"description":"Most valuable for larger deployments where minimal downtime cutover is critical"}},{"id":"azure_backup_smart","name":"Azure Backup with Smart Tiering","vendor":"Microsoft","category":"backup_dr","description":"Intelligent backup with automatic tiering to optimize costs. Policy-based backup management for VMs, databases, and file shares.","url":"https://learn.microsoft.com/en-us/azure/backup/","applicable_components":["backup_dr"],"applicable_phases":["phase_4_validation"],"hours_saved":{"optimistic":4,"expected":3,"pessimistic":1},"cost":{"type":"pay_per_use","details":"Based on protected instance size and storage consumed"},"pros":["Automated backup policies","Smart tiering reduces storage costs","Centralized backup management","Built-in compliance reporting"],"cons":["Backup policies need tuning for Sitecore RPO requirements","Cross-region backup adds cost","Restore testing should be validated"],"prerequisites":["Recovery Services vault"],"recommendation":"recommended","applicability_conditions":{"description":"Standard for all Azure deployments — configure during validation phase"}},{"id":"azure_traffic_manager","name":"Azure Traffic Manager (Gradual Cutover)","vendor":"Microsoft","category":"network_dns","description":"DNS-based traffic routing for gradual migration cutover. Enables weighted routing to shift traffic from AWS to Azure incrementally.","url":"https://learn.microsoft.com/en-us/azure/traffic-manager/","applicable_components":["dns_cutover","cutover_execution"],"applicable_phases":["phase_5_cutover"],"hours_saved":{"optimistic":8,"expected":5,"pessimistic":2},"cost":{"type":"pay_per_use","details":"$0.54/million DNS queries"},"pros":["Gradual traffic shift reduces cutover risk","Automatic health-based failback to AWS","Weighted routing for canary deployment","No downtime during transition"],"cons":["DNS TTL affects failover speed","Session affinity between AWS and Azure needs careful handling","Sitecore session state must work cross-platform during transition","Adds DNS hop latency"],"prerequisites":["Azure Traffic Manager profile","Health endpoints on both AWS and Azure"],"recommendation":"conditional","applicability_conditions":{"description":"Recommended when zero-downtime cutover is required or risk tolerance is low"}},{"id":"azure_network_watcher","name":"Azure Network Watcher","vendor":"Microsoft","category":"network_dns","description":"Network monitoring and diagnostics tool. Validates connectivity, captures packets, and diagnoses networking issues during migration.","url":"https://learn.microsoft.com/en-us/azure/network-watcher/","applicable_components":["networking_vnet"],"applicable_phases":["phase_1_infrastructure","phase_4_validation"],"hours_saved":{"optimistic":4,"expected":3,"pessimistic":1},"cost":{"type":"included","details":"Included with Azure subscription (packet capture has storage cost)"},"pros":["Connection troubleshooting between Azure and AWS","NSG flow log analysis","Topology visualization","IP flow verify for firewall rule validation"],"cons":["Azure-side only — can't diagnose AWS networking","Flow logs generate significant storage","Learning curve for advanced features"],"prerequisites":["Network Watcher enabled in target regions"],"recommendation":"recommended","applicability_conditions":{"description":"Enable in all target regions for troubleshooting during migration"}},{"id":"azure_advisor","name":"Azure Advisor","vendor":"Microsoft","category":"monitoring_observability","description":"Personalized cloud consultant that provides recommendations for cost optimization, performance, reliability, security, and operational excellence.","url":"https://learn.microsoft.com/en-us/azure/advisor/","applicable_components":["compute_single_role","database_single","networking_vnet","monitoring_setup"],"applicable_phases":["phase_4_validation"],"hours_saved":{"optimistic":4,"expected":3,"pessimistic":1},"cost":{"type":"free","details":"Free Azure service"},"pros":["Automated right-sizing recommendations","Cost optimization suggestions post-deployment","Security and reliability best practice checks","Actionable with one-click remediation"],"cons":["Needs running resources to analyze — post-deployment only","Generic recommendations — not Sitecore-aware","Some recommendations require workload running period"],"prerequisites":["Deployed Azure resources"],"recommendation":"recommended","applicability_conditions":{"description":"Review after initial Azure deployment to optimize sizing and costs"}}]},
+  aiSelections: {"generated_at":"2026-02-21T17:43:00Z","selections":{"azure_migrate":true,"aws_app_discovery":true,"azure_dms":true,"dma":true,"azcopy":true,"github_copilot":true,"claude_code":true,"terraform_opentofu":true,"playwright_ai_testgen":true,"k6_performance":true,"azure_monitor_ai":true,"app_insights_smart":true,"defender_for_cloud":true,"azure_backup_smart":true,"azure_network_watcher":true,"azure_advisor":true,"azure_devops_pipelines":true,"ssma":false,"azure_storage_mover":false,"azure_bicep":false,"azure_load_testing":false,"azure_policy":false,"github_actions_copilot":false,"azure_site_recovery":false,"azure_traffic_manager":false},"disabled_reasons":{"ssma":"SQL Server to SQL Server migration — DMA is more appropriate","azure_storage_mover":"Media library <100GB — AzCopy is simpler and sufficient","azure_bicep":"Mutual exclusion: Terraform/OpenTofu selected as IaC tool","azure_load_testing":"K6 selected as primary load testing tool","azure_policy":"No confirmed compliance requirements — enable if PCI/HIPAA/GDPR discovered","github_actions_copilot":"Mutual exclusion: Azure DevOps Pipelines selected (repos already on Azure DevOps)","azure_site_recovery":"IaaS replatform approach — not using ASR lift-and-shift pathway","azure_traffic_manager":"Standard DNS cutover planned — gradual cutover not required"}}
+};
+
+// ============================================================
+// ANIMATE — Numeric count-up animations
+// ============================================================
+const Animate = {
+  _running: new WeakMap(),
+  countTo(el, target, duration) {
+    if (!el) return;
+    const prev = this._running.get(el);
+    if (prev) cancelAnimationFrame(prev);
+    const start = parseFloat(el.textContent) || 0;
+    const diff = target - start;
+    if (Math.abs(diff) < 0.5) { el.textContent = Math.round(target); return; }
+    const startTime = performance.now();
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / (duration || 600), 1);
+      const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      el.textContent = Math.round(start + diff * ease);
+      if (progress < 1) {
+        this._running.set(el, requestAnimationFrame(step));
+      } else {
+        this._running.delete(el);
+      }
+    };
+    this._running.set(el, requestAnimationFrame(step));
+  }
+};
+
+// ============================================================
+// STATE MANAGER — Single source of truth for all toggles
+// ============================================================
+const State = {
+  components: {},
+  aiTools: {},
+  assumptionTab: 'unvalidated',
+  init() {
+    if (DATA.estimate && DATA.estimate.phases) {
+      DATA.estimate.phases.forEach(p => {
+        p.components.forEach(c => { this.components[c.id] = true; });
+      });
+    }
+    if (DATA.aiSelections && DATA.aiSelections.selections) {
+      this.aiTools = { ...DATA.aiSelections.selections };
+    } else if (DATA.aiAlternatives && DATA.aiAlternatives.alternatives) {
+      DATA.aiAlternatives.alternatives.forEach(a => {
+        this.aiTools[a.id] = a.recommendation === 'recommended';
+      });
+    }
+  },
+  toggleComponent(id) {
+    this.components[id] = !this.components[id];
+    App.recalculate();
+  },
+  toggleAI(id) {
+    const alt = DATA.aiAlternatives.alternatives.find(a => a.id === id);
+    if (alt && alt.mutual_exclusion) {
+      const other = alt.mutual_exclusion;
+      if (!this.aiTools[id] && this.aiTools[other]) {
+        this.aiTools[other] = false;
+      }
+    }
+    this.aiTools[id] = !this.aiTools[id];
+    App.recalculate();
+  }
+};
+
+// ============================================================
+// CALCULATOR — Recalculates all totals from state + data
+// ============================================================
+const Calc = {
+  results: {},
+  calculate() {
+    const r = { phases: [], totalWithout: {o:0,e:0,p:0}, totalWith: {o:0,e:0,p:0}, roles: {}, aiSavings: {o:0,e:0,p:0}, aiToolCount: 0, cappedComponents: [] };
+    const cap = (DATA.aiAlternatives && DATA.aiAlternatives.savings_cap) ? DATA.aiAlternatives.savings_cap.max_percentage / 100 : 0.5;
+
+    if (!DATA.estimate || !DATA.estimate.phases) { this.results = r; return r; }
+
+    DATA.estimate.phases.forEach(phase => {
+      const pr = { id: phase.id, name: phase.name, components: [], without: {o:0,e:0,p:0}, with: {o:0,e:0,p:0} };
+      phase.components.forEach(comp => {
+        if (!State.components[comp.id]) return;
+        const wo = comp.hours ? comp.hours.without_ai : { optimistic: comp.final_hours * 0.8, expected: comp.final_hours, pessimistic: comp.final_hours * 1.3 };
+        let savO = 0, savE = 0, savP = 0;
+        if (comp.ai_alternatives) {
+          comp.ai_alternatives.forEach(alt => {
+            if (State.aiTools[alt.id]) {
+              savO += alt.hours_saved.optimistic || 0;
+              savE += alt.hours_saved.expected || 0;
+              savP += alt.hours_saved.pessimistic || 0;
+            }
+          });
+        }
+        const maxSav = wo.expected * cap;
+        let capped = false;
+        if (savE > maxSav) { const ratio = maxSav / savE; savO *= ratio; savE *= ratio; savP *= ratio; capped = true; r.cappedComponents.push(comp.id); }
+        const wi = { optimistic: Math.max(wo.optimistic - savO, wo.optimistic * (1 - cap)), expected: Math.max(wo.expected - savE, wo.expected * (1 - cap)), pessimistic: Math.max(wo.pessimistic - savP, wo.pessimistic * (1 - cap)) };
+        const cr = { id: comp.id, name: comp.name, firm: comp.firm_hours || comp.final_hours, assumption: comp.assumption_dependent_hours || 0, without: wo, with: wi, savings: { o: wo.optimistic - wi.optimistic, e: wo.expected - wi.expected, p: wo.pessimistic - wi.pessimistic }, capped, assumptions: comp.assumptions_affecting || [], byRole: comp.by_role || {}, riskLevel: comp.risk_level || 'medium' };
+        pr.components.push(cr);
+        pr.without.o += wo.optimistic; pr.without.e += wo.expected; pr.without.p += wo.pessimistic;
+        pr.with.o += wi.optimistic; pr.with.e += wi.expected; pr.with.p += wi.pessimistic;
+        Object.entries(cr.byRole).forEach(([role, hrs]) => {
+          if (!r.roles[role]) r.roles[role] = { without: 0, with: 0 };
+          r.roles[role].without += hrs;
+          const roleRatio = wi.expected / (wo.expected || 1);
+          r.roles[role].with += hrs * roleRatio;
+        });
+      });
+      r.phases.push(pr);
+      r.totalWithout.o += pr.without.o; r.totalWithout.e += pr.without.e; r.totalWithout.p += pr.without.p;
+      r.totalWith.o += pr.with.o; r.totalWith.e += pr.with.e; r.totalWith.p += pr.with.p;
+    });
+    r.aiSavings.o = r.totalWithout.o - r.totalWith.o;
+    r.aiSavings.e = r.totalWithout.e - r.totalWith.e;
+    r.aiSavings.p = r.totalWithout.p - r.totalWith.p;
+    r.aiToolCount = Object.values(State.aiTools).filter(Boolean).length;
+    r.confidence = this.calcConfidence();
+    this.results = r;
+    return r;
+  },
+  calcConfidence() {
+    if (!DATA.assumptions || !DATA.assumptions.summary) {
+      return DATA.estimate.confidence_score || 0;
+    }
+    const s = DATA.assumptions.summary;
+    const total = s.total_assumptions + (s.confirmed_answers || 0);
+    if (total === 0) return 100;
+    const validated = s.validated + (s.confirmed_answers || 0);
+    return Math.round(validated / total * 100);
+  },
+  totalPessimisticWidening() {
+    if (!DATA.assumptions || !DATA.assumptions.assumptions) return 0;
+    return DATA.assumptions.assumptions
+      .filter(a => a.validation_status !== 'validated')
+      .reduce((sum, a) => sum + (a.pessimistic_widening_hours || 0), 0);
+  }
+};
+
+// ============================================================
+// CHART RENDERER — CSS bar charts + SVG donut + gauge
+// ============================================================
+const Charts = {
+  phaseBar(phase, maxHours) {
+    const pct = maxHours > 0 ? (phase.with.e / maxHours * 100) : 0;
+    const firmPct = phase.components.reduce((s, c) => s + (c.firm || 0), 0) / (phase.with.e || 1) * pct;
+    const assumPct = pct - firmPct;
+    return `<div class="bar-row" onclick="Toggles.expandPhaseFromBar('${phase.id}')">
+      <div class="bar-label">${phase.name.replace(/Phase \d+: /, '')}</div>
+      <div class="bar-track">
+        <div class="bar-segment firm" style="width:${firmPct}%" title="Firm hours"></div>
+        <div class="bar-segment assumption" style="width:${assumPct}%" title="Assumption-dependent"></div>
+      </div>
+      <div class="bar-value">${Math.round(phase.with.e)} hrs</div>
+    </div>`;
+  },
+  DONUT_COLORS: ['#2563eb', '#dc2626', '#facc15', '#16a34a', '#7c3aed', '#ea580c', '#0891b2', '#be185d'],
+  donut(phases, containerId) {
+    const el = document.getElementById(containerId);
+    if (!el || !phases.length) return;
+    const size = 160, cx = 80, cy = 80, r = 56, strokeWidth = 30;
+    const total = phases.reduce((s, p) => s + p.with.e, 0);
+    if (total === 0) { el.innerHTML = '<p style="color:var(--text-faint);">No data</p>'; return; }
+    let cumAngle = -90; // start top
+    let paths = '';
+    phases.forEach((p, i) => {
+      const pct = p.with.e / total;
+      const angle = pct * 360;
+      const startRad = cumAngle * Math.PI / 180;
+      const endRad = (cumAngle + angle) * Math.PI / 180;
+      const x1 = cx + r * Math.cos(startRad);
+      const y1 = cy + r * Math.sin(startRad);
+      const x2 = cx + r * Math.cos(endRad);
+      const y2 = cy + r * Math.sin(endRad);
+      const largeArc = angle > 180 ? 1 : 0;
+      const color = this.DONUT_COLORS[i % this.DONUT_COLORS.length];
+      paths += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="butt" style="filter: drop-shadow(0 0 0 transparent)"/>`;
+      // Black separator line
+      if (phases.length > 1) {
+        paths += `<line x1="${cx}" y1="${cy}" x2="${x1}" y2="${y1}" stroke="#000" stroke-width="2"/>`;
+      }
+      cumAngle += angle;
+    });
+    const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#000" stroke-width="${strokeWidth + 4}"/>
+      ${paths}
+      <circle cx="${cx}" cy="${cy}" r="${r - strokeWidth/2 - 2}" fill="var(--surface)" stroke="#000" stroke-width="2"/>
+      <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="18" font-weight="800" fill="var(--text)">${Math.round(total)}</text>
+      <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--text-muted)" text-transform="uppercase">TOTAL HRS</text>
+    </svg>`;
+    let legend = '<div class="donut-legend">';
+    phases.forEach((p, i) => {
+      const color = this.DONUT_COLORS[i % this.DONUT_COLORS.length];
+      legend += `<div class="donut-legend-item"><div class="donut-legend-swatch" style="background:${color};"></div><span>${p.name.replace(/Phase \d+: /, '')}</span><span class="donut-legend-hours">${Math.round(p.with.e)} hrs</span></div>`;
+    });
+    legend += '</div>';
+    el.innerHTML = svg + legend;
+  },
+  confidenceGauge(pct) {
+    const size = 120, cx = 60, cy = 65, r = 50;
+    const color = pct >= 80 ? 'var(--success)' : pct >= 60 ? '#facc15' : 'var(--danger)';
+    const startAngle = 180;
+    const sweepAngle = (pct / 100) * 180;
+    const endAngle = startAngle + sweepAngle;
+    const x1 = cx + r * Math.cos(startAngle * Math.PI / 180);
+    const y1 = cy + r * Math.sin(startAngle * Math.PI / 180);
+    const x2 = cx + r * Math.cos(endAngle * Math.PI / 180);
+    const y2 = cy + r * Math.sin(endAngle * Math.PI / 180);
+    const largeArc = sweepAngle > 180 ? 1 : 0;
+    // Background arc
+    const bgX1 = cx + r * Math.cos(Math.PI);
+    const bgY1 = cy + r * Math.sin(Math.PI);
+    const bgX2 = cx + r * Math.cos(0);
+    const bgY2 = cy + r * Math.sin(0);
+    return `<svg width="${size}" height="${cy + 10}" viewBox="0 0 ${size} ${cy + 10}">
+      <path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 0 1 ${bgX2} ${bgY2}" fill="none" stroke="var(--border-light)" stroke-width="12" stroke-linecap="butt"/>
+      <path d="M ${bgX1} ${bgY1} A ${r} ${r} 0 0 1 ${bgX2} ${bgY2}" fill="none" stroke="#000" stroke-width="14" stroke-linecap="butt" opacity="0.08"/>
+      <path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="butt"/>
+      <path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" fill="none" stroke="#000" stroke-width="14" stroke-linecap="butt" opacity="0"/>
+      <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="24" font-weight="800" fill="var(--text)">${pct}%</text>
+    </svg>`;
+  }
+};
+
+// ============================================================
+// FILTERS — Search + phase/risk filter chips
+// ============================================================
+const Filters = {
+  searchText: '',
+  activePhases: new Set(),
+  activeRisks: new Set(),
+  renderBar() {
+    const el = document.getElementById('filter-bar');
+    if (!el) return;
+    const phases = Calc.results.phases || [];
+    let html = '<div class="filter-bar-row"><input class="filter-search" type="text" placeholder="Search components..." oninput="Filters.onSearch(this.value)" value="' + this.searchText + '"></div>';
+    html += '<div class="filter-group"><span class="filter-label">Phase:</span>';
+    phases.forEach(p => {
+      const active = this.activePhases.has(p.id) ? ' active' : '';
+      html += `<span class="filter-chip${active}" onclick="Filters.togglePhase('${p.id}')">${p.name.replace(/Phase \d+: /, '')}</span>`;
+    });
+    html += '</div>';
+    html += '<div class="filter-group"><span class="filter-label">Risk:</span>';
+    ['high', 'medium', 'low'].forEach(level => {
+      const active = this.activeRisks.has(level) ? ' active' : '';
+      html += `<span class="filter-chip risk-${level}${active}" onclick="Filters.toggleRisk('${level}')">${level}</span>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+    el.classList.add('active');
+  },
+  onSearch(val) {
+    this.searchText = val.toLowerCase();
+    this.apply();
+  },
+  togglePhase(id) {
+    if (this.activePhases.has(id)) this.activePhases.delete(id);
+    else this.activePhases.add(id);
+    this.renderBar();
+    this.apply();
+  },
+  toggleRisk(level) {
+    if (this.activeRisks.has(level)) this.activeRisks.delete(level);
+    else this.activeRisks.add(level);
+    this.renderBar();
+    this.apply();
+  },
+  apply() {
+    document.querySelectorAll('.phase-group').forEach(group => {
+      const phaseId = group.dataset.phaseId;
+      if (this.activePhases.size > 0 && !this.activePhases.has(phaseId)) {
+        group.style.display = 'none';
+        return;
+      }
+      group.style.display = '';
+      let visibleCount = 0;
+      group.querySelectorAll('.comp-row').forEach(row => {
+        const name = (row.dataset.compName || '').toLowerCase();
+        const risk = row.dataset.riskLevel || 'medium';
+        let show = true;
+        if (this.searchText && !name.includes(this.searchText)) show = false;
+        if (this.activeRisks.size > 0 && !this.activeRisks.has(risk)) show = false;
+        row.style.display = show ? '' : 'none';
+        // Also hide/show the detail row
+        const detailId = row.dataset.detailId;
+        if (detailId) {
+          const detailRow = document.getElementById(detailId);
+          if (detailRow && !show) detailRow.style.display = 'none';
+        }
+        if (show) visibleCount++;
+      });
+      if (visibleCount === 0 && (this.searchText || this.activeRisks.size > 0)) {
+        group.style.display = 'none';
+      }
+    });
+  }
+};
+
+// ============================================================
+// SCENARIOS — Manual / AI-Assisted / Best Case toggle
+// ============================================================
+const Scenarios = {
+  current: 'ai-assisted',
+  _initialized: false,
+  renderBar() {
+    const el = document.getElementById('scenario-bar');
+    if (!el) return;
+    if (!this._initialized) {
+      const scenarios = [
+        { id: 'manual', label: 'Manual Only' },
+        { id: 'ai-assisted', label: 'AI-Assisted' },
+        { id: 'best-case', label: 'Best Case' }
+      ];
+      el.innerHTML = scenarios.map(s =>
+        `<button class="scenario-btn${s.id === this.current ? ' active' : ''}" data-scenario="${s.id}" onclick="Scenarios.select('${s.id}')">${s.label}</button>`
+      ).join('');
+      this._initialized = true;
+    } else {
+      el.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.scenario === this.current);
+      });
+    }
+  },
+  select(id) {
+    this.current = id;
+    this.renderBar();
+    Render.summaryCards();
+    Render.comparisonTable();
+  },
+  getValues(r) {
+    const widening = Calc.totalPessimisticWidening();
+    const bestPess = r.totalWith.p > 0 ? Math.round(r.totalWith.p - widening) : 0;
+    switch (this.current) {
+      case 'manual':
+        return { o: r.totalWithout.o, e: r.totalWithout.e, p: r.totalWithout.p, label: 'Manual Only' };
+      case 'best-case':
+        return { o: r.totalWith.o, e: r.totalWith.e, p: bestPess, label: 'Best Case' };
+      default:
+        return { o: r.totalWith.o, e: r.totalWith.e, p: r.totalWith.p, label: 'AI-Assisted' };
+    }
+  }
+};
+
+// ============================================================
+// EDIT MODE — Inline editing of numeric values
+// ============================================================
+const EditMode = {
+  active: false,
+  originalData: null,
+  modified: false,
+  toggle() {
+    this.active = !this.active;
+    const toolbar = document.getElementById('edit-toolbar');
+    const btn = document.getElementById('edit-mode-btn');
+    const exportBtn = document.getElementById('export-btn');
+    if (this.active) {
+      if (!this.originalData) {
+        this.originalData = JSON.parse(JSON.stringify(DATA));
+      }
+      toolbar.classList.add('active');
+      btn.textContent = 'Exit Edit Mode';
+      btn.classList.add('btn-danger');
+      exportBtn.style.display = '';
+      this.enableEditing();
+    } else {
+      toolbar.classList.remove('active');
+      btn.textContent = 'Edit Mode';
+      btn.classList.remove('btn-danger');
+      exportBtn.style.display = 'none';
+      this.disableEditing();
+    }
+  },
+  enableEditing() {
+    document.querySelectorAll('.editable').forEach(el => {
+      el.contentEditable = 'true';
+    });
+  },
+  disableEditing() {
+    document.querySelectorAll('.editable').forEach(el => {
+      el.contentEditable = 'false';
+    });
+  },
+  onBlur(el, compId, field) {
+    const val = parseFloat(el.textContent);
+    if (isNaN(val) || val < 0) {
+      el.textContent = el.dataset.original || '0';
+      return;
+    }
+    el.textContent = Math.round(val);
+    // Update DATA in place
+    if (DATA.estimate && DATA.estimate.phases) {
+      for (const phase of DATA.estimate.phases) {
+        const comp = phase.components.find(c => c.id === compId);
+        if (comp) {
+          if (field === 'firm_hours') comp.firm_hours = val;
+          else if (field === 'final_hours') comp.final_hours = val;
+          else if (field === 'hours_expected') {
+            if (!comp.hours) comp.hours = {};
+            if (!comp.hours.without_ai) comp.hours.without_ai = {};
+            comp.hours.without_ai.expected = val;
+          }
+          break;
+        }
+      }
+    }
+    this.modified = true;
+    document.getElementById('status-modified').classList.add('visible');
+    App.recalculate();
+  },
+  resetAll() {
+    if (this.originalData) {
+      Object.assign(DATA, JSON.parse(JSON.stringify(this.originalData)));
+      this.modified = false;
+      document.getElementById('status-modified').classList.remove('visible');
+      State.init();
+      App.recalculate();
+    }
+  },
+  exportJSON() {
+    const exportData = {
+      exported: new Date().toISOString(),
+      modified: this.modified,
+      estimate: DATA.estimate,
+      aiSelections: { selections: State.aiTools },
+      componentStates: State.components,
+      totals: {
+        withAI: Calc.results.totalWith,
+        withoutAI: Calc.results.totalWithout,
+        aiSavings: Calc.results.aiSavings,
+        confidence: Calc.results.confidence
+      }
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'migration-estimate-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+};
+
+// ============================================================
+// DOM RENDERER — Renders all dashboard sections
+// ============================================================
+const Render = {
+  all() {
+    this.summaryCards();
+    this.confidencePanel();
+    this.phaseBreakdown();
+    this.aiCards();
+    this.aiSummary();
+    this.assumptionsPanel();
+    this.comparisonTable();
+    this.roleBreakdown();
+    this.riskSummary();
+    Charts.donut(Calc.results.phases, 'donut-chart');
+    Scenarios.renderBar();
+    Filters.renderBar();
+  },
+  summaryCards() {
+    const r = Calc.results;
+    const vals = Scenarios.getValues(r);
+    const confClass = r.confidence >= 80 ? 'success' : r.confidence >= 60 ? 'warning' : 'danger';
+    const cardsHtml = `
+      <div class="card"><div class="card-header">Recommended Estimate</div><div class="card-value primary"><span class="animated-value" data-animate="estimate">${Math.round(vals.e)}</span> hrs</div><div class="card-detail">${vals.label} expected</div></div>
+      <div class="card"><div class="card-header">Estimate Range</div><div class="card-value"><span class="animated-value" data-animate="range-low">${Math.round(vals.o)}</span>–<span class="animated-value" data-animate="range-high">${Math.round(r.totalWithout.p)}</span></div><div class="card-detail">Low to High (manual + assumptions)</div></div>
+      <div class="card"><div class="card-header">Confidence</div><div class="card-value ${confClass}"><span class="animated-value" data-animate="confidence">${r.confidence}</span>%</div><div class="card-detail">${DATA.assumptions ? DATA.assumptions.summary.unvalidated : '?'} unvalidated assumptions</div></div>
+      <div class="card"><div class="card-header">AI Savings</div><div class="card-value success"><span class="animated-value" data-animate="savings">${Math.round(r.aiSavings.e)}</span> hrs</div><div class="card-detail">${r.aiToolCount} tools enabled</div></div>
+    `;
+    const container = document.getElementById('summary-cards');
+    // Animate if values already rendered
+    const prevEstimate = container.querySelector('[data-animate="estimate"]');
+    container.innerHTML = cardsHtml;
+    if (prevEstimate) {
+      Animate.countTo(container.querySelector('[data-animate="estimate"]'), Math.round(vals.e), 500);
+      Animate.countTo(container.querySelector('[data-animate="range-low"]'), Math.round(vals.o), 500);
+      Animate.countTo(container.querySelector('[data-animate="range-high"]'), Math.round(r.totalWithout.p), 500);
+      Animate.countTo(container.querySelector('[data-animate="confidence"]'), r.confidence, 500);
+      Animate.countTo(container.querySelector('[data-animate="savings"]'), Math.round(r.aiSavings.e), 500);
+    }
+  },
+  confidencePanel() {
+    const r = Calc.results;
+    const widening = Calc.totalPessimisticWidening();
+    const narrative = DATA.estimate.client_summary ? DATA.estimate.client_summary.range_narrative : '';
+    const gauge = Charts.confidenceGauge(r.confidence);
+    document.getElementById('confidence-panel').innerHTML = `
+      <div class="confidence-gauge">
+        <div>${gauge}</div>
+        <div style="flex:1;">
+          <div class="confidence-gauge-label">Confidence Score: ${r.confidence}%</div>
+          <div style="margin-top:6px;">
+            <div style="font-size:0.75rem;color:var(--text-muted);">Pessimistic widening from assumptions</div>
+            <div style="font-size:1.125rem;font-weight:800;color:var(--warning-dark);font-family:var(--mono);">+${Math.round(widening)} hrs</div>
+          </div>
+        </div>
+      </div>
+      ${narrative ? `<div class="callout">${narrative}</div>` : ''}
+    `;
+  },
+  phaseBreakdown() {
+    const r = Calc.results;
+    const roleNames = { infrastructure_engineer: 'Infrastructure Engineer', dba: 'DBA', sitecore_developer: 'Sitecore Developer', qa_engineer: 'QA Engineer', project_manager: 'Project Manager' };
+    const maxH = Math.max(...r.phases.map(p => p.with.e), 1);
+    let html = '<div class="bar-chart" style="margin-bottom:14px;">';
+    r.phases.forEach(p => { html += Charts.phaseBar(p, maxH); });
+    html += '</div><div style="display:flex;gap:14px;font-size:0.6875rem;color:var(--text-muted);margin-bottom:14px;font-weight:700;"><span><span style="display:inline-block;width:12px;height:12px;background:var(--primary);border:2px solid #000;vertical-align:middle;margin-right:4px;"></span>Firm hours</span><span><span style="display:inline-block;width:12px;height:12px;background:#93c5fd;border:2px solid #000;vertical-align:middle;margin-right:4px;"></span>Assumption-dependent</span></div>';
+    r.phases.forEach(p => {
+      // Phase summary stats
+      const compCount = p.components.length;
+      const riskHigh = p.components.filter(c => c.riskLevel === 'high').length;
+      const riskMedium = p.components.filter(c => c.riskLevel === 'medium').length;
+      const riskLow = p.components.filter(c => c.riskLevel === 'low').length;
+      const phaseSavings = Math.round(p.without.e - p.with.e);
+      const phaseSavingsPct = p.without.e > 0 ? Math.round((p.without.e - p.with.e) / p.without.e * 100) : 0;
+      const totalHrs = r.phases.reduce((s, ph) => s + ph.with.e, 0);
+      const phasePct = totalHrs > 0 ? Math.round(p.with.e / totalHrs * 100) : 0;
+
+      html += `<div class="phase-group" data-phase-id="${p.id}"><div class="phase-header" onclick="Toggles.togglePhase('${p.id}')">`;
+      html += `<div class="phase-header-top"><span class="phase-arrow" id="arrow-${p.id}">&#9654;</span><span class="phase-name">${p.name}</span><span class="phase-hours">${Math.round(p.with.e)} hrs</span></div>`;
+      html += `<div class="phase-summary">${compCount} component${compCount !== 1 ? 's' : ''}`;
+      if (riskHigh > 0) html += ` | <span class="badge badge-danger">${riskHigh} high risk</span>`;
+      if (riskMedium > 0) html += ` <span class="badge badge-warning">${riskMedium} medium</span>`;
+      if (riskLow > 0) html += ` <span class="badge badge-success">${riskLow} low</span>`;
+      if (phaseSavings > 0) html += ` | AI saves ${phaseSavings} hrs (${phaseSavingsPct}%)`;
+      html += ` | ${phasePct}% of total</div>`;
+      html += `</div>`;
+
+      html += `<div class="phase-body" id="body-${p.id}"><table><thead><tr><th style="width:32px;" class="no-print"></th><th>Component</th><th class="num">Firm</th><th class="num">Assumed</th><th class="num">Without AI</th><th class="num">With AI</th><th class="num">Savings</th></tr></thead><tbody>`;
+      p.components.forEach(c => {
+        const riskLevel = c.riskLevel || 'medium';
+        const checked = State.components[c.id] ? 'checked' : '';
+        // Clickable component row with data attributes for filtering
+        html += `<tr class="comp-row" data-comp-name="${c.name}" data-risk-level="${riskLevel}" data-detail-id="comp-detail-${c.id}" onclick="Toggles.toggleCompDetail('${c.id}')"><td class="no-print" onclick="event.stopPropagation()"><input type="checkbox" ${checked} onchange="State.toggleComponent('${c.id}')"></td><td><span class="comp-arrow" id="comp-arrow-${c.id}">&#9654;</span>${c.name}${c.assumptions.length ? ` <span class="badge badge-warning">${c.assumptions.length} assumptions</span>` : ''}</td><td class="num">${Math.round(c.firm)}</td><td class="num">${Math.round(c.assumption)}</td><td class="num">${Math.round(c.without.expected)}</td><td class="num">${Math.round(c.with.expected)}</td><td class="num" style="color:var(--success);">${c.savings.e > 0 ? '-' + Math.round(c.savings.e) : '0'}</td></tr>`;
+
+        // Component detail summary bar
+        const savPct = c.without.expected > 0 ? Math.round(c.savings.e / c.without.expected * 100) : 0;
+        const riskBadgeCls = riskLevel === 'high' ? 'badge-danger' : riskLevel === 'medium' ? 'badge-warning' : 'badge-success';
+        let detailSummaryHtml = `<div class="comp-detail-summary">`;
+        detailSummaryHtml += `<div class="comp-detail-stat"><div class="stat-label">Without AI</div><div class="stat-value">${Math.round(c.without.expected)} hrs</div></div>`;
+        detailSummaryHtml += `<div class="comp-detail-stat"><div class="stat-label">With AI</div><div class="stat-value" style="color:var(--primary);">${Math.round(c.with.expected)} hrs</div></div>`;
+        detailSummaryHtml += `<div class="comp-detail-stat"><div class="stat-label">Savings</div><div class="stat-value" style="color:var(--success);">${c.savings.e > 0 ? '-' + Math.round(c.savings.e) : '0'} hrs (${savPct}%)</div></div>`;
+        detailSummaryHtml += `<div class="comp-detail-stat"><div class="stat-label">Risk</div><div class="stat-value"><span class="badge ${riskBadgeCls}">${riskLevel}</span></div></div>`;
+        detailSummaryHtml += `</div>`;
+
+        // Detail row — assumptions, AI tools, role split
+        let assumHtml = '';
+        if (c.assumptions.length && DATA.assumptions && DATA.assumptions.assumptions) {
+          c.assumptions.forEach(aId => {
+            const a = DATA.assumptions.assumptions.find(x => x.id === aId);
+            if (a) {
+              const w = a.pessimistic_widening_hours || 0;
+              const badge = a.validation_status === 'validated' ? 'badge-success' : 'badge-warning';
+              assumHtml += `<li><span class="detail-label">${a.id} <span class="badge ${badge}">${a.validation_status}</span></span><span class="detail-value" style="color:var(--warning-dark);">+${w} hrs</span></li>`;
+            }
+          });
+        }
+        if (!assumHtml) assumHtml = '<li><span class="comp-detail-none">No assumptions</span></li>';
+
+        let aiHtml = '';
+        const srcComp = DATA.estimate.phases.flatMap(ph => ph.components).find(x => x.id === c.id);
+        if (srcComp && srcComp.ai_alternatives && srcComp.ai_alternatives.length) {
+          srcComp.ai_alternatives.forEach(alt => {
+            const full = DATA.aiAlternatives.alternatives.find(x => x.id === alt.id);
+            const name = full ? full.name : alt.id;
+            const enabled = State.aiTools[alt.id];
+            const cls = enabled ? 'detail-enabled' : 'detail-disabled';
+            const savText = enabled ? '-' + alt.hours_saved.expected + ' hrs' : 'off';
+            aiHtml += `<li><span class="detail-label">${name}</span><span class="detail-value ${cls}">${savText}</span></li>`;
+          });
+        }
+        if (!aiHtml) aiHtml = '<li><span class="comp-detail-none">No AI tools applicable</span></li>';
+
+        let roleHtml = '';
+        Object.entries(c.byRole).forEach(([role, hrs]) => {
+          roleHtml += `<li><span class="detail-label">${roleNames[role] || role}</span><span class="detail-value">${Math.round(hrs)} hrs</span></li>`;
+        });
+        if (!roleHtml) roleHtml = '<li><span class="comp-detail-none">No role data</span></li>';
+
+        html += `<tr class="comp-detail-row" id="comp-detail-${c.id}"><td class="comp-detail-cell" colspan="7">${detailSummaryHtml}<div class="comp-detail"><div class="comp-detail-section"><h4>Assumptions</h4><ul class="comp-detail-list">${assumHtml}</ul></div><div class="comp-detail-section"><h4>AI Tools</h4><ul class="comp-detail-list">${aiHtml}</ul></div><div class="comp-detail-section"><h4>Role Split</h4><ul class="comp-detail-list">${roleHtml}</ul></div></div></td></tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+    });
+    document.getElementById('phase-breakdown').innerHTML = html;
+  },
+  aiCards() {
+    if (!DATA.aiAlternatives || !DATA.aiAlternatives.alternatives) { document.getElementById('ai-cards').innerHTML = '<div class="card"><p>No AI alternatives data available.</p></div>'; return; }
+    const costMult = { free: 1.0, included: 0.95, pay_per_use: 0.8, subscription: 0.7 };
+    const prereqMult = n => n <= 1 ? 1.0 : n === 2 ? 0.9 : 0.8;
+    const costLabel = { free: 'Free', included: 'Included', pay_per_use: 'Pay/use', subscription: 'Subscription' };
+    const costClass = { free: 'cost-free', included: 'cost-included', pay_per_use: 'cost-pay', subscription: 'cost-sub' };
+    const ranked = DATA.aiAlternatives.alternatives.map(alt => {
+      const cm = costMult[alt.cost.type] || 0.8;
+      const pm = prereqMult((alt.prerequisites || []).length);
+      return { ...alt, score: alt.hours_saved.expected * cm * pm };
+    }).sort((a, b) => b.score - a.score);
+    let html = '<table><thead><tr><th style="width:32px;text-align:center;">#</th><th>Tool</th><th class="num">Hrs Saved</th><th>Cost</th><th class="num">Score</th><th style="width:32px;" class="no-print"></th></tr></thead><tbody>';
+    ranked.forEach((alt, i) => {
+      const enabled = State.aiTools[alt.id];
+      const cat = DATA.aiAlternatives.categories[alt.category];
+      const disabledCls = enabled ? '' : ' tool-row-disabled';
+      const rankCls = i < 3 ? 'rank-num top3' : 'rank-num';
+      const badge = `<span class="cost-badge ${costClass[alt.cost.type] || 'cost-pay'}">${costLabel[alt.cost.type] || alt.cost.type}</span>`;
+      const mutual = alt.mutual_exclusion ? `<span class="mutual-tag">excl. ${alt.mutual_exclusion}</span>` : '';
+      const desc = alt.description.length > 100 ? alt.description.substring(0, 100) + '...' : alt.description;
+
+      // Clickable summary row
+      html += `<tr class="tool-row${disabledCls}" onclick="Toggles.toggleToolDetail('${alt.id}')"><td class="${rankCls}"><span class="tool-arrow" id="tool-arrow-${alt.id}">&#9654;</span>${i + 1}</td><td><div class="tool-name">${alt.name}${mutual}</div><div class="tool-meta">${alt.vendor} — ${cat ? cat.name : alt.category}</div><div class="tool-desc">${desc}</div></td><td class="num">${alt.hours_saved.expected}</td><td>${badge}</td><td class="num">${alt.score.toFixed(1)}</td><td class="no-print" onclick="event.stopPropagation()"><input type="checkbox" ${enabled ? 'checked' : ''} onchange="State.toggleAI('${alt.id}')"></td></tr>`;
+
+      // Detail row
+      const prosHtml = (alt.pros || []).map(p => `<li>${p}</li>`).join('');
+      const consHtml = (alt.cons || []).map(c => `<li>${c}</li>`).join('');
+      const prereqHtml = (alt.prerequisites || []).map(p => `<li>${p}</li>`).join('');
+      const compChips = (alt.applicable_components || []).map(cId => {
+        const comp = DATA.estimate.phases.flatMap(ph => ph.components).find(x => x.id === cId);
+        return `<span class="tool-detail-chip">${comp ? comp.name : cId}</span>`;
+      }).join('');
+      const phaseChips = (alt.applicable_phases || []).map(pId => {
+        const phase = DATA.estimate.phases.find(x => x.id === pId);
+        return `<span class="tool-detail-chip">${phase ? phase.name.replace(/Phase \d+: /, '') : pId}</span>`;
+      }).join('');
+      const disReason = DATA.aiSelections && DATA.aiSelections.disabled_reasons && DATA.aiSelections.disabled_reasons[alt.id] ? `<div style="margin-top:8px;font-size:0.6875rem;color:var(--warning-dark);"><strong>Disabled:</strong> ${DATA.aiSelections.disabled_reasons[alt.id]}</div>` : '';
+
+      html += `<tr class="tool-detail-row" id="tool-detail-${alt.id}"><td class="tool-detail-cell" colspan="6">`;
+      html += `<div class="tool-detail-full">${alt.description}${alt.url ? ` <a href="${alt.url}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;white-space:nowrap;font-weight:700;">Docs &#8599;</a>` : ''}</div>`;
+      if (compChips || phaseChips) {
+        html += `<div class="tool-detail-chips">${phaseChips}${compChips}</div>`;
+      }
+      html += `<div class="tool-detail"><div class="tool-detail-section"><h4>Pros</h4><ul class="tool-detail-list pros">${prosHtml || '<li>—</li>'}</ul></div><div class="tool-detail-section"><h4>Cons</h4><ul class="tool-detail-list cons">${consHtml || '<li>—</li>'}</ul></div></div>`;
+      if (prereqHtml) {
+        html += `<div style="margin-top:10px;"><div class="tool-detail-section"><h4>Prerequisites</h4><ul class="tool-detail-list prereqs">${prereqHtml}</ul></div></div>`;
+      }
+      html += `<div class="tool-savings-range"><span class="label">Savings range:</span> <span style="color:var(--success);">${alt.hours_saved.optimistic} optimistic</span> <span>${alt.hours_saved.expected} expected</span> <span style="color:var(--text-muted);">${alt.hours_saved.pessimistic} pessimistic</span></div>`;
+      html += `<div style="margin-top:4px;font-size:0.6875rem;color:var(--text-muted);">Cost: ${alt.cost.details}</div>`;
+      html += disReason;
+      html += `</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('ai-cards').innerHTML = html;
+  },
+  aiSummary() {
+    const r = Calc.results;
+    document.getElementById('ai-summary').innerHTML = `
+      <div class="card-header">AI Savings Summary</div>
+      <table><thead><tr><th></th><th class="num">Optimistic</th><th class="num">Expected</th><th class="num">Pessimistic</th></tr></thead><tbody>
+        <tr><td>Manual Only</td><td class="num">${Math.round(r.totalWithout.o)}</td><td class="num">${Math.round(r.totalWithout.e)}</td><td class="num">${Math.round(r.totalWithout.p)}</td></tr>
+        <tr><td>AI-Assisted</td><td class="num">${Math.round(r.totalWith.o)}</td><td class="num">${Math.round(r.totalWith.e)}</td><td class="num">${Math.round(r.totalWith.p)}</td></tr>
+        <tr style="color:var(--success);font-weight:800;"><td>Savings</td><td class="num">${Math.round(r.aiSavings.o)}</td><td class="num">${Math.round(r.aiSavings.e)}</td><td class="num">${Math.round(r.aiSavings.p)}</td></tr>
+      </tbody></table>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">${r.aiToolCount} tools enabled${r.cappedComponents.length ? ` | ${r.cappedComponents.length} components hit 50% savings cap` : ''}</div>
+    `;
+  },
+  assumptionsPanel() {
+    if (!DATA.assumptions || !DATA.assumptions.assumptions) { document.getElementById('assumptions-panel').innerHTML = '<div class="card"><p>No assumptions registry available. Run <code>/migrate analyze</code> to generate.</p></div>'; return; }
+    const tab = State.assumptionTab;
+    const all = DATA.assumptions.assumptions;
+    let filtered;
+    if (tab === 'unvalidated') filtered = all.filter(a => a.validation_status !== 'validated');
+    else if (tab === 'validated') filtered = all.filter(a => a.validation_status === 'validated');
+    else filtered = all;
+    filtered.sort((a, b) => (b.pessimistic_widening_hours || 0) - (a.pessimistic_widening_hours || 0));
+    let html = '';
+    if (filtered.length === 0) {
+      html = '<div class="card"><p>No assumptions in this category.</p></div>';
+    }
+    filtered.forEach(a => {
+      const w = a.pessimistic_widening_hours || 0;
+      const cls = w >= 12 ? 'high' : w >= 6 ? 'medium' : 'low';
+      const statusBadge = a.validation_status === 'validated' ? '<span class="badge badge-success">Validated</span>' : '<span class="badge badge-warning">Unvalidated</span>';
+      html += `<div class="assumption-item ${cls}"><div class="assumption-header"><div><span class="assumption-id">${a.id}</span> ${statusBadge} <span style="font-size:0.75rem;color:var(--text-muted);margin-left:6px;">${a.dimension}</span></div><div class="assumption-widening ${cls}">+${w} hrs widening</div></div><div class="assumption-body"><strong>Assumed:</strong> ${a.assumed_value} — ${a.basis}<br><strong>Affects:</strong> ${(a.affected_components || []).join(', ')}<br><strong>To validate:</strong> ${a.validation_method || 'N/A'}</div></div>`;
+    });
+    document.getElementById('assumptions-panel').innerHTML = html;
+  },
+  comparisonTable() {
+    const r = Calc.results;
+    const widening = Calc.totalPessimisticWidening();
+    const bestPess = r.totalWith.p > 0 ? Math.round(r.totalWith.p - widening) : '—';
+    const highlight = Scenarios.current;
+    const container = document.getElementById('comparison-table');
+    const existing = container.querySelector('table');
+    if (existing) {
+      // Update values and highlight in place
+      existing.querySelectorAll('tr[data-scenario]').forEach(tr => {
+        tr.classList.toggle('comparison-highlight', tr.dataset.scenario === highlight);
+        const cells = tr.querySelectorAll('td.num');
+        if (tr.dataset.scenario === 'manual') {
+          cells[0].textContent = Math.round(r.totalWithout.o);
+          cells[1].textContent = Math.round(r.totalWithout.e);
+          cells[2].textContent = Math.round(r.totalWithout.p);
+        } else if (tr.dataset.scenario === 'ai-assisted') {
+          cells[0].textContent = Math.round(r.totalWith.o);
+          cells[1].textContent = Math.round(r.totalWith.e);
+          cells[2].textContent = Math.round(r.totalWith.p);
+        } else if (tr.dataset.scenario === 'best-case') {
+          cells[0].textContent = Math.round(r.totalWith.o);
+          cells[1].textContent = Math.round(r.totalWith.e);
+          cells[2].textContent = bestPess;
+        }
+      });
+      return;
+    }
+    container.innerHTML = `
+      <table><thead><tr><th>Scenario</th><th class="num">Optimistic</th><th class="num">Expected</th><th class="num">Pessimistic</th></tr></thead><tbody>
+        <tr data-scenario="manual"${highlight === 'manual' ? ' class="comparison-highlight"' : ''}><td>Manual Only</td><td class="num">${Math.round(r.totalWithout.o)}</td><td class="num">${Math.round(r.totalWithout.e)}</td><td class="num">${Math.round(r.totalWithout.p)}</td></tr>
+        <tr data-scenario="ai-assisted"${highlight === 'ai-assisted' ? ' class="comparison-highlight"' : ''}><td>AI-Assisted (Recommended)</td><td class="num">${Math.round(r.totalWith.o)}</td><td class="num">${Math.round(r.totalWith.e)}</td><td class="num">${Math.round(r.totalWith.p)}</td></tr>
+        <tr data-scenario="best-case"${highlight === 'best-case' ? ' class="comparison-highlight"' : ''} style="color:var(--success);"><td>Best Case (all validated + AI)</td><td class="num">${Math.round(r.totalWith.o)}</td><td class="num">${Math.round(r.totalWith.e)}</td><td class="num">${bestPess}</td></tr>
+      </tbody></table>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">Best case assumes all assumptions validated (removes +${Math.round(widening)} hrs pessimistic widening) and AI tools enabled.</div>
+    `;
+  },
+  roleBreakdown() {
+    const r = Calc.results;
+    const roleNames = { infrastructure_engineer: 'Infrastructure Engineer', dba: 'DBA', sitecore_developer: 'Sitecore Developer', qa_engineer: 'QA Engineer', project_manager: 'Project Manager' };
+    const rateRanges = { infrastructure_engineer: '$150-250/hr', dba: '$150-225/hr', sitecore_developer: '$175-275/hr', qa_engineer: '$100-175/hr', project_manager: '$125-200/hr' };
+    let html = '<table><thead><tr><th>Role</th><th class="num">Without AI</th><th class="num">With AI</th><th class="num">Rate Range</th></tr></thead><tbody>';
+    Object.entries(r.roles).forEach(([role, data]) => {
+      const roleId = role.replace(/[^a-zA-Z0-9_]/g, '_');
+      html += `<tr class="role-row" onclick="Toggles.toggleRoleDetail('${roleId}')"><td><span class="role-arrow" id="role-arrow-${roleId}">&#9654;</span>${roleNames[role] || role}</td><td class="num">${Math.round(data.without)}</td><td class="num">${Math.round(data.with)}</td><td class="num">${rateRanges[role] || '—'}</td></tr>`;
+      // Build nested component breakdown for this role
+      let detailHtml = '<table style="width:100%;margin:0;"><thead><tr><th>Component</th><th>Phase</th><th class="num">Without AI</th><th class="num">With AI</th></tr></thead><tbody>';
+      let hasDetails = false;
+      r.phases.forEach(phase => {
+        phase.components.forEach(comp => {
+          if (comp.byRole && comp.byRole[role]) {
+            hasDetails = true;
+            const roleHrs = comp.byRole[role];
+            const ratio = comp.without.expected > 0 ? comp.with.expected / comp.without.expected : 1;
+            const withAiHrs = Math.round(roleHrs * ratio);
+            detailHtml += `<tr><td>${comp.name}</td><td style="color:var(--text-muted);">${phase.name.replace(/Phase \d+: /, '')}</td><td class="num">${Math.round(roleHrs)}</td><td class="num">${withAiHrs}</td></tr>`;
+          }
+        });
+      });
+      detailHtml += '</tbody></table>';
+      if (!hasDetails) detailHtml = '<span style="font-size:0.6875rem;color:var(--text-faint);font-style:italic;">No component data</span>';
+      html += `<tr class="role-detail-row" id="role-detail-${roleId}"><td class="role-detail-cell" colspan="4">${detailHtml}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('role-breakdown').innerHTML = html;
+  },
+  riskSummary() {
+    if (!DATA.analysis || !DATA.analysis.risks) { document.getElementById('risk-summary').innerHTML = '<p>No risk analysis data available.</p>'; return; }
+    const risks = DATA.analysis.risks;
+    const bySeverity = { critical: [], high: [], medium: [], low: [] };
+    risks.forEach(r => { (bySeverity[r.severity] || bySeverity.medium).push(r); });
+    let html = `<div style="display:flex;gap:14px;margin-bottom:12px;">
+      <div><span class="badge badge-danger">${bySeverity.critical.length} Critical</span></div>
+      <div><span class="badge badge-warning">${bySeverity.high.length} High</span></div>
+      <div><span class="badge badge-success">${bySeverity.medium.length + bySeverity.low.length} Medium/Low</span></div>
+    </div>`;
+    html += '<table><thead><tr><th>ID</th><th>Category</th><th>Description</th><th>Severity</th><th class="num">Hours Impact</th></tr></thead><tbody>';
+    [...bySeverity.critical, ...bySeverity.high, ...bySeverity.medium, ...bySeverity.low].forEach(r => {
+      const cls = r.severity === 'critical' ? 'badge-danger' : r.severity === 'high' ? 'badge-warning' : 'badge-success';
+      html += `<tr><td>${r.id}</td><td>${r.category || '—'}</td><td>${r.description ? r.description.substring(0, 80) + (r.description.length > 80 ? '...' : '') : '—'}</td><td><span class="badge ${cls}">${r.severity}</span></td><td class="num">${r.estimated_hours_impact || '—'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('risk-summary').innerHTML = html;
+  }
+};
+
+// ============================================================
+// UI HELPERS — Toggles, tabs, phase expand/collapse
+// ============================================================
+const Toggles = {
+  enableAllComponents() { Object.keys(State.components).forEach(k => State.components[k] = true); App.recalculate(); },
+  disableAllComponents() { Object.keys(State.components).forEach(k => State.components[k] = false); App.recalculate(); },
+  enableAllAI() { Object.keys(State.aiTools).forEach(k => State.aiTools[k] = true); App.recalculate(); },
+  disableAllAI() { Object.keys(State.aiTools).forEach(k => State.aiTools[k] = false); App.recalculate(); },
+  togglePhase(id) {
+    const body = document.getElementById('body-' + id);
+    const arrow = document.getElementById('arrow-' + id);
+    if (body) { body.classList.toggle('open'); }
+    if (arrow) { arrow.classList.toggle('open'); }
+  },
+  toggleCompDetail(id) {
+    const row = document.getElementById('comp-detail-' + id);
+    const arrow = document.getElementById('comp-arrow-' + id);
+    if (row) { row.classList.toggle('open'); }
+    if (arrow) { arrow.classList.toggle('open'); }
+  },
+  toggleToolDetail(id) {
+    const row = document.getElementById('tool-detail-' + id);
+    const arrow = document.getElementById('tool-arrow-' + id);
+    if (row) { row.classList.toggle('open'); }
+    if (arrow) { arrow.classList.toggle('open'); }
+  },
+  toggleRoleDetail(id) {
+    const row = document.getElementById('role-detail-' + id);
+    const arrow = document.getElementById('role-arrow-' + id);
+    if (row) { row.classList.toggle('open'); }
+    if (arrow) { arrow.classList.toggle('open'); }
+  },
+  expandPhaseFromBar(id) {
+    // Switch to Estimate tab
+    MainTabs.show('estimate');
+    const body = document.getElementById('body-' + id);
+    const arrow = document.getElementById('arrow-' + id);
+    if (body && !body.classList.contains('open')) {
+      body.classList.add('open');
+      if (arrow) arrow.classList.add('open');
+    }
+    // Smooth scroll to the phase group
+    const group = document.querySelector(`.phase-group[data-phase-id="${id}"]`);
+    if (group) {
+      setTimeout(() => group.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }
+};
+const Tabs = {
+  show(group, tab) {
+    if (group === 'assumption') {
+      State.assumptionTab = tab;
+      document.querySelectorAll('#assumption-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      Render.assumptionsPanel();
+    }
+  }
+};
+
+// ============================================================
+// MAIN TABS — Top-level panel switching + keyboard nav
+// ============================================================
+const MainTabs = {
+  tabs: ['overview', 'estimate', 'ai-tools', 'risk', 'deliverables'],
+  current: 'overview',
+  show(tabId) {
+    this.current = tabId;
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.toggle('active', t.dataset.panel === tabId));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tabId));
+  },
+  initKeyboard() {
+    document.addEventListener('keydown', e => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (e.target.isContentEditable) return;
+      const idx = parseInt(e.key, 10);
+      if (idx >= 1 && idx <= 5) {
+        e.preventDefault();
+        this.show(this.tabs[idx - 1]);
+      }
+    });
+  }
+};
+
+// ============================================================
+// APP — Initialization and recalculation
+// ============================================================
+const App = {
+  init() {
+    State.init();
+    Calc.calculate();
+    Render.all();
+    MainTabs.initKeyboard();
+    this.initStickyOffsets();
+    this.updateStatusBar();
+  },
+  recalculate() {
+    Calc.calculate();
+    Render.all();
+    Filters.apply();
+    this.updateStatusBar();
+  },
+  initStickyOffsets() {
+    const bar = document.querySelector('.summary-bar');
+    if (!bar) return;
+    const tabBar = document.querySelector('.main-tab-bar');
+    const update = () => {
+      const h = bar.offsetHeight;
+      if (tabBar) tabBar.style.top = h + 'px';
+    };
+    update();
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(update).observe(bar);
+    }
+  },
+  updateStatusBar() {
+    const dateEl = document.getElementById('status-date');
+    const countsEl = document.getElementById('status-counts');
+    if (dateEl) {
+      const d = DATA.project && DATA.project.created_date ? DATA.project.created_date : '';
+      dateEl.textContent = d ? 'Generated ' + d : '';
+    }
+    if (countsEl) {
+      const phases = DATA.estimate && DATA.estimate.phases ? DATA.estimate.phases.length : 0;
+      const comps = DATA.estimate && DATA.estimate.phases ? DATA.estimate.phases.reduce((s, p) => s + p.components.length, 0) : 0;
+      const assumptions = DATA.assumptions && DATA.assumptions.assumptions ? DATA.assumptions.assumptions.length : 0;
+      const tools = DATA.aiAlternatives && DATA.aiAlternatives.alternatives ? DATA.aiAlternatives.alternatives.length : 0;
+      const risks = DATA.analysis && DATA.analysis.risks ? DATA.analysis.risks.length : 0;
+      countsEl.innerHTML = `<span>${phases} phases</span><span>${comps} components</span><span>${assumptions} assumptions</span><span>${tools} tools</span><span>${risks} risks</span>`;
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', App.init.bind(App));
+</script>
+</body>
+</html>

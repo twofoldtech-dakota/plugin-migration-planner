@@ -1,0 +1,1 @@
+{"version":3,"file":"deliverables.d.ts","sourceRoot":"","sources":["../../src/queries/deliverables.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,KAAK,QAAQ,EAAE,MAAM,kBAAkB,CAAC;AAGjD,wBAAsB,eAAe,CAAC,EAAE,EAAE,QAAQ,EAAE,YAAY,EAAE,MAAM;;;;;KAKvE;AAED,wBAAsB,iBAAiB,CACrC,EAAE,EAAE,QAAQ,EACZ,YAAY,EAAE,MAAM,EACpB,IAAI,EAAE,MAAM,EACZ,QAAQ,EAAE,MAAM,iBAUjB"}

@@ -1,0 +1,40 @@
+[  337085ms] ReferenceError: AiToolToggles is not defined
+
+	in <unknown>
+	in Card.svelte
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at $.add_svelte_meta.componentTag (http://localhost:5173/src/routes/assessments/[id]/+page.svelte?t=1771789509445:1147:14)
+    at Module.add_svelte_meta (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:590:12)
+    at http://localhost:5173/src/routes/assessments/[id]/+page.svelte?t=1771789509445:1146:9
+    at snippet2 (http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:1468:14)
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:1460:56
+    at http://localhost:5173/node_modules/.vite/deps/chunk-O7I35TK4.js?v=c0001dfe:656:24
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at update_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3679:21)
+    at create_effect (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3031:7)
+    at branch (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3205:10)
+[ 1513754ms] Svelte error: derived_references_self
+A derived value cannot reference itself recursively
+https://svelte.dev/e/derived_references_self
+
+	in <unknown>
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+    at derived_references_self (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:285:19)
+    at execute_derived (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:1931:9)
+    at update_derived (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:1955:15)
+    at Module.get (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3786:7)
+    at http://localhost:5173/src/routes/assessments/[id]/+page.svelte?t=1771790686173:417:52
+    at update_reaction (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3540:18)
+    at execute_derived (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:1936:15)
+    at update_derived (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:1955:15)
+    at Module.get (http://localhost:5173/node_modules/.vite/deps/chunk-MP5Q6MV3.js?v=c0001dfe:3786:7)
+    at http://localhost:5173/src/routes/assessments/[id]/+page.svelte?t=1771790686173:921:56

@@ -13,7 +13,6 @@
 		hasAnalysis: boolean;
 		hasEstimate: boolean;
 		hasRefine: boolean;
-		hasDeliverables: boolean;
 		challengeReviews?: Record<string, ChallengeReviewInfo>;
 	}
 
@@ -33,7 +32,6 @@
 		{ href: '/analysis',     label: 'Analysis',       step: '\u2462', key: 'hasAnalysis',     reviewStep: 'analysis' },
 		{ href: '/estimate',     label: 'Estimate',       step: '\u2463', key: 'hasEstimate',     reviewStep: 'estimate' },
 		{ href: '/refine',       label: 'Refine',         step: '\u2464', key: 'hasRefine',       reviewStep: 'refine' },
-		{ href: '/deliverables', label: 'Deliverables',   step: '\u2465', key: 'hasDeliverables', reviewStep: null }
 	];
 
 	function isActive(href: string): boolean {
@@ -48,7 +46,7 @@
 
 	function isComplete(key: string): boolean {
 		if (key === 'always') return true;
-		return summary?.[key as keyof Summary] ?? false;
+		return !!(summary?.[key as keyof Summary]);
 	}
 
 	function getReview(step: string | null): ChallengeReviewInfo | null {
@@ -77,10 +75,7 @@
 </script>
 
 <aside class="w-56 shrink-0 border-r-3 border-brutal bg-surface min-h-full">
-	<div class="p-4 border-b-3 border-brutal">
-		<h2 class="text-sm font-extrabold uppercase tracking-wider text-text break-words">{projectName}</h2>
-	</div>
-	<nav class="flex flex-col gap-1 p-2">
+	<nav class="flex flex-col gap-1 p-2 pt-3">
 		{#each links as link}
 			<a
 				href="{base}{link.href}"
@@ -105,7 +100,7 @@
 						: 'text-text-muted hover:bg-surface-hover hover:text-text'}"
 				>
 					<span class="w-1.5 h-1.5 rotate-45 {diamondColor(review)} shrink-0"></span>
-					<span class="flex-1">Review</span>
+					<span class="flex-1">Agent Review</span>
 					{#if review}
 						<span class="{reviewColor(review.latestStatus, review.confidenceScore)} font-mono text-[10px]">
 							{Math.round(review.confidenceScore)}% {reviewIcon(review.latestStatus)}

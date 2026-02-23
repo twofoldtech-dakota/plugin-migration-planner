@@ -1,0 +1,13 @@
+{
+  "dimension": "storage",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "provider": { "value": "S3", "confidence": "confirmed" },
+    "bucket_count": { "value": 2, "confidence": "confirmed" },
+    "buckets": { "value": ["contoso-media-prod", "contoso-media-assets"], "confidence": "confirmed" },
+    "total_size_gb": { "value": 75, "confidence": "confirmed" },
+    "blob_provider_module": { "value": "unknown", "confidence": "unknown", "basis": "Custom module or standard Sitecore provider unclear" },
+    "versioning_enabled": { "value": true, "confidence": "confirmed" }
+  }
+}

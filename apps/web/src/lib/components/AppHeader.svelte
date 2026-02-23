@@ -38,7 +38,52 @@
 						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
 						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
 				>
+					Dashboard
+				</a>
+				<a
+					href="/assessments"
+					class="brutal-border-thin px-3 py-1 no-underline transition-all duration-150
+						{page.url.pathname.startsWith('/assessments')
+						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
+						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
+				>
 					Assessments
+				</a>
+				<a
+					href="/clients"
+					class="brutal-border-thin px-3 py-1 no-underline transition-all duration-150
+						{page.url.pathname.startsWith('/clients')
+						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
+						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
+				>
+					Clients
+				</a>
+				<a
+					href="/knowledge"
+					class="brutal-border-thin px-3 py-1 no-underline transition-all duration-150
+						{page.url.pathname.startsWith('/knowledge')
+						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
+						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
+				>
+					Knowledge
+				</a>
+				<a
+					href="/analytics"
+					class="brutal-border-thin px-3 py-1 no-underline transition-all duration-150
+						{page.url.pathname.startsWith('/analytics')
+						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
+						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
+				>
+					Analytics
+				</a>
+				<a
+					href="/planning"
+					class="brutal-border-thin px-3 py-1 no-underline transition-all duration-150
+						{page.url.pathname.startsWith('/planning')
+						? 'bg-primary text-white shadow-sm -translate-x-px -translate-y-px'
+						: 'bg-surface text-text-secondary hover:bg-surface-hover hover:-translate-x-px hover:-translate-y-px hover:shadow-sm'}"
+				>
+					Planning
 				</a>
 			</nav>
 			<ThemeToggle />

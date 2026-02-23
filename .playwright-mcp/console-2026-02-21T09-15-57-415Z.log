@@ -1,0 +1,34 @@
+[   23926ms] [ERROR] WebSocket connection to 'ws://localhost:5180/?token=SOvUN01YH0mj' failed:  @ http://localhost:5180/@vite/client:801
+[   24011ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   25014ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   26016ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   28850ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5180/assessments/assess-e2e-20260220/dashboard:0
+[   35289ms] [ERROR] WebSocket connection to 'ws://localhost:5180/?token=3JpGhiCGDgKh' failed:  @ http://localhost:5180/@vite/client:801
+[   35350ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   36351ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   37353ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   38355ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   39358ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   40365ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   41369ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   42387ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   43409ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   44487ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   45544ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   46820ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   48287ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   50132ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   52416ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   59835ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5180/assessments/assess-e2e-20260220/dashboard:0
+[   74097ms] [ERROR] WebSocket connection to 'ws://localhost:5180/?token=YVD9YxG1a8nC' failed:  @ http://localhost:5180/@vite/client:801
+[   74159ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   75161ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   76164ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   77166ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   78170ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   79174ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   80178ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   81203ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   82227ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   83276ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034
+[   84385ms] [ERROR] WebSocket connection to 'ws://localhost:5180/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:5180/@vite/client:1034

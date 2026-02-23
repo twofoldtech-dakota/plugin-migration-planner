@@ -67,12 +67,45 @@
 
 	// ── Step 3: Project ───────────────────────────────────────
 	let projectName = $state('');
-	let sitecoreVersion = $state('10.4');
-	let topology = $state('');
-	let sourceCloud = $state('aws');
-	let targetCloud = $state('azure');
 	let targetTimeline = $state('');
 	let projectPath = $state('');
+
+	// Source stack
+	let sourcePlatform = $state('');
+	let sourcePlatformVersion = $state('');
+	let sourceTopology = $state('');
+	let sourceInfrastructure = $state('');
+
+	// Target stack
+	let targetPlatform = $state('');
+	let targetInfrastructure = $state('');
+
+	// Derived pack data for dropdowns
+	const selectedSourcePlatformPack = $derived(
+		data.platforms.find((p: any) => p.id === sourcePlatform) ?? null
+	);
+	const sourceVersions = $derived(
+		(selectedSourcePlatformPack?.supported_versions as string[]) ?? []
+	);
+	const sourceTopologies = $derived(
+		(selectedSourcePlatformPack?.valid_topologies as string[]) ?? []
+	);
+	const targetPlatforms = $derived(
+		selectedSourcePlatformPack
+			? data.platforms.filter((p: any) => (selectedSourcePlatformPack.compatible_targets as string[])?.includes(p.id))
+			: data.platforms
+	);
+	const targetInfraOptions = $derived(
+		selectedSourcePlatformPack
+			? data.infrastructure.filter((i: any) => (selectedSourcePlatformPack.compatible_infrastructure as string[])?.includes(i.id))
+			: data.infrastructure
+	);
+
+	// Legacy compat fields (derived from stack selections)
+	const sitecoreVersion = $derived(sourcePlatform === 'sitecore-xp' ? sourcePlatformVersion : '');
+	const topology = $derived(sourceTopology);
+	const sourceCloud = $derived(sourceInfrastructure || 'aws');
+	const targetCloud = $derived(targetInfrastructure || 'azure');
 
 	const step3Valid = $derived(projectName.trim().length > 0);
 
@@ -125,6 +158,38 @@
 			}
 
 			const assessmentId = generateId('assess');
+
+			// Build stack objects
+			const sourceStackObj: Record<string, unknown> = {};
+			if (sourcePlatform) {
+				sourceStackObj.platform = sourcePlatform;
+				if (sourcePlatformVersion) sourceStackObj.platform_version = sourcePlatformVersion;
+				if (sourceTopology) sourceStackObj.topology = sourceTopology;
+			}
+			if (sourceInfrastructure) sourceStackObj.infrastructure = sourceInfrastructure;
+			sourceStackObj.services = [];
+
+			const targetStackObj: Record<string, unknown> = {};
+			if (targetPlatform) targetStackObj.platform = targetPlatform;
+			if (targetInfrastructure) targetStackObj.infrastructure = targetInfrastructure;
+			targetStackObj.services = [];
+
+			// Derive migration scope
+			const migrationScopeObj: Record<string, unknown> = {};
+			const layersAffected: string[] = [];
+			if (sourcePlatform && targetPlatform && sourcePlatform !== targetPlatform) {
+				migrationScopeObj.type = 're-platform';
+				layersAffected.push('platform');
+			} else if (sourcePlatform && !targetPlatform) {
+				migrationScopeObj.type = 'cloud-migration';
+			}
+			if (sourceInfrastructure && targetInfrastructure && sourceInfrastructure !== targetInfrastructure) {
+				layersAffected.push('infrastructure', 'services', 'data');
+				if (!migrationScopeObj.type) migrationScopeObj.type = 'cloud-migration';
+			}
+			if (layersAffected.length > 0) migrationScopeObj.layers_affected = layersAffected;
+			migrationScopeObj.complexity = layersAffected.length >= 3 ? 'major' : layersAffected.length >= 1 ? 'moderate' : 'minor';
+
 			const res = await fetch('/api/assessments', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -133,6 +198,9 @@
 					project_name: projectName.trim(),
 					client_id: clientId,
 					client_name: clientName,
+					source_stack: sourceStackObj,
+					target_stack: targetStackObj,
+					migration_scope: migrationScopeObj,
 					sitecore_version: sitecoreVersion,
 					topology,
 					source_cloud: sourceCloud,
@@ -385,69 +453,112 @@
 						/>
 					</div>
 
-					<div class="grid grid-cols-2 gap-4">
-						<div>
-							<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="sitecore-version">
-								Sitecore Version
-							</label>
-							<select
-								id="sitecore-version"
-								bind:value={sitecoreVersion}
-								class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
-							>
-								<option value="10.0">10.0</option>
-								<option value="10.1">10.1</option>
-								<option value="10.2">10.2</option>
-								<option value="10.3">10.3</option>
-								<option value="10.4">10.4</option>
-							</select>
+					<!-- Source Stack -->
+					<div class="brutal-border-thin bg-surface p-4 space-y-4">
+						<span class="text-xs font-extrabold uppercase tracking-wider text-text-muted">Source Stack</span>
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="source-platform">
+									Platform
+								</label>
+								<select
+									id="source-platform"
+									bind:value={sourcePlatform}
+									class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
+								>
+									<option value="">Select...</option>
+									{#each data.platforms as pack}
+										<option value={pack.id}>{pack.name}</option>
+									{/each}
+								</select>
+							</div>
+							<div>
+								<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="source-version">
+									Version
+								</label>
+								<select
+									id="source-version"
+									bind:value={sourcePlatformVersion}
+									disabled={sourceVersions.length === 0}
+									class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary disabled:opacity-50"
+								>
+									<option value="">Select...</option>
+									{#each sourceVersions as v}
+										<option value={v}>{v}</option>
+									{/each}
+								</select>
+							</div>
 						</div>
-						<div>
-							<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="topology">
-								Topology
-							</label>
-							<select
-								id="topology"
-								bind:value={topology}
-								class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
-							>
-								<option value="">Select...</option>
-								<option value="xm_single">XM Single</option>
-								<option value="xm_scaled">XM Scaled</option>
-								<option value="xp_scaled">XP Scaled</option>
-								<option value="xp_exm">XP + EXM</option>
-							</select>
+						<div class="grid grid-cols-2 gap-4">
+							{#if sourceTopologies.length > 0}
+								<div>
+									<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="source-topology">
+										Topology
+									</label>
+									<select
+										id="source-topology"
+										bind:value={sourceTopology}
+										class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
+									>
+										<option value="">Select...</option>
+										{#each sourceTopologies as t}
+											<option value={t}>{t.replace(/_/g, ' ').toUpperCase()}</option>
+										{/each}
+									</select>
+								</div>
+							{/if}
+							<div>
+								<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="source-infra">
+									Infrastructure
+								</label>
+								<select
+									id="source-infra"
+									bind:value={sourceInfrastructure}
+									class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
+								>
+									<option value="">Select...</option>
+									{#each data.infrastructure as infra}
+										<option value={infra.id}>{infra.name}</option>
+									{/each}
+								</select>
+							</div>
 						</div>
 					</div>
 
-					<div class="grid grid-cols-2 gap-4">
-						<div>
-							<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="source-cloud">
-								Source Cloud
-							</label>
-							<select
-								id="source-cloud"
-								bind:value={sourceCloud}
-								class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
-							>
-								<option value="aws">AWS</option>
-								<option value="azure">Azure</option>
-								<option value="on_prem">On-Premises</option>
-								<option value="other">Other</option>
-							</select>
-						</div>
-						<div>
-							<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="target-cloud">
-								Target Cloud
-							</label>
-							<select
-								id="target-cloud"
-								bind:value={targetCloud}
-								class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
-							>
-								<option value="azure">Azure</option>
-								<option value="aws">AWS</option>
-							</select>
+					<!-- Target Stack -->
+					<div class="brutal-border-thin bg-surface p-4 space-y-4">
+						<span class="text-xs font-extrabold uppercase tracking-wider text-text-muted">Target Stack</span>
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="target-platform">
+									Platform
+								</label>
+								<select
+									id="target-platform"
+									bind:value={targetPlatform}
+									class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
+								>
+									<option value="">Same / None</option>
+									{#each targetPlatforms as pack}
+										<option value={pack.id}>{pack.name}</option>
+									{/each}
+								</select>
+							</div>
+							<div>
+								<label class="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5" for="target-infra">
+									Infrastructure
+								</label>
+								<select
+									id="target-infra"
+									bind:value={targetInfrastructure}
+									class="w-full brutal-border-thin bg-bg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary"
+								>
+									<option value="">Select...</option>
+									{#each targetInfraOptions as infra}
+										<option value={infra.id}>{infra.name}</option>
+									{/each}
+								</select>
+							</div>
 						</div>
 					</div>
 
@@ -546,9 +657,16 @@
 					</div>
 					<p class="font-bold">{projectName}</p>
 					<div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary">
-						{#if sitecoreVersion}<span>Sitecore {sitecoreVersion}</span>{/if}
-						{#if topology}<span>{topology.replace(/_/g, ' ').toUpperCase()}</span>{/if}
-						<span>{sourceCloud.toUpperCase()} &rarr; {targetCloud.toUpperCase()}</span>
+						{#if sourcePlatform}
+							{@const pack = data.platforms.find((p: any) => p.id === sourcePlatform)}
+							<span>{pack?.name ?? sourcePlatform}{sourcePlatformVersion ? ` ${sourcePlatformVersion}` : ''}</span>
+						{/if}
+						{#if sourceTopology}<span>{sourceTopology.replace(/_/g, ' ').toUpperCase()}</span>{/if}
+						{#if sourceInfrastructure || targetInfrastructure}
+							{@const srcName = data.infrastructure.find((i: any) => i.id === sourceInfrastructure)?.name ?? sourceInfrastructure}
+							{@const tgtName = data.infrastructure.find((i: any) => i.id === targetInfrastructure)?.name ?? targetInfrastructure}
+							<span>{srcName || '?'} &rarr; {tgtName || '?'}</span>
+						{/if}
 						{#if targetTimeline}<span>{targetTimeline}</span>{/if}
 					</div>
 					{#if projectPath}

@@ -1,0 +1,11 @@
+{
+  "dimension": "ssl",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "certificate_provider": { "value": "ACM", "confidence": "confirmed" },
+    "certificate_count": { "value": 3, "confidence": "confirmed" },
+    "domains": { "value": ["*.contoso.com", "*.contoso-cms.com", "*.contoso-cdn.com"], "confidence": "confirmed" },
+    "auto_renewal": { "value": true, "confidence": "confirmed" }
+  }
+}

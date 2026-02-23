@@ -22,6 +22,23 @@
 - **Azure**: Azure WAF on Application Gateway or Front Door uses different rule format
 - **Impact**: WAF rules need complete rewrite. OWASP rulesets available on both but custom rules differ.
 
+### Secrets & Configuration Management
+- **AWS Secrets Manager / Parameter Store**: Flat namespace with path-based organization, native RDS credential rotation, seamless Lambda integration via SDK
+- **Azure Key Vault / App Configuration**: Key Vault uses vault-based isolation (separate access policies per vault), different API surface, RBAC or access policy authorization model. App Configuration provides feature flags and key-value config separate from secrets
+- **Impact**:
+  - All secrets references in application code must be updated (AWS SDK → Azure SDK or Managed Identity + Key Vault references)
+  - Automatic RDS credential rotation has no direct Key Vault equivalent — use Azure SQL Managed Identity authentication instead
+  - Parameter Store hierarchical paths (`/app/prod/db-password`) don't map to Key Vault's flat key namespace — restructure naming
+  - IAM-based secret access → Managed Identity + Key Vault access policies or RBAC roles
+  - Sitecore connection strings stored in Secrets Manager must be migrated to Key Vault and referenced via Key Vault configuration provider
+
+### Messaging & Streaming
+- **AWS SQS**: Pull-based queue with long polling, visibility timeout, built-in dead-letter queue
+- **Azure Service Bus Queues**: Push and pull patterns, sessions for ordered processing, different dead-letter and retry semantics
+- **Impact**: Queue consumer code must be rewritten. SQS message attributes → Service Bus message properties. Visibility timeout → Lock duration. FIFO guarantees require Service Bus sessions.
+
+---
+
 ## Behavioral Differences
 
 ### Storage Snapshots
@@ -63,9 +80,13 @@
   - Access patterns (signed URLs vs SAS tokens) differ
 
 ### Sitecore TDS/Unicorn Serialization Paths
-- File paths in serialization configs may reference S3/EFS mounted paths
-- Azure equivalent paths (Azure Files SMB mount) use different conventions
-- Review all serialization configs for path dependencies
+- File paths in serialization configs may reference S3/EFS mounted paths (e.g., `/mnt/efs/unicorn/`)
+- Azure equivalent paths use Azure Files SMB mount (`\\storage.file.core.windows.net\share`) or local disk (`D:\unicorn\`)
+- Review all Unicorn `.config` files for `physicalRootPath` settings
+- Transparent sync file watchers may behave differently on Azure Files vs EFS (latency, event notification)
+- If Unicorn configs use `$(dataFolder)` variable, verify it resolves correctly on Azure VMs
+- TDS projects with source control bindings may need path updates in `.scproj` files
+- **During data migration**: Run Unicorn sync after database restore to push serialized item state to Azure databases. Resolve any conflicts between serialized items and database content. Validate item counts match expected configuration.
 
 ### License File Considerations
 - Sitecore license files are not cloud-specific, but deployment location may need updating

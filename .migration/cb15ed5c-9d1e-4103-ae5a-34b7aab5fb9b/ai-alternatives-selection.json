@@ -1,0 +1,40 @@
+{
+  "generated_at": "2026-02-21T17:43:00Z",
+  "selections": {
+    "azure_migrate": true,
+    "aws_app_discovery": true,
+    "azure_dms": true,
+    "dma": true,
+    "azcopy": true,
+    "github_copilot": true,
+    "claude_code": true,
+    "terraform_opentofu": true,
+    "playwright_ai_testgen": true,
+    "k6_performance": true,
+    "azure_monitor_ai": true,
+    "app_insights_smart": true,
+    "defender_for_cloud": true,
+    "azure_backup_smart": true,
+    "azure_network_watcher": true,
+    "azure_advisor": true,
+    "azure_devops_pipelines": true,
+    "ssma": false,
+    "azure_storage_mover": false,
+    "azure_bicep": false,
+    "azure_load_testing": false,
+    "azure_policy": false,
+    "github_actions_copilot": false,
+    "azure_site_recovery": false,
+    "azure_traffic_manager": false
+  },
+  "disabled_reasons": {
+    "ssma": "SQL Server to SQL Server migration — DMA is more appropriate",
+    "azure_storage_mover": "Media library <100GB — AzCopy is simpler and sufficient",
+    "azure_bicep": "Mutual exclusion: Terraform/OpenTofu selected as IaC tool",
+    "azure_load_testing": "K6 selected as primary load testing tool",
+    "azure_policy": "No confirmed compliance requirements — enable if PCI/HIPAA/GDPR discovered",
+    "github_actions_copilot": "Mutual exclusion: Azure DevOps Pipelines selected (repos already on Azure DevOps)",
+    "azure_site_recovery": "IaaS replatform approach — not using ASR lift-and-shift pathway",
+    "azure_traffic_manager": "Standard DNS cutover planned — gradual cutover not required"
+  }
+}

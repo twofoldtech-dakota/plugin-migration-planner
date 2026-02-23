@@ -1,0 +1,20 @@
+{
+  "name": "migration-planner-db",
+  "version": "4.0.0",
+  "description": "MCP server providing Postgres persistence for the migration-planner plugin",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@migration-planner/db": "*",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

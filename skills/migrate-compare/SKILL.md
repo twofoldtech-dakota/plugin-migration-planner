@@ -20,8 +20,8 @@ If the comparison topic is unclear, ask the user to clarify.
 
 ### 2. Load Context
 
-1. Read `.migration/assessment.json` for project context
-2. Read relevant discovery data from `.migration/discovery/`
+1. Call `get_assessment` with `project_path` (current working directory). Fall back to `.migration/assessment.json` for project context.
+2. Call `get_discovery` with the assessment ID for relevant discovery data. Fall back to reading `.migration/discovery/` files.
 3. Read relevant knowledge files from `skills/migrate-knowledge/knowledge/`
 4. Read `skills/migrate-knowledge/heuristics/base-effort-hours.json` for effort differences
 

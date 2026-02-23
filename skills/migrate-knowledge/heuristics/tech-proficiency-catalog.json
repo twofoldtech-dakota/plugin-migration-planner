@@ -1,0 +1,78 @@
+{
+  "proficiency_levels": ["none", "beginner", "intermediate", "advanced", "expert"],
+  "adoption_overhead_factors": {
+    "none": 1.0,
+    "beginner": 0.6,
+    "intermediate": 0.3,
+    "advanced": 0.1,
+    "expert": 0.0
+  },
+  "categories": {
+    "infrastructure_as_code": {
+      "name": "Infrastructure as Code",
+      "description": "Terraform, Bicep, ARM templates, CloudFormation",
+      "adoption_base_hours": 8,
+      "maps_to_tools": ["terraform_opentofu", "azure_bicep"]
+    },
+    "azure_services": {
+      "name": "Azure Platform",
+      "description": "Azure portal, CLI, resource management, subscriptions",
+      "adoption_base_hours": 4,
+      "maps_to_tools": ["azure_migrate", "azure_storage_mover", "azure_site_recovery", "azure_backup_smart", "azure_advisor", "azure_load_testing"]
+    },
+    "aws_services": {
+      "name": "AWS Platform",
+      "description": "AWS console, CLI, EC2, RDS, S3",
+      "adoption_base_hours": 4,
+      "maps_to_tools": ["aws_app_discovery"]
+    },
+    "databases": {
+      "name": "Database Administration",
+      "description": "SQL Server, Azure SQL, migration tools, DBA tasks",
+      "adoption_base_hours": 6,
+      "maps_to_tools": ["azure_dms", "ssma", "dma"]
+    },
+    "ai_coding_tools": {
+      "name": "AI Coding Tools",
+      "description": "GitHub Copilot, Claude Code, AI pair programming",
+      "adoption_base_hours": 3,
+      "maps_to_tools": ["github_copilot", "claude_code"]
+    },
+    "cicd": {
+      "name": "CI/CD & DevOps",
+      "description": "Azure DevOps, GitHub Actions, pipeline authoring",
+      "adoption_base_hours": 6,
+      "maps_to_tools": ["azure_devops_pipelines", "github_actions_copilot"]
+    },
+    "monitoring": {
+      "name": "Monitoring & Observability",
+      "description": "Azure Monitor, Application Insights, Grafana",
+      "adoption_base_hours": 4,
+      "maps_to_tools": ["azure_monitor_ai", "app_insights_smart"]
+    },
+    "security": {
+      "name": "Security & Compliance",
+      "description": "Defender for Cloud, Azure Policy, compliance frameworks",
+      "adoption_base_hours": 4,
+      "maps_to_tools": ["defender_for_cloud", "azure_policy"]
+    },
+    "testing": {
+      "name": "Testing & Validation",
+      "description": "Playwright, K6, load testing, automated QA",
+      "adoption_base_hours": 5,
+      "maps_to_tools": ["playwright_ai_testgen", "k6_performance"]
+    },
+    "networking": {
+      "name": "Networking & DNS",
+      "description": "VNets, Traffic Manager, Network Watcher, DNS",
+      "adoption_base_hours": 4,
+      "maps_to_tools": ["azure_traffic_manager", "azure_network_watcher"]
+    },
+    "storage_tools": {
+      "name": "Storage & Data Transfer",
+      "description": "AzCopy, Storage Mover, blob migration",
+      "adoption_base_hours": 2,
+      "maps_to_tools": ["azcopy"]
+    }
+  }
+}

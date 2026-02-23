@@ -1,0 +1,12 @@
+{
+  "dimension": "cdn",
+  "status": "complete",
+  "last_updated": "2026-02-20",
+  "answers": {
+    "provider": { "value": "CloudFront", "confidence": "confirmed" },
+    "distribution_count": { "value": 2, "confidence": "confirmed" },
+    "waf_enabled": { "value": true, "confidence": "confirmed" },
+    "custom_origins": { "value": ["www.contoso.com", "media.contoso.com"], "confidence": "confirmed" },
+    "caching_behavior": { "value": "Default + media path overrides", "confidence": "confirmed" }
+  }
+}

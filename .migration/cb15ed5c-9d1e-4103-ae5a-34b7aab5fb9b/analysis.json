@@ -1,0 +1,265 @@
+{
+  "generated_at": "2026-02-21T17:30:00Z",
+  "discovery_completeness": 0.91,
+  "confidence_score": 52,
+  "risks": [
+    {
+      "id": "RISK-001",
+      "source": "gotcha:large_db_migration_window",
+      "severity": "high",
+      "category": "database",
+      "description": "250GB database exceeds 200GB threshold. Network transfer and index rebuild can take 6-12 hours, exceeding standard maintenance windows.",
+      "affected_components": ["database_single", "cutover_execution"],
+      "mitigation": "Use Azure Database Migration Service with continuous sync. Pre-copy bulk data during business hours, then delta sync at cutover.",
+      "contingency": "If DMS sync fails, fall back to backup/restore with extended downtime window (12-16 hrs).",
+      "estimated_hours_impact": 16,
+      "linked_assumptions": ["ASMP-003"]
+    },
+    {
+      "id": "RISK-002",
+      "source": "gotcha:media_blob_references",
+      "severity": "medium",
+      "category": "storage",
+      "description": "Media stored in SQL DB (~50GB+) inflates database size, increases migration time, and causes ongoing performance and cost concerns on Azure SQL.",
+      "affected_components": ["blob_storage", "database_single"],
+      "mitigation": "Consider migrating to Azure Blob Storage during replatform. If keeping in DB, plan for larger migration window and increased Azure SQL storage costs.",
+      "contingency": "Keep media in SQL initially, plan post-migration media externalization as phase 2.",
+      "estimated_hours_impact": 16,
+      "linked_assumptions": ["ASMP-004"]
+    },
+    {
+      "id": "RISK-003",
+      "source": "gotcha:custom_handlers_aws",
+      "severity": "medium",
+      "category": "integration",
+      "description": "AWS Secrets Manager to Azure Key Vault migration requires code changes. Different API, naming conventions, SDK, and access patterns.",
+      "affected_components": ["custom_integration", "managed_identity_keyvault"],
+      "mitigation": "Audit all code for AWS SDK usage. Replace with Azure Key Vault SDK. Update connection string references and access patterns.",
+      "contingency": "Use environment variables as temporary bridge during migration.",
+      "estimated_hours_impact": 8,
+      "linked_assumptions": []
+    },
+    {
+      "id": "RISK-004",
+      "source": "challenge:CHK-004",
+      "severity": "high",
+      "category": "deployment",
+      "description": "Unicorn has documented issues on Azure App Service — path length bugs, physicalRootPath issues, transparent sync problems. In maintenance mode since 2020.",
+      "affected_components": ["content_serialization_sync", "compute_single_role"],
+      "mitigation": "Deploy on Azure VMs (not App Service) to avoid path issues. Validate Unicorn sync on target VMs early. Consider SCS migration for long-term Azure strategy.",
+      "contingency": "If Unicorn fails on Azure VMs, use database backup/restore for initial content population.",
+      "estimated_hours_impact": 12,
+      "linked_assumptions": []
+    },
+    {
+      "id": "RISK-005",
+      "source": "gap:database_ha_config",
+      "severity": "high",
+      "category": "database",
+      "description": "Database HA configuration unknown. If Always On AG or mirroring exists, migration approach changes — SQL MI Business Critical tier required instead of General Purpose.",
+      "affected_components": ["database_single"],
+      "mitigation": "Verify HA configuration with client DBA before estimating. Plan for SQL MI Business Critical if HA required.",
+      "contingency": "Default to General Purpose tier, upgrade to Business Critical post-migration if needed.",
+      "estimated_hours_impact": 16,
+      "linked_assumptions": ["ASMP-001"]
+    },
+    {
+      "id": "RISK-006",
+      "source": "multiplier:many_custom_solr_indexes",
+      "severity": "medium",
+      "category": "search",
+      "description": "30+ custom Solr indexes require individual schema review, config migration, and rebuild validation. 1.6x effort multiplier on search migration.",
+      "affected_components": ["solr_standalone"],
+      "mitigation": "Inventory all indexes and custom schema configs. Deploy Solr on Azure VM. Plan parallel index rebuild. Validate search results post-rebuild.",
+      "contingency": "If index rebuild fails, restore Solr data directory from backup.",
+      "estimated_hours_impact": 12,
+      "linked_assumptions": []
+    },
+    {
+      "id": "RISK-007",
+      "source": "analysis:cdn_distribution_migration",
+      "severity": "medium",
+      "category": "cdn",
+      "description": "20 CloudFront distributions need mapping to Azure Front Door Premium. WAF rules need rewriting. Custom error pages need porting.",
+      "affected_components": ["cdn_setup", "ssl_tls"],
+      "mitigation": "Consolidate into Front Door Premium (~$330/mo). Map each distribution's origin, rules, and behaviors. Rewrite WAF rules for Azure WAF.",
+      "contingency": "Migrate distributions in batches, keeping CloudFront active as fallback.",
+      "estimated_hours_impact": 16,
+      "linked_assumptions": ["ASMP-006"]
+    },
+    {
+      "id": "RISK-008",
+      "source": "analysis:cicd_pipeline_migration",
+      "severity": "medium",
+      "category": "cicd",
+      "description": "~30 TeamCity build configs need migration to Azure Pipelines. Includes Unicorn builds, npm builds, Snyk scans, and deployment automation.",
+      "affected_components": ["cicd_pipeline"],
+      "mitigation": "Source already on Azure DevOps Repos — simplifies migration. Plan phased migration by repo group. Template common pipeline patterns.",
+      "contingency": "Keep TeamCity operational in parallel during pipeline migration.",
+      "estimated_hours_impact": 24,
+      "linked_assumptions": []
+    },
+    {
+      "id": "RISK-009",
+      "source": "gap:database_compliance_requirements",
+      "severity": "medium",
+      "category": "compliance",
+      "description": "Compliance requirements unknown. If PCI/HIPAA/GDPR applies, could trigger 1.2-1.5x multiplier across all components.",
+      "affected_components": ["all"],
+      "mitigation": "Verify compliance requirements with client legal/security team before finalizing estimate.",
+      "contingency": "If compliance discovered late, add compliance remediation phase post-migration.",
+      "estimated_hours_impact": 0,
+      "linked_assumptions": ["ASMP-002"]
+    }
+  ],
+  "dependency_chains": [
+    {
+      "chain": ["networking_vnet", "managed_identity_keyvault", "compute_single_role", "database_single", "identity_server", "xconnect_xdb", "testing_validation", "cutover_execution", "dns_cutover"],
+      "critical_path": true,
+      "notes": "Main critical path. backup_dr also required before cutover_execution."
+    }
+  ],
+  "parallel_tracks": [
+    {
+      "name": "Search Track",
+      "chain": ["solr_standalone"],
+      "starts_after": "networking_vnet",
+      "merges_at": "testing_validation"
+    },
+    {
+      "name": "Caching Track",
+      "chain": ["redis_session"],
+      "starts_after": "networking_vnet",
+      "merges_at": "testing_validation"
+    },
+    {
+      "name": "CDN Track",
+      "chain": ["ssl_tls", "cdn_setup"],
+      "starts_after": "networking_vnet",
+      "merges_at": "dns_cutover"
+    },
+    {
+      "name": "Monitoring Track",
+      "chain": ["monitoring_setup"],
+      "starts_after": "compute_single_role"
+    },
+    {
+      "name": "CI/CD Track",
+      "chain": ["cicd_pipeline"],
+      "starts_after": "compute_single_role"
+    },
+    {
+      "name": "Storage Track",
+      "chain": ["blob_storage"],
+      "starts_after": "networking_vnet"
+    }
+  ],
+  "complexity_multipliers_active": [
+    {
+      "id": "many_custom_solr_indexes",
+      "multiplier": 1.6,
+      "reason": "30+ custom Solr indexes (> 5 threshold, supersedes custom_solr_indexes)",
+      "applies_to": ["solr_standalone"],
+      "evidence": "discovery.search.custom_indexes = 30+"
+    },
+    {
+      "id": "many_sites",
+      "multiplier": 1.5,
+      "reason": "Global multi-site instance with 20 CDN distributions, ~30 repos — assumed > 10 sites",
+      "applies_to": ["compute_single_role", "cdn_setup", "ssl_tls", "testing_validation", "dns_cutover"],
+      "evidence": "discovery.cdn.distribution_count = 20, multi-site architecture confirmed"
+    },
+    {
+      "id": "multi_environment",
+      "multiplier": 1.3,
+      "reason": "3 environments (dev, qa, prod) exceeds 2-environment threshold",
+      "applies_to": ["networking_vnet", "compute_single_role", "database_single", "monitoring_setup", "cicd_pipeline"],
+      "evidence": "assessment.environment_count = 3"
+    }
+  ],
+  "risk_clusters": [
+    {
+      "name": "Data Migration",
+      "severity": "high",
+      "contributing_factors": ["250GB database", "Media blobs in SQL (~50GB+)", "HA config unknown", "Extended migration window needed"],
+      "combined_hours_impact": 48,
+      "risks": ["RISK-001", "RISK-002", "RISK-005"],
+      "description": "Large database with embedded media and unknown HA config creates significant data migration risk. Migration window could exceed 12 hours."
+    },
+    {
+      "name": "Search Migration",
+      "severity": "medium",
+      "contributing_factors": ["30+ custom Solr indexes", "1.6x effort multiplier", "Index size unknown"],
+      "combined_hours_impact": 12,
+      "risks": ["RISK-006"],
+      "description": "High custom index count significantly increases Solr migration complexity and rebuild time."
+    },
+    {
+      "name": "CI/CD Pipeline Migration",
+      "severity": "medium",
+      "contributing_factors": ["~30 TeamCity configs", "~30 repos", "Unicorn + npm + Snyk builds"],
+      "combined_hours_impact": 24,
+      "risks": ["RISK-008"],
+      "description": "Large pipeline migration effort, mitigated by source already being on Azure DevOps Repos."
+    },
+    {
+      "name": "CDN & WAF Migration",
+      "severity": "medium",
+      "contributing_factors": ["20 CloudFront distributions", "WAF rules to migrate", "Custom error pages"],
+      "combined_hours_impact": 16,
+      "risks": ["RISK-007"],
+      "description": "Many CDN distributions need consolidated into Azure Front Door Premium with WAF rule rewriting."
+    },
+    {
+      "name": "Integration & Secrets",
+      "severity": "medium",
+      "contributing_factors": ["AWS Secrets Manager → Key Vault", "Unicorn Azure compatibility issues"],
+      "combined_hours_impact": 20,
+      "risks": ["RISK-003", "RISK-004"],
+      "description": "Code changes needed for Key Vault migration and Unicorn Azure compatibility workarounds."
+    }
+  ],
+  "gaps": {
+    "total_answers": 124,
+    "confirmed_answers": 65,
+    "assumed_answers": 46,
+    "unknown_answers": 13,
+    "top_gaps": [
+      {
+        "dimension": "database",
+        "question": "database_ha_config",
+        "impact": "Critical — determines SQL MI tier and migration approach"
+      },
+      {
+        "dimension": "database",
+        "question": "database_compliance_requirements",
+        "impact": "High — could trigger 1.2-1.5x multiplier across all components"
+      },
+      {
+        "dimension": "compute",
+        "question": "compute_ec2_instance_type_cm/cd",
+        "impact": "Medium — affects Azure VM SKU sizing ±15%"
+      },
+      {
+        "dimension": "search",
+        "question": "search_total_index_size_gb",
+        "impact": "Medium — affects Solr VM disk provisioning and rebuild time"
+      },
+      {
+        "dimension": "session_state",
+        "question": "session_peak_concurrent",
+        "impact": "Medium — affects Azure Cache for Redis tier selection"
+      },
+      {
+        "dimension": "dns",
+        "question": "dns_zone_count",
+        "impact": "Medium — affects DNS cutover effort and planning"
+      },
+      {
+        "dimension": "email",
+        "question": "email_smtp_provider",
+        "impact": "Low-Medium — affects SMTP relay configuration on Azure"
+      }
+    ]
+  }
+}

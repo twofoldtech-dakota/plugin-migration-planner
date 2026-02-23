@@ -2,14 +2,14 @@
   "multipliers": [
     {
       "id": "multi_cd",
-      "condition": "cd_instance_count > 2",
+      "condition": "compute_cd_instance_count > 2",
       "multiplier": 1.3,
       "applies_to": ["compute_single_role", "networking_vnet", "cdn_setup", "testing_validation"],
       "reason": "Multiple CD instances require coordinated deployment, load balancer configuration, and per-instance validation"
     },
     {
       "id": "many_cd",
-      "condition": "cd_instance_count > 6",
+      "condition": "compute_cd_instance_count > 6",
       "multiplier": 1.5,
       "applies_to": ["compute_single_role", "networking_vnet", "cdn_setup", "testing_validation"],
       "reason": "6+ CD instances significantly increase deployment complexity and testing surface",
@@ -17,58 +17,36 @@
     },
     {
       "id": "solr_cloud",
-      "condition": "search.type == 'solr_cloud'",
+      "condition": "search_provider == 'SolrCloud'",
       "multiplier": 1.5,
       "applies_to": ["solr_standalone"],
       "reason": "SolrCloud requires ZooKeeper migration, ensemble setup, and cluster coordination"
     },
     {
       "id": "custom_solr_indexes",
-      "condition": "search.custom_indexes > 0",
+      "condition": "search_custom_indexes > 0",
       "multiplier": 1.3,
       "applies_to": ["solr_standalone", "solr_cloud"],
       "reason": "Custom indexes need schema review, config migration, and rebuild validation"
     },
     {
       "id": "many_custom_solr_indexes",
-      "condition": "search.custom_indexes > 5",
+      "condition": "search_custom_indexes > 5",
       "multiplier": 1.6,
       "applies_to": ["solr_standalone", "solr_cloud"],
       "reason": "Many custom indexes significantly increase migration and validation effort",
       "supersedes": "custom_solr_indexes"
     },
     {
-      "id": "exm_custom_mta",
-      "condition": "email.custom_mta == true",
-      "multiplier": 1.4,
-      "applies_to": ["exm_dispatch"],
-      "reason": "Custom MTA requires SMTP relay reconfiguration, authentication updates, and IP warming"
-    },
-    {
-      "id": "exm_high_volume",
-      "condition": "email.monthly_volume > 100000",
-      "multiplier": 1.3,
-      "applies_to": ["exm_dispatch"],
-      "reason": "High-volume dispatch needs IP warming plan, gradual ramp-up, and deliverability monitoring"
-    },
-    {
-      "id": "exm_very_high_volume",
-      "condition": "email.monthly_volume > 500000",
-      "multiplier": 1.6,
-      "applies_to": ["exm_dispatch"],
-      "reason": "Very high volume requires dedicated IP pools, complex warming plan, and extended stabilization",
-      "supersedes": "exm_high_volume"
-    },
-    {
       "id": "xdb_large",
-      "condition": "xconnect.contact_count > 1000000",
+      "condition": "xconnect_contact_count > 1000000",
       "multiplier": 1.5,
       "applies_to": ["xconnect_xdb", "database_single"],
       "reason": "Large xDB requires shard migration planning, potential downtime, and extended data validation"
     },
     {
       "id": "xdb_very_large",
-      "condition": "xconnect.contact_count > 10000000",
+      "condition": "xconnect_contact_count > 10000000",
       "multiplier": 2.0,
       "applies_to": ["xconnect_xdb", "database_single"],
       "reason": "Very large xDB needs phased migration strategy, potential shard redistribution",
@@ -76,14 +54,14 @@
     },
     {
       "id": "multi_site",
-      "condition": "sites_count > 3",
+      "condition": "integrations_sxa_site_count > 3",
       "multiplier": 1.2,
       "applies_to": ["compute_single_role", "cdn_setup", "ssl_tls", "testing_validation", "dns_cutover"],
       "reason": "Multi-site adds per-site validation overhead, per-site CDN config, and SSL per domain"
     },
     {
       "id": "many_sites",
-      "condition": "sites_count > 10",
+      "condition": "integrations_sxa_site_count > 10",
       "multiplier": 1.5,
       "applies_to": ["compute_single_role", "cdn_setup", "ssl_tls", "testing_validation", "dns_cutover"],
       "reason": "Many sites significantly multiply validation and DNS cutover effort",
@@ -91,28 +69,28 @@
     },
     {
       "id": "custom_session_state",
-      "condition": "session.type == 'custom'",
+      "condition": "session_private_provider == 'Custom session provider'",
       "multiplier": 1.3,
       "applies_to": ["redis_session", "compute_single_role"],
       "reason": "Custom session providers need migration, Azure compatibility testing, and fallback planning"
     },
     {
       "id": "ha_database",
-      "condition": "database.ha == true",
+      "condition": "database_ha_config != 'No HA configured'",
       "multiplier": 1.4,
       "applies_to": ["database_single"],
       "reason": "HA database requires Always On AG or MI Business Critical setup, failover testing"
     },
     {
       "id": "large_media_library",
-      "condition": "storage.media_size_gb > 50",
+      "condition": "storage_media_total_size_gb > 50",
       "multiplier": 1.3,
       "applies_to": ["blob_storage"],
       "reason": "Large media libraries need staged transfer and extended cutover window"
     },
     {
       "id": "very_large_media_library",
-      "condition": "storage.media_size_gb > 500",
+      "condition": "storage_media_total_size_gb > 500",
       "multiplier": 1.8,
       "applies_to": ["blob_storage"],
       "reason": "Very large media libraries may require multi-day transfer and phased sync strategy",
@@ -120,54 +98,207 @@
     },
     {
       "id": "vpn_connectivity",
-      "condition": "networking.vpn_required == true",
+      "condition": "networking_vpn_connection == true",
       "multiplier": 1.3,
       "applies_to": ["networking_vnet"],
       "reason": "VPN/ExpressRoute setup adds connectivity complexity, requires coordination with network team"
     },
     {
       "id": "expressroute",
-      "condition": "networking.expressroute == true",
+      "condition": "networking_vpn_type == 'AWS Direct Connect' OR networking_vpn_type == 'Direct Connect + VPN backup'",
       "multiplier": 1.5,
       "applies_to": ["networking_vnet"],
-      "reason": "ExpressRoute requires circuit provisioning, partner coordination, and peering setup",
+      "reason": "Direct Connect (→ ExpressRoute on Azure) requires circuit provisioning, partner coordination, and peering setup",
       "supersedes": "vpn_connectivity"
     },
     {
       "id": "compliance_requirements",
-      "condition": "compliance.required == true",
+      "condition": "database_compliance_requirements != 'None / No specific compliance'",
       "multiplier": 1.2,
       "applies_to": ["all"],
       "reason": "Compliance requirements add documentation, audit trails, and validation overhead"
     },
     {
       "id": "pci_compliance",
-      "condition": "compliance.pci == true",
+      "condition": "database_compliance_requirements contains 'PCI DSS (payment card data)'",
       "multiplier": 1.4,
       "applies_to": ["all"],
       "reason": "PCI DSS compliance requires specific network segmentation, encryption, and audit controls",
       "supersedes": "compliance_requirements"
     },
     {
+      "id": "large_serialization",
+      "condition": "content_total_item_count == '50,000-100,000' OR content_total_item_count == '100,000+'",
+      "multiplier": 1.3,
+      "applies_to": ["content_serialization_sync"],
+      "reason": "Large content item counts increase serialization sync time, conflict resolution effort, and validation complexity"
+    },
+    {
       "id": "multi_environment",
-      "condition": "environment_count > 2",
+      "condition": "cicd_environment_count > 2",
       "multiplier": 1.3,
       "applies_to": ["networking_vnet", "compute_single_role", "database_single", "monitoring_setup", "cicd_pipeline"],
       "reason": "Multiple environments (dev/staging/UAT/prod) multiply infrastructure provisioning effort"
     },
     {
       "id": "custom_modules",
-      "condition": "sitecore.custom_modules > 3",
+      "condition": "modules_marketplace_count == '9-15' OR modules_marketplace_count == '15+'",
       "multiplier": 1.2,
       "applies_to": ["compute_single_role", "testing_validation"],
-      "reason": "Custom Sitecore modules need individual migration validation and compatibility testing"
+      "reason": "Many Sitecore modules need individual migration validation and compatibility testing"
     },
     {
       "id": "sxa_enabled",
-      "condition": "sitecore.sxa == true",
+      "condition": "integrations_sxa_site_count > 0",
       "multiplier": 1.1,
       "applies_to": ["solr_standalone", "solr_cloud", "testing_validation"],
       "reason": "SXA adds additional search indexes and rendering validation requirements"
+    },
+    {
+      "id": "hipaa_compliance",
+      "condition": "database_compliance_requirements contains 'HIPAA (health data)'",
+      "multiplier": 1.5,
+      "applies_to": ["all"],
+      "reason": "HIPAA requires encryption at rest/transit validation, access audit logging, BAA with Azure, PHI data handling procedures, and breach notification readiness",
+      "supersedes": "pci_compliance"
+    },
+    {
+      "id": "gdpr_compliance",
+      "condition": "database_compliance_requirements contains 'GDPR (EU personal data)'",
+      "multiplier": 1.3,
+      "applies_to": ["database_single", "xconnect_xdb", "blob_storage", "backup_dr"],
+      "reason": "GDPR requires data residency validation, right-to-erasure support in xDB, DPA with Azure, and cross-border transfer assessment"
+    },
+    {
+      "id": "hub_spoke_networking",
+      "condition": "networking_topology_pattern == 'Hub-spoke (shared services VPC + application VPCs)'",
+      "multiplier": 1.5,
+      "applies_to": ["networking_vnet"],
+      "reason": "Hub-spoke VNet topology requires hub VNet with Azure Firewall or NVA, spoke peering, UDR configuration, and centralized DNS forwarding"
+    },
+    {
+      "id": "active_active_dr",
+      "condition": "backup_dr_strategy == 'Hot standby / active-active'",
+      "multiplier": 1.8,
+      "applies_to": ["backup_dr", "database_single", "networking_vnet", "dns_cutover"],
+      "reason": "Active-active DR requires geo-replicated databases, Traffic Manager, synchronized deployments, and conflict resolution strategy"
+    },
+    {
+      "id": "jss_headless",
+      "condition": "integrations_jss_rendering_host != '' AND integrations_jss_rendering_host != 'N/A'",
+      "multiplier": 1.3,
+      "applies_to": ["compute_single_role", "cdn_setup", "testing_validation", "cicd_pipeline"],
+      "reason": "JSS/headless adds Node.js rendering host migration, SSR configuration, API endpoint validation, and separate build pipeline"
+    },
+    {
+      "id": "many_environments",
+      "condition": "cicd_environment_count > 4",
+      "multiplier": 1.5,
+      "applies_to": ["networking_vnet", "compute_single_role", "database_single", "monitoring_setup", "cicd_pipeline"],
+      "reason": "5+ environments (dev/QA/staging/UAT/prod) significantly multiply infrastructure provisioning, configuration management, and pipeline complexity",
+      "supersedes": "multi_environment"
+    },
+    {
+      "id": "publishing_service_dedicated",
+      "condition": "integrations_publishing_service_hosting == 'Dedicated EC2 instance'",
+      "multiplier": 1.2,
+      "applies_to": ["compute_single_role", "testing_validation"],
+      "reason": "Dedicated Publishing Service requires separate VM provisioning, connection string configuration, and publish queue validation"
+    },
+    {
+      "id": "large_content_volume",
+      "condition": "content_total_item_count == '50,000-100,000'",
+      "multiplier": 1.3,
+      "applies_to": ["content_migration", "testing_validation", "cutover_execution"],
+      "reason": "50-100K content items significantly increase migration duration, validation effort, and cutover window"
+    },
+    {
+      "id": "very_large_content_volume",
+      "condition": "content_total_item_count == '100,000+'",
+      "multiplier": 1.6,
+      "applies_to": ["content_migration", "testing_validation", "cutover_execution"],
+      "reason": "100K+ content items require phased migration strategy, extended validation, and potentially multi-day cutover",
+      "supersedes": "large_content_volume"
+    },
+    {
+      "id": "multi_language",
+      "condition": "content_language_count > 3",
+      "multiplier": 1.3,
+      "applies_to": ["content_migration", "testing_validation"],
+      "reason": "4+ languages multiply content migration and validation effort per language version"
+    },
+    {
+      "id": "many_languages",
+      "condition": "content_language_count > 8",
+      "multiplier": 1.6,
+      "applies_to": ["content_migration", "testing_validation"],
+      "reason": "9+ languages create significant complexity in content migration ordering, fallback chains, and per-language validation",
+      "supersedes": "multi_language"
+    },
+    {
+      "id": "deep_customization",
+      "condition": "customization_pipeline_count == '16-30'",
+      "multiplier": 1.5,
+      "applies_to": ["code_migration", "testing_validation"],
+      "reason": "16-30 custom pipeline processors require extensive code review, refactoring, and regression testing"
+    },
+    {
+      "id": "extreme_customization",
+      "condition": "customization_pipeline_count == '30+'",
+      "multiplier": 2.0,
+      "applies_to": ["code_migration", "testing_validation"],
+      "reason": "30+ custom pipeline processors indicate a heavily customized Sitecore instance requiring comprehensive code migration",
+      "supersedes": "deep_customization"
+    },
+    {
+      "id": "many_renderings",
+      "condition": "customization_rendering_count == '60-100'",
+      "multiplier": 1.3,
+      "applies_to": ["frontend_rebuild", "testing_validation"],
+      "reason": "60-100 custom renderings increase frontend migration and visual regression testing effort"
+    },
+    {
+      "id": "very_many_renderings",
+      "condition": "customization_rendering_count == '100+'",
+      "multiplier": 1.6,
+      "applies_to": ["frontend_rebuild", "testing_validation"],
+      "reason": "100+ renderings require systematic migration approach and extensive visual regression testing",
+      "supersedes": "many_renderings"
+    },
+    {
+      "id": "inexperienced_team_sitecore",
+      "condition": "team_sitecore_experience == 'Some experience (< 2 years)'",
+      "multiplier": 1.3,
+      "applies_to": ["code_migration", "content_migration", "testing_validation"],
+      "reason": "Limited Sitecore experience increases ramp-up time, error rate, and review overhead for platform-specific migration tasks"
+    },
+    {
+      "id": "inexperienced_team_azure",
+      "condition": "team_target_platform_experience == 'Some experience'",
+      "multiplier": 1.2,
+      "applies_to": ["compute_single_role", "networking_vnet", "database_single", "monitoring_setup"],
+      "reason": "Limited Azure experience adds learning overhead to infrastructure provisioning and configuration"
+    },
+    {
+      "id": "imminent_deadline",
+      "condition": "team_hard_deadline == 'Imminent deadline (< 6 weeks away)'",
+      "multiplier": 1.3,
+      "applies_to": ["all"],
+      "reason": "Imminent deadlines compress testing cycles, force parallel work that increases coordination overhead, and reduce time for issue resolution"
+    },
+    {
+      "id": "incompatible_modules",
+      "condition": "modules_version_compatibility == 'Several incompatible'",
+      "multiplier": 1.5,
+      "applies_to": ["code_migration", "testing_validation"],
+      "reason": "Incompatible modules require version upgrades, code changes, or replacement — each with its own testing cycle"
+    },
+    {
+      "id": "no_code_quality",
+      "condition": "customization_code_quality == 'Low (no docs, no tests)'",
+      "multiplier": 1.4,
+      "applies_to": ["code_migration", "testing_validation"],
+      "reason": "Low code quality with no documentation or tests increases code analysis time and creates risk of undiscovered side effects during migration"
     }
   ]
 }

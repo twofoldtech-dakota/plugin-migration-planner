@@ -1,0 +1,16 @@
+{
+  "id": "assess-e2e-20260220",
+  "project_name": "Contoso Global Web Platform",
+  "client_name": "Contoso Ltd.",
+  "architect": "Dakota Smith",
+  "created": "2026-02-20",
+  "updated": "2026-02-20",
+  "sitecore_version": "10.3",
+  "topology": "xp_exm",
+  "status": "planning",
+  "source_cloud": "aws",
+  "target_cloud": "azure",
+  "target_timeline": "Q2 2026",
+  "environment_count": 3,
+  "environments": ["dev", "staging", "production"]
+}
